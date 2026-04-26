@@ -36,7 +36,7 @@ export default function Checkout() {
   const { items, total, clear } = useCart();
   const { user } = useAuth();
   const nav = useNavigate();
-  const [step, setStep] = useState<0 | 1 | 2>(0);
+  const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [data, setData] = useState({ customer_name: "", customer_phone: "", customer_address: "", notes: "" });
   const [paymentReference, setPaymentReference] = useState(
     () => `MAD-${Date.now().toString(36).toUpperCase()}`
@@ -44,6 +44,7 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false);
   const [orderRef, setOrderRef] = useState<string | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => { if (!user) nav("/auth"); }, [user, nav]);
   useEffect(() => { if (items.length === 0 && !orderRef) nav("/cart"); }, [items, orderRef, nav]);
