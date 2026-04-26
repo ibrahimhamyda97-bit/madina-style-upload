@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { Image as ImageIcon, X, Loader2, Plus, Sparkles, Upload } from "lucide-react";
+import { Image as ImageIcon, X, Loader2, Plus, Sparkles, Upload, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -18,7 +19,7 @@ type Size = typeof SIZES[number];
 
 const CATEGORIES = ["Vêtements", "Chaussures", "Accessoires", "Sacs", "Bijoux", "Beauté", "Maison", "Enfants", "Autre"];
 
-interface PhotoItem { id: string; url: string; size: Size | null; loading: boolean; }
+interface PhotoItem { id: string; url: string; loading: boolean; }
 
 const schema = z.object({
   shop_id: z.string().uuid("Sélectionnez une boutique"),
@@ -30,16 +31,19 @@ const schema = z.object({
 
 interface Props { mode: "admin" | "vendor" }
 
+const fmt = (n: number) => Number(n).toLocaleString("fr-FR");
+
 export default function ProductUploadForm({ mode }: Props) {
   const { user } = useAuth();
   const nav = useNavigate();
-  const [shops, setShops] = useState<{ id: string; name: string; status?: string }[]>([]);
+  const [shops, setShops] = useState<{ id: string; name: string; status?: string; commission_rate?: number }[]>([]);
   const [shopId, setShopId] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
   const [color, setColor] = useState("");
+  const [selectedSizes, setSelectedSizes] = useState<Size[]>([]);
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [adminUrl, setAdminUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -47,8 +51,8 @@ export default function ProductUploadForm({ mode }: Props) {
   useEffect(() => {
     if (!user) return;
     const q = mode === "admin"
-      ? supabase.from("shops").select("id,name,status").order("name")
-      : supabase.from("shops").select("id,name,status").eq("owner_id", user.id).eq("status", "approved").order("name");
+      ? supabase.from("shops").select("id,name,status,commission_rate").order("name")
+      : supabase.from("shops").select("id,name,status,commission_rate").eq("owner_id", user.id).eq("status", "approved").order("name");
     q.then(({ data }) => {
       const list = (data ?? []) as any;
       setShops(list);
@@ -56,13 +60,23 @@ export default function ProductUploadForm({ mode }: Props) {
     });
   }, [user, mode]);
 
+  const selectedShop = useMemo(() => shops.find((s) => s.id === shopId), [shops, shopId]);
+  const commissionRate = Number(selectedShop?.commission_rate ?? 10);
+  const priceNum = Number(price) || 0;
+  const commissionAmount = Math.round(priceNum * (commissionRate / 100));
+  const netAmount = Math.max(0, priceNum - commissionAmount);
+
+  function toggleSize(s: Size) {
+    setSelectedSizes((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]);
+  }
+
   // -------- Vendor: file upload to bucket --------
   async function handleVendorFiles(files: FileList | null) {
     if (!user || !files) return;
     for (const file of Array.from(files)) {
       if (file.size > 5 * 1024 * 1024) { toast.error(`${file.name} : trop lourd (5 Mo max)`); continue; }
       const id = crypto.randomUUID();
-      setPhotos((p) => [...p, { id, url: "", size: null, loading: true }]);
+      setPhotos((p) => [...p, { id, url: "", loading: true }]);
       const ext = file.name.split(".").pop() || "jpg";
       const path = `${user.id}/${Date.now()}-${id}.${ext}`;
       const { error } = await supabase.storage.from("product-images").upload(path, file, { contentType: file.type });
@@ -81,14 +95,11 @@ export default function ProductUploadForm({ mode }: Props) {
     const url = adminUrl.trim();
     if (!url) return toast.error("Saisissez une URL");
     try { new URL(url); } catch { return toast.error("URL invalide"); }
-    setPhotos((p) => [...p, { id: crypto.randomUUID(), url, size: null, loading: false }]);
+    setPhotos((p) => [...p, { id: crypto.randomUUID(), url, loading: false }]);
     setAdminUrl("");
   }
 
   function removePhoto(id: string) { setPhotos((p) => p.filter((it) => it.id !== id)); }
-  function updatePhotoSize(id: string, size: Size | null) {
-    setPhotos((p) => p.map((it) => it.id === id ? { ...it, size } : it));
-  }
 
   async function submit() {
     if (!user) return;
@@ -110,14 +121,21 @@ export default function ProductUploadForm({ mode }: Props) {
 
     if (error || !prod) { setSubmitting(false); return toast.error(error?.message || "Erreur"); }
 
-    // size defaults to "M" if not provided (DB requires non-null size on product_images)
-    const rows = photos.map((p, i) => ({
-      product_id: prod.id,
-      image_url: p.url,
-      size: (p.size ?? "M") as Size,
-      detected_color: color || null,
-      position: i,
-    }));
+    // Tailles : si aucune sélectionnée, on utilise "M" par défaut (la colonne size est non-null)
+    const sizesToUse: Size[] = selectedSizes.length > 0 ? selectedSizes : ["M" as Size];
+    const rows: any[] = [];
+    photos.forEach((p, photoIdx) => {
+      sizesToUse.forEach((sz, sizeIdx) => {
+        rows.push({
+          product_id: prod.id,
+          image_url: p.url,
+          size: sz,
+          detected_color: color || null,
+          position: photoIdx * sizesToUse.length + sizeIdx,
+        });
+      });
+    });
+
     const { error: imgErr } = await supabase.from("product_images").insert(rows);
     setSubmitting(false);
     if (imgErr) return toast.error(imgErr.message);
@@ -127,7 +145,7 @@ export default function ProductUploadForm({ mode }: Props) {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Photos */}
+      {/* Photos — zone unique avec bouton + */}
       <div className="bg-gradient-card border border-border rounded-3xl p-6 md:p-8 shadow-soft">
         <div className="flex items-center gap-2 mb-1">
           <Sparkles className="h-4 w-4 text-secondary" />
@@ -137,10 +155,10 @@ export default function ProductUploadForm({ mode }: Props) {
         </div>
         <h2 className="font-display text-2xl font-bold">Ajoutez vos photos</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Au moins une photo est requise. Vous pouvez préciser la taille et la couleur si nécessaire — c'est optionnel.
+          Ajoutez une première photo, puis utilisez le bouton <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-primary/10 text-primary mx-1"><Plus className="h-3 w-3" /></span> pour en ajouter d'autres.
         </p>
 
-        {mode === "admin" ? (
+        {mode === "admin" && (
           <div className="mt-6 flex flex-col md:flex-row gap-2">
             <Input
               value={adminUrl}
@@ -151,49 +169,48 @@ export default function ProductUploadForm({ mode }: Props) {
             />
             <Button onClick={addAdminUrl} className="h-11"><Plus className="h-5 w-5" /> Ajouter</Button>
           </div>
-        ) : (
-          <label className="mt-6 block">
-            <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleVendorFiles(e.target.files)} />
-            <span className="block rounded-2xl border-2 border-dashed border-border bg-muted/30 hover:bg-muted/50 hover:border-primary/40 transition-smooth py-8 cursor-pointer text-center">
-              <Upload className="h-7 w-7 text-muted-foreground mx-auto mb-2" />
-              <p className="font-medium text-sm">Cliquez pour téléverser des photos</p>
-              <p className="text-xs text-muted-foreground mt-1">JPG, PNG — 5 Mo max par image</p>
-            </span>
-          </label>
         )}
 
-        {photos.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mt-5">
-            {photos.map((p) => (
-              <div key={p.id} className="rounded-2xl border border-border bg-background overflow-hidden flex flex-col shadow-soft">
-                <div className="aspect-square bg-muted relative">
-                  {p.loading ? (
-                    <div className="absolute inset-0 grid place-items-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
-                  ) : (
-                    <img src={p.url} alt="" className="h-full w-full object-cover" />
-                  )}
-                  <button
-                    onClick={() => removePhoto(p.id)}
-                    className="absolute top-2 right-2 h-7 w-7 grid place-items-center rounded-full bg-background/90 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-smooth"
-                    aria-label="Supprimer"
-                  ><X className="h-4 w-4" /></button>
-                </div>
-                <div className="p-2">
-                  <Select value={p.size ?? "none"} onValueChange={(v) => updatePhotoSize(p.id, v === "none" ? null : v as Size)}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Taille (optionnel)" /></SelectTrigger>
-                    <SelectContent className="max-h-72">
-                      <SelectItem value="none">Sans taille</SelectItem>
-                      <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">Vêtements</div>
-                      {LETTER_SIZES.map((s) => <SelectItem key={s} value={s}>Taille {s}</SelectItem>)}
-                      <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground border-t mt-1">Pointures</div>
-                      {NUMERIC_SIZES.map((s) => <SelectItem key={s} value={s}>Pointure {s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
+        {/* Galerie de photos (vendor + admin) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mt-5">
+          {photos.map((p) => (
+            <div key={p.id} className="rounded-2xl border border-border bg-background overflow-hidden shadow-soft">
+              <div className="aspect-square bg-muted relative">
+                {p.loading ? (
+                  <div className="absolute inset-0 grid place-items-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
+                ) : (
+                  <img src={p.url} alt="" className="h-full w-full object-cover" />
+                )}
+                <button
+                  onClick={() => removePhoto(p.id)}
+                  className="absolute top-2 right-2 h-7 w-7 grid place-items-center rounded-full bg-background/90 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-smooth"
+                  aria-label="Supprimer"
+                ><X className="h-4 w-4" /></button>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ))}
+
+          {/* Tuile d'ajout (vendor uniquement) */}
+          {mode === "vendor" && (
+            <label className="aspect-square rounded-2xl border-2 border-dashed border-border bg-muted/30 hover:bg-muted/50 hover:border-primary/40 transition-smooth grid place-items-center cursor-pointer text-center px-3">
+              <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => { handleVendorFiles(e.target.files); e.currentTarget.value = ""; }} />
+              {photos.length === 0 ? (
+                <div>
+                  <Upload className="h-7 w-7 text-muted-foreground mx-auto mb-2" />
+                  <p className="font-medium text-xs">Téléverser une photo</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">JPG / PNG · 5 Mo max</p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-1.5 text-primary">
+                  <span className="h-10 w-10 rounded-full bg-primary text-primary-foreground grid place-items-center shadow-soft">
+                    <Plus className="h-5 w-5" />
+                  </span>
+                  <span className="text-[11px] font-medium">Ajouter une photo</span>
+                </div>
+              )}
+            </label>
+          )}
+        </div>
 
         {photos.length === 0 && mode === "admin" && (
           <div className="mt-5 rounded-2xl border-2 border-dashed border-border bg-muted/30 py-10 grid place-items-center text-center">
@@ -201,6 +218,37 @@ export default function ProductUploadForm({ mode }: Props) {
             <p className="text-sm text-muted-foreground">Aucune photo ajoutée.</p>
           </div>
         )}
+
+        {/* Tailles & couleur (sous la zone unique d'upload) */}
+        <div className="mt-8 pt-6 border-t border-border space-y-5">
+          <div>
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Tailles disponibles (optionnel)</Label>
+            <p className="text-xs text-muted-foreground mt-1 mb-3">Cochez toutes les tailles où ce produit est disponible.</p>
+            <div className="space-y-3">
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">Vêtements</p>
+                <div className="flex flex-wrap gap-2">
+                  {LETTER_SIZES.map((s) => (
+                    <SizeChip key={s} label={s} active={selectedSizes.includes(s)} onClick={() => toggleSize(s)} />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">Pointures</p>
+                <div className="flex flex-wrap gap-2">
+                  {NUMERIC_SIZES.map((s) => (
+                    <SizeChip key={s} label={s} active={selectedSizes.includes(s)} onClick={() => toggleSize(s)} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-1.5 max-w-sm">
+            <Label>Couleur (optionnel)</Label>
+            <Input maxLength={40} value={color} onChange={(e) => setColor(e.target.value)} placeholder="Bleu marine, Rouge..." />
+          </div>
+        </div>
       </div>
 
       {/* Détails */}
@@ -233,12 +281,8 @@ export default function ProductUploadForm({ mode }: Props) {
             <Input maxLength={120} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex. Robe Wax Émeraude" />
           </div>
           <div className="space-y-1.5">
-            <Label>Prix (GNF) *</Label>
+            <Label>Prix de vente (GNF) *</Label>
             <Input type="number" min={1} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="150000" />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Couleur (optionnel)</Label>
-            <Input maxLength={40} value={color} onChange={(e) => setColor(e.target.value)} placeholder="Bleu marine, Rouge..." />
           </div>
           <div className="space-y-1.5 md:col-span-2">
             <Label>Description *</Label>
@@ -246,10 +290,52 @@ export default function ProductUploadForm({ mode }: Props) {
           </div>
         </div>
 
+        {/* Aperçu prix net vendeur */}
+        {mode === "vendor" && priceNum > 0 && (
+          <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Wallet className="h-4 w-4 text-primary" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Ce que vous recevrez</p>
+            </div>
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Prix de vente</p>
+                <p className="font-display font-bold text-lg mt-1">{fmt(priceNum)} <span className="text-xs text-muted-foreground font-medium">GNF</span></p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Commission ({commissionRate}%)</p>
+                <p className="font-display font-bold text-lg mt-1 text-secondary-foreground/80">- {fmt(commissionAmount)} <span className="text-xs text-muted-foreground font-medium">GNF</span></p>
+              </div>
+              <div className="rounded-xl bg-primary/10 px-2 py-1">
+                <p className="text-[10px] uppercase tracking-wider text-primary font-semibold">Net vendeur</p>
+                <p className="font-display font-bold text-lg mt-1 text-primary">{fmt(netAmount)} <span className="text-xs font-medium">GNF</span></p>
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-3">Montant que Madina vous reversera après chaque vente payée.</p>
+          </div>
+        )}
+
         <Button onClick={submit} disabled={submitting} size="lg" className="w-full md:w-auto md:px-10 mt-8 rounded-2xl bg-gradient-gold text-secondary-foreground shadow-gold hover:opacity-95">
           {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Publication...</> : "Publier le produit"}
         </Button>
       </div>
     </div>
+  );
+}
+
+function SizeChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "h-9 min-w-[3rem] px-3 rounded-xl border text-sm font-medium transition-smooth",
+        active
+          ? "bg-primary text-primary-foreground border-primary shadow-soft"
+          : "bg-background border-border hover:border-primary/40 hover:bg-muted/50"
+      ].join(" ")}
+    >
+      {label}
+    </button>
   );
 }
