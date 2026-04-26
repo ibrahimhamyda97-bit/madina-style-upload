@@ -549,43 +549,54 @@ export default function ProductUploadForm({ mode }: Props) {
           </div>
         )}
 
-        {/* Mode vendor : galerie classique */}
+        {/* Mode vendor : UNE SEULE photo principale (autres photos = variantes) */}
         {mode === "vendor" && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mt-5">
-            {photos.map((p) => (
-              <div key={p.id} className="rounded-2xl border border-border bg-background overflow-hidden shadow-soft">
-                <div className="aspect-square bg-muted relative">
-                  {p.loading ? (
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-[200px,1fr] gap-4">
+            {photos.length > 0 ? (
+              <div className="relative">
+                <div className="aspect-square rounded-2xl border-2 border-primary bg-muted overflow-hidden shadow-soft">
+                  {photos[0].loading ? (
                     <div className="absolute inset-0 grid place-items-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
                   ) : (
-                    <img src={p.url} alt="" className="h-full w-full object-cover" />
+                    <img src={photos[0].url} alt="" className="h-full w-full object-cover" />
                   )}
-                  <button
-                    onClick={() => removePhoto(p.id)}
-                    className="absolute top-2 right-2 h-7 w-7 grid place-items-center rounded-full bg-background/90 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-smooth"
-                    aria-label="Supprimer"
-                  ><X className="h-4 w-4" /></button>
                 </div>
+                <span className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider shadow-soft">
+                  <ImageIcon className="h-3 w-3" /> Principale
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removePhoto(photos[0].id)}
+                  className="absolute top-2 right-2 h-7 w-7 grid place-items-center rounded-full bg-background/90 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-smooth"
+                  aria-label="Supprimer"
+                ><X className="h-4 w-4" /></button>
               </div>
-            ))}
-
-            <label className="aspect-square rounded-2xl border-2 border-dashed border-border bg-muted/30 hover:bg-muted/50 hover:border-primary/40 transition-smooth grid place-items-center cursor-pointer text-center px-3">
-              <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => { handleVendorFiles(e.target.files); e.currentTarget.value = ""; }} />
-              {photos.length === 0 ? (
+            ) : (
+              <label className="aspect-square rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 transition-smooth grid place-items-center cursor-pointer text-center px-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => { handleVendorFiles(e.target.files); e.currentTarget.value = ""; }}
+                />
                 <div>
-                  <Upload className="h-7 w-7 text-muted-foreground mx-auto mb-2" />
-                  <p className="font-medium text-xs">Téléverser une photo</p>
+                  <Upload className="h-8 w-8 text-primary mx-auto mb-2" />
+                  <p className="font-semibold text-sm text-foreground">Photo principale</p>
                   <p className="text-[10px] text-muted-foreground mt-1">JPG / PNG · 5 Mo max</p>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center gap-1.5 text-primary">
-                  <span className="h-10 w-10 rounded-full bg-primary text-primary-foreground grid place-items-center shadow-soft">
-                    <Plus className="h-5 w-5" />
-                  </span>
-                  <span className="text-[11px] font-medium">Ajouter une photo</span>
-                </div>
-              )}
-            </label>
+              </label>
+            )}
+            <div className="rounded-2xl border border-border bg-muted/30 p-4 text-sm">
+              <p className="font-semibold text-foreground mb-1.5 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-primary" /> Une seule photo principale
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Cette photo s'affiche en premier sur la page produit. Pour proposer
+                <strong className="text-foreground"> d'autres photos, couleurs, tailles ou prix</strong>,
+                utilisez la section <strong className="text-foreground">« Variantes »</strong> juste en dessous.
+                Le client choisira sa variante avant d'ajouter au panier.
+              </p>
+            </div>
           </div>
         )}
 
