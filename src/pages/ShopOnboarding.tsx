@@ -36,11 +36,13 @@ export default function ShopOnboarding() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data: existing } = await supabase
+      const { data: existingList } = await supabase
         .from("shops")
-        .select("id, name, description, city, phone, logo_url, banner_url, id_document_url")
+        .select("id, name, description, city, phone, logo_url, banner_url, id_document_url, created_at")
         .eq("owner_id", user.id)
-        .maybeSingle();
+        .order("created_at", { ascending: true })
+        .limit(1);
+      const existing = (existingList ?? [])[0] ?? null;
       if (existing) {
         setShopId(existing.id);
         setData({
