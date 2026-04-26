@@ -18,7 +18,8 @@ export default function Cart() {
       const name = l.product.shop?.name ?? "Boutique";
       if (!m[sid]) m[sid] = { name, lines: [], subtotal: 0, shipping: 0 };
       m[sid].lines.push(l);
-      m[sid].subtotal += (l.product.price_gnf ?? 0) * l.quantity;
+      const unit = l.variant?.price_gnf ?? l.product.price_gnf ?? 0;
+      m[sid].subtotal += unit * l.quantity;
       m[sid].shipping += (l.product.shipping_fee_gnf ?? 0) * l.quantity;
     });
     return m;
@@ -62,9 +63,14 @@ export default function Cart() {
                 </div>
                 <div className="divide-y divide-border">
                   {group.lines.map((l) => {
+                    const variantImg = l.variant?.images?.slice().sort((a: any, b: any) => a.position - b.position)[0]?.image_url;
                     const sized = l.product.images?.find((i: any) => i.size === l.size);
-                    const img = sized?.image_url ?? l.product.images?.[0]?.image_url;
+                    const img = variantImg ?? sized?.image_url ?? l.product.images?.[0]?.image_url;
                     const ship = l.product.shipping_fee_gnf ?? 0;
+                    const unit = l.variant?.price_gnf ?? l.product.price_gnf;
+                    const variantLabel = l.variant
+                      ? [l.variant.name, l.variant.color].filter(Boolean).join(" · ")
+                      : null;
                     return (
                       <div key={l.id} className="flex gap-4 py-4 first:pt-0 last:pb-0">
                         <Link to={`/product/${l.product.id}`} className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl overflow-hidden bg-muted shrink-0">
@@ -74,9 +80,12 @@ export default function Cart() {
                           <Link to={`/product/${l.product.id}`} className="font-display font-semibold leading-tight hover:text-primary transition-smooth line-clamp-2">
                             {l.product.title}
                           </Link>
+                          {variantLabel && (
+                            <p className="text-xs text-muted-foreground mt-1">Variante : <strong className="text-foreground">{variantLabel}</strong></p>
+                          )}
                           <p className="text-xs text-muted-foreground mt-1">Taille : <strong className="text-foreground">{l.size}</strong></p>
                           <p className="font-display text-base font-bold text-primary mt-2">
-                            {Number(l.product.price_gnf).toLocaleString("fr-FR")} <span className="text-xs text-muted-foreground font-medium">GNF</span>
+                            {Number(unit).toLocaleString("fr-FR")} <span className="text-xs text-muted-foreground font-medium">GNF</span>
                           </p>
                           {ship > 0 && (
                             <p className="text-[11px] text-muted-foreground mt-0.5">

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSepa
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import VariantsEditor, { DraftVariant, persistVariants } from "@/components/VariantsEditor";
 
 const LETTER_SIZES = ["XS", "S", "M", "L", "XL"] as const;
 const NUMERIC_SIZES = ["36","37","38","39","40","41","42","43","44","45"] as const;
@@ -113,6 +114,7 @@ export default function ProductUploadForm({ mode }: Props) {
   const [selectedSizes, setSelectedSizes] = useState<Size[]>([]);
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [adminUrl, setAdminUrl] = useState("");
+  const [variants, setVariants] = useState<DraftVariant[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -232,6 +234,7 @@ export default function ProductUploadForm({ mode }: Props) {
     if (mode === "admin") {
       // Each image with overrides becomes ITS OWN product (so each can have its own price/color/sizes/title)
       let createdCount = 0;
+      let lastProductId: string | null = null;
       for (const photo of photos) {
         const photoPrice = Number(photo.price) > 0 ? Number(photo.price) : Number(price);
         const photoColor = (photo.color ?? "").trim() || color || null;
@@ -262,7 +265,12 @@ export default function ProductUploadForm({ mode }: Props) {
         }));
         const { error: imgErr } = await supabase.from("product_images").insert(rows);
         if (imgErr) { setSubmitting(false); return toast.error(imgErr.message); }
+        lastProductId = prod.id;
         createdCount++;
+      }
+      // Variantes : appliquées au dernier produit créé (mode admin)
+      if (variants.length > 0 && lastProductId) {
+        await persistVariants(lastProductId, variants);
       }
       setSubmitting(false);
       toast.success(`${createdCount} produit(s) publié(s) sur Madina !`);
@@ -298,8 +306,11 @@ export default function ProductUploadForm({ mode }: Props) {
     });
 
     const { error: imgErr } = await supabase.from("product_images").insert(rows);
+    if (imgErr) { setSubmitting(false); return toast.error(imgErr.message); }
+    if (variants.length > 0) {
+      await persistVariants(prod.id, variants);
+    }
     setSubmitting(false);
-    if (imgErr) return toast.error(imgErr.message);
     toast.success("Produit publié sur Madina !");
     nav("/vendor/products");
   }
@@ -622,6 +633,27 @@ export default function ProductUploadForm({ mode }: Props) {
             <Input maxLength={40} value={color} onChange={(e) => setColor(e.target.value)} placeholder="Ou saisir une couleur personnalisée..." className="h-9" />
           </div>
         </div>
+      </div>
+
+      {/* Variantes */}
+      <div className="bg-card border border-border rounded-3xl p-6 md:p-8 shadow-soft">
+        <div className="flex items-center gap-2 mb-1">
+          <Sparkles className="h-4 w-4 text-secondary" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Variantes (optionnel)
+          </span>
+        </div>
+        <h2 className="font-display text-xl font-bold mb-2">Plusieurs photos & prix par variante</h2>
+        <p className="text-sm text-muted-foreground mb-6">
+          Le client pourra choisir une variante (couleur/taille) et voir <strong className="text-foreground">jusqu'à 5 photos</strong> ainsi qu'un <strong className="text-foreground">prix spécifique</strong>.
+          {mode === "admin" && photos.length > 1 && " Les variantes seront attachées au dernier produit créé."}
+        </p>
+        <VariantsEditor
+          variants={variants}
+          onChange={setVariants}
+          mode={mode}
+          userId={user?.id}
+        />
       </div>
 
       {/* Détails */}

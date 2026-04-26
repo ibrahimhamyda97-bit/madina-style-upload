@@ -23,6 +23,7 @@ export type Database = {
           size: Database["public"]["Enums"]["product_size"]
           updated_at: string
           user_id: string
+          variant_id: string | null
         }
         Insert: {
           created_at?: string
@@ -32,6 +33,7 @@ export type Database = {
           size: Database["public"]["Enums"]["product_size"]
           updated_at?: string
           user_id: string
+          variant_id?: string | null
         }
         Update: {
           created_at?: string
@@ -41,8 +43,17 @@ export type Database = {
           size?: Database["public"]["Enums"]["product_size"]
           updated_at?: string
           user_id?: string
+          variant_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_items: {
         Row: {
@@ -58,6 +69,8 @@ export type Database = {
           size: Database["public"]["Enums"]["product_size"]
           title: string
           unit_price_gnf: number
+          variant_id: string | null
+          variant_label: string | null
         }
         Insert: {
           commission_rate?: number
@@ -72,6 +85,8 @@ export type Database = {
           size: Database["public"]["Enums"]["product_size"]
           title: string
           unit_price_gnf: number
+          variant_id?: string | null
+          variant_label?: string | null
         }
         Update: {
           commission_rate?: number
@@ -86,6 +101,8 @@ export type Database = {
           size?: Database["public"]["Enums"]["product_size"]
           title?: string
           unit_price_gnf?: number
+          variant_id?: string | null
+          variant_label?: string | null
         }
         Relationships: [
           {
@@ -245,6 +262,74 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      product_variant_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          position: number
+          variant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          position?: number
+          variant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          position?: number
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variant_images_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_variants: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string | null
+          position: number
+          price_gnf: number | null
+          product_id: string
+          size: Database["public"]["Enums"]["product_size"] | null
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          position?: number
+          price_gnf?: number | null
+          product_id: string
+          size?: Database["public"]["Enums"]["product_size"] | null
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          position?: number
+          price_gnf?: number | null
+          product_id?: string
+          size?: Database["public"]["Enums"]["product_size"] | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       products: {
         Row: {
