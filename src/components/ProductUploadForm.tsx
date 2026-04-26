@@ -311,8 +311,11 @@ function AdminImageManager({
           <Label className="text-xs">Taille</Label>
           <Select value={currentSize} onValueChange={(v) => onSizeChange(v as Size)}>
             <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {SIZES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            <SelectContent className="max-h-72">
+              <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">Vêtements</div>
+              {LETTER_SIZES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground border-t mt-1">Pointures</div>
+              {NUMERIC_SIZES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -353,8 +356,11 @@ function AdminImageManager({
               <div className="p-2 space-y-1.5">
                 <Select value={img.size} onValueChange={(v) => onUpdateSize(img.id, v as Size)}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {SIZES.map((s) => <SelectItem key={s} value={s}>Taille {s}</SelectItem>)}
+                  <SelectContent className="max-h-72">
+                    <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">Vêtements</div>
+                    {LETTER_SIZES.map((s) => <SelectItem key={s} value={s}>Taille {s}</SelectItem>)}
+                    <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground border-t mt-1">Pointures</div>
+                    {NUMERIC_SIZES.map((s) => <SelectItem key={s} value={s}>Pointure {s}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 {img.detectedColor && (
