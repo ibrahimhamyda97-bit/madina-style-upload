@@ -33,11 +33,13 @@ export default function VendorSales() {
     if (!user) return;
     (async () => {
       setLoading(true);
-      const { data: shopData } = await supabase
+      const { data: shopList } = await supabase
         .from("shops")
-        .select("id, name, commission_rate")
+        .select("id, name, commission_rate, created_at")
         .eq("owner_id", user.id)
-        .maybeSingle();
+        .order("created_at", { ascending: true })
+        .limit(1);
+      const shopData = (shopList ?? [])[0] ?? null;
       setShop(shopData as any);
 
       if (shopData) {

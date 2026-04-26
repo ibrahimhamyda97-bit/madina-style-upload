@@ -12,14 +12,25 @@ import ImageUploader from "@/components/ImageUploader";
 export default function MyShop() {
   const { user } = useAuth();
   const [shop, setShop] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("shops").select("*").eq("owner_id", user.id).maybeSingle().then(({ data }) => setShop(data));
+    setLoading(true);
+    supabase
+      .from("shops")
+      .select("*")
+      .eq("owner_id", user.id)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .then(({ data }) => {
+        setShop((data ?? [])[0] ?? null);
+        setLoading(false);
+      });
   }, [user]);
 
-  if (shop === null) return <div className="text-muted-foreground">Chargement...</div>;
+  if (loading) return <div className="text-muted-foreground">Chargement...</div>;
   if (!shop) return (
     <div className="text-center py-16">
       <p className="text-muted-foreground mb-4">Vous n'avez pas encore de boutique.</p>
