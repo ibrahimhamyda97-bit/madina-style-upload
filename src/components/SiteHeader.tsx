@@ -108,7 +108,7 @@ export default function SiteHeader() {
 
           {/* Mobile right side: cart + burger */}
           <div className="flex md:hidden items-center gap-1">
-            {user && (
+            {user && !isAdmin && (
               <Link to="/cart" className="relative h-10 w-10 grid place-items-center rounded-full hover:bg-muted transition-smooth" aria-label="Panier">
                 <ShoppingCart className="h-5 w-5" />
                 {count > 0 && (
