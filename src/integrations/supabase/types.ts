@@ -53,6 +53,7 @@ export type Database = {
           order_id: string
           product_id: string
           quantity: number
+          shipping_fee_gnf: number
           shop_id: string
           size: Database["public"]["Enums"]["product_size"]
           title: string
@@ -66,6 +67,7 @@ export type Database = {
           order_id: string
           product_id: string
           quantity: number
+          shipping_fee_gnf?: number
           shop_id: string
           size: Database["public"]["Enums"]["product_size"]
           title: string
@@ -79,6 +81,7 @@ export type Database = {
           order_id?: string
           product_id?: string
           quantity?: number
+          shipping_fee_gnf?: number
           shop_id?: string
           size?: Database["public"]["Enums"]["product_size"]
           title?: string
@@ -224,6 +227,8 @@ export type Database = {
       }
       products: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           category: string
           created_at: string
           created_by: string
@@ -232,11 +237,16 @@ export type Database = {
           detected_object_type: string | null
           id: string
           price_gnf: number
+          rejection_reason: string | null
+          shipping_fee_gnf: number
           shop_id: string
+          status: Database["public"]["Enums"]["product_status"]
           title: string
           updated_at: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           category: string
           created_at?: string
           created_by: string
@@ -245,11 +255,16 @@ export type Database = {
           detected_object_type?: string | null
           id?: string
           price_gnf: number
+          rejection_reason?: string | null
+          shipping_fee_gnf?: number
           shop_id: string
+          status?: Database["public"]["Enums"]["product_status"]
           title: string
           updated_at?: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           category?: string
           created_at?: string
           created_by?: string
@@ -258,7 +273,10 @@ export type Database = {
           detected_object_type?: string | null
           id?: string
           price_gnf?: number
+          rejection_reason?: string | null
+          shipping_fee_gnf?: number
           shop_id?: string
+          status?: Database["public"]["Enums"]["product_status"]
           title?: string
           updated_at?: string
         }
@@ -407,6 +425,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      place_order: {
+        Args: {
+          p_confirmed_shop_ids: string[]
+          p_customer_address: string
+          p_customer_name: string
+          p_customer_phone: string
+          p_notes: string
+          p_payment_operator: string
+          p_payment_reference: string
+          p_reference: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "vendor" | "buyer"
@@ -427,6 +458,7 @@ export type Database = {
         | "43"
         | "44"
         | "45"
+      product_status: "pending" | "approved" | "rejected"
       shop_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
@@ -574,6 +606,7 @@ export const Constants = {
         "44",
         "45",
       ],
+      product_status: ["pending", "approved", "rejected"],
       shop_status: ["pending", "approved", "rejected"],
     },
   },

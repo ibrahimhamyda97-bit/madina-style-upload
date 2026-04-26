@@ -33,7 +33,7 @@ function operatorMeta(name?: string | null) {
 }
 
 export default function Checkout() {
-  const { items, total, clear } = useCart();
+  const { items, total, subtotal, shipping, refresh } = useCart();
   const { user } = useAuth();
   const nav = useNavigate();
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
@@ -44,7 +44,7 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false);
   const [orderRef, setOrderRef] = useState<string | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmedByShop, setConfirmedByShop] = useState<Record<string, boolean>>({});
 
   useEffect(() => { if (!user) nav("/auth"); }, [user, nav]);
   useEffect(() => { if (items.length === 0 && !orderRef) nav("/cart"); }, [items, orderRef, nav]);
@@ -79,15 +79,20 @@ export default function Checkout() {
       shopName: string;
       operatorName: string;
       paymentNumber: string;
-      subtotal: number;
+      itemsSubtotal: number;
+      shippingTotal: number;
+      subtotal: number; // itemsSubtotal + shippingTotal — what to send via mobile money
       meta: ReturnType<typeof operatorMeta>;
     }>();
     items.forEach((l) => {
       const sid = l.product.shop?.id ?? "—";
+      const itemSub = (l.product?.price_gnf ?? 0) * l.quantity;
+      const shipSub = (l.product?.shipping_fee_gnf ?? 0) * l.quantity;
       const existing = m.get(sid);
-      const sub = (l.product?.price_gnf ?? 0) * l.quantity;
       if (existing) {
-        existing.subtotal += sub;
+        existing.itemsSubtotal += itemSub;
+        existing.shippingTotal += shipSub;
+        existing.subtotal = existing.itemsSubtotal + existing.shippingTotal;
       } else {
         const operatorName = l.product.shop?.payment_operator || FALLBACK_OPERATORS[0].name;
         const paymentNumber = l.product.shop?.payment_number || FALLBACK_OPERATORS[0].number;
@@ -96,7 +101,9 @@ export default function Checkout() {
           shopName: l.product.shop?.name ?? "Boutique",
           operatorName,
           paymentNumber,
-          subtotal: sub,
+          itemsSubtotal: itemSub,
+          shippingTotal: shipSub,
+          subtotal: itemSub + shipSub,
           meta: operatorMeta(operatorName),
         });
       }
@@ -105,45 +112,37 @@ export default function Checkout() {
   }, [items]);
 
   const primary = shopGroups[0];
+  const allConfirmed = shopGroups.length > 0 && shopGroups.every((g) => confirmedByShop[g.shopId]);
 
   async function placeOrder() {
     if (!user) return;
     const parsed = schema.safeParse(data);
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
+    if (!allConfirmed) return toast.error("Confirmez le paiement de chaque boutique");
 
     setSubmitting(true);
     const reference = paymentReference || `MAD-${Date.now().toString(36).toUpperCase()}`;
-    const { data: order, error } = await supabase.from("orders").insert({
-      user_id: user.id,
-      reference,
-      total_gnf: total,
-      payment_method: "mobile_money",
-      payment_operator: primary?.operatorName ?? "Mobile Money",
-      payment_reference: reference,
-      customer_name: parsed.data.customer_name,
-      customer_phone: parsed.data.customer_phone,
-      customer_address: parsed.data.customer_address,
-      notes: parsed.data.notes || null,
-      status: "pending",
-    }).select().single();
+    const confirmedIds = shopGroups
+      .filter((g) => confirmedByShop[g.shopId])
+      .map((g) => g.shopId);
 
-    if (error || !order) { setSubmitting(false); return toast.error(error?.message ?? "Erreur"); }
+    const { data: orderId, error } = await supabase.rpc("place_order", {
+      p_reference: reference,
+      p_customer_name: parsed.data.customer_name,
+      p_customer_phone: parsed.data.customer_phone,
+      p_customer_address: parsed.data.customer_address,
+      p_notes: parsed.data.notes || null,
+      p_payment_operator: primary?.operatorName ?? "Mobile Money",
+      p_payment_reference: reference,
+      p_confirmed_shop_ids: confirmedIds,
+    });
 
-    const lines = items.map((l) => ({
-      order_id: order.id,
-      product_id: l.product.id,
-      shop_id: l.product.shop?.id,
-      title: l.product.title,
-      image_url: l.product.images?.find((i: any) => i.size === l.size)?.image_url ?? l.product.images?.[0]?.image_url ?? null,
-      size: l.size as any,
-      quantity: l.quantity,
-      unit_price_gnf: l.product.price_gnf,
-      commission_rate: l.product.shop?.commission_rate ?? 10,
-    }));
-    const { error: liErr } = await supabase.from("order_items").insert(lines);
-    if (liErr) { setSubmitting(false); return toast.error(liErr.message); }
+    if (error || !orderId) {
+      setSubmitting(false);
+      return toast.error(error?.message ?? "Erreur lors de la validation");
+    }
 
-    await clear();
+    await refresh();
     setOrderRef(reference);
     setSubmitting(false);
     setStep(3);
@@ -257,6 +256,11 @@ export default function Checkout() {
                 <div className="text-right shrink-0">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Montant</p>
                   <p className="font-display font-bold text-primary">{g.subtotal.toLocaleString("fr-FR")} <span className="text-[11px] text-muted-foreground">GNF</span></p>
+                  {g.shippingTotal > 0 && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      dont {g.shippingTotal.toLocaleString("fr-FR")} livraison
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -389,23 +393,64 @@ export default function Checkout() {
                       </li>
                     ))}
                 </ul>
+                <div className="mt-3 pt-3 border-t border-dashed border-border space-y-1 text-xs">
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Sous-total articles</span>
+                    <span className="font-mono">{g.itemsSubtotal.toLocaleString("fr-FR")} GNF</span>
+                  </div>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Livraison</span>
+                    <span className="font-mono">
+                      {g.shippingTotal > 0 ? `${g.shippingTotal.toLocaleString("fr-FR")} GNF` : "Offerte"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between font-semibold text-foreground pt-1">
+                    <span>Total à transférer</span>
+                    <span className="font-mono text-primary">{g.subtotal.toLocaleString("fr-FR")} GNF</span>
+                  </div>
+                </div>
               </div>
+
+              {/* Confirmation par boutique */}
+              <label className={cn(
+                "mt-4 flex items-start gap-3 rounded-2xl border p-3 cursor-pointer transition-smooth",
+                confirmedByShop[g.shopId]
+                  ? "bg-primary/5 border-primary/40"
+                  : "bg-muted/30 border-border hover:border-primary/40"
+              )}>
+                <Checkbox
+                  checked={!!confirmedByShop[g.shopId]}
+                  onCheckedChange={(v) => setConfirmedByShop((prev) => ({ ...prev, [g.shopId]: v === true }))}
+                  className="mt-0.5"
+                />
+                <span className="text-xs text-foreground">
+                  J'ai effectué le paiement de <strong>{g.subtotal.toLocaleString("fr-FR")} GNF</strong> à <strong>{g.shopName}</strong> via {g.meta.name}.
+                </span>
+              </label>
             </div>
           ))}
 
           {/* Total */}
-          <div className="bg-gradient-gold text-secondary-foreground rounded-3xl p-5 shadow-gold flex items-center justify-between">
-            <span className="font-display font-bold text-base">Total à payer</span>
-            <span className="font-display font-bold text-2xl">{total.toLocaleString("fr-FR")} <span className="text-sm opacity-70">GNF</span></span>
+          <div className="bg-gradient-gold text-secondary-foreground rounded-3xl p-5 shadow-gold space-y-1">
+            <div className="flex items-center justify-between text-xs opacity-80">
+              <span>Articles</span>
+              <span className="font-mono">{subtotal.toLocaleString("fr-FR")} GNF</span>
+            </div>
+            <div className="flex items-center justify-between text-xs opacity-80">
+              <span>Livraison</span>
+              <span className="font-mono">{shipping > 0 ? `${shipping.toLocaleString("fr-FR")} GNF` : "Offerte"}</span>
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-secondary-foreground/20">
+              <span className="font-display font-bold text-base">Total à payer</span>
+              <span className="font-display font-bold text-2xl">{total.toLocaleString("fr-FR")} <span className="text-sm opacity-70">GNF</span></span>
+            </div>
           </div>
 
-          {/* Confirmation case à cocher */}
-          <label className="flex items-start gap-3 bg-card border border-border rounded-2xl p-4 cursor-pointer hover:border-primary/50 transition-smooth">
-            <Checkbox checked={confirmed} onCheckedChange={(v) => setConfirmed(v === true)} className="mt-0.5" />
-            <span className="text-sm text-muted-foreground">
-              Je confirme avoir effectué le(s) paiement(s) Mobile Money en utilisant les numéros et la référence indiqués ci-dessus.
-            </span>
-          </label>
+          {!allConfirmed && (
+            <p className="text-xs text-muted-foreground text-center">
+              Cochez la confirmation pour <strong>chaque boutique</strong> avant de valider.
+            </p>
+          )}
 
           <div className="flex gap-3">
             <Button variant="ghost" size="lg" onClick={() => setStep(1)} className="rounded-2xl">
@@ -413,7 +458,7 @@ export default function Checkout() {
             </Button>
             <Button
               size="lg"
-              disabled={submitting || !confirmed}
+              disabled={submitting || !allConfirmed}
               onClick={placeOrder}
               className="flex-1 rounded-2xl bg-gradient-gold text-secondary-foreground shadow-gold h-14 text-base"
             >

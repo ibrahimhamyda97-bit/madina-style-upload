@@ -7,17 +7,19 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
 export default function Cart() {
-  const { items, total, count, setQuantity, remove, loading } = useCart();
+  const { items, total, subtotal, shipping, count, setQuantity, remove, loading } = useCart();
   const { user } = useAuth();
   const nav = useNavigate();
 
   const byShop = useMemo(() => {
-    const m: Record<string, { name: string; lines: typeof items }> = {};
+    const m: Record<string, { name: string; lines: typeof items; subtotal: number; shipping: number }> = {};
     items.forEach((l) => {
       const sid = l.product.shop?.id ?? "—";
       const name = l.product.shop?.name ?? "Boutique";
-      if (!m[sid]) m[sid] = { name, lines: [] };
+      if (!m[sid]) m[sid] = { name, lines: [], subtotal: 0, shipping: 0 };
       m[sid].lines.push(l);
+      m[sid].subtotal += (l.product.price_gnf ?? 0) * l.quantity;
+      m[sid].shipping += (l.product.shipping_fee_gnf ?? 0) * l.quantity;
     });
     return m;
   }, [items]);
@@ -62,6 +64,7 @@ export default function Cart() {
                   {group.lines.map((l) => {
                     const sized = l.product.images?.find((i: any) => i.size === l.size);
                     const img = sized?.image_url ?? l.product.images?.[0]?.image_url;
+                    const ship = l.product.shipping_fee_gnf ?? 0;
                     return (
                       <div key={l.id} className="flex gap-4 py-4 first:pt-0 last:pb-0">
                         <Link to={`/product/${l.product.id}`} className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl overflow-hidden bg-muted shrink-0">
@@ -75,6 +78,11 @@ export default function Cart() {
                           <p className="font-display text-base font-bold text-primary mt-2">
                             {Number(l.product.price_gnf).toLocaleString("fr-FR")} <span className="text-xs text-muted-foreground font-medium">GNF</span>
                           </p>
+                          {ship > 0 && (
+                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                              + Livraison <strong className="text-foreground">{ship.toLocaleString("fr-FR")} GNF</strong> / article
+                            </p>
+                          )}
                         </div>
                         <div className="flex flex-col items-end justify-between gap-2 shrink-0">
                           <button onClick={() => remove(l.id)} className="text-muted-foreground hover:text-destructive transition-smooth" aria-label="Retirer">
@@ -86,6 +94,12 @@ export default function Cart() {
                     );
                   })}
                 </div>
+                {group.shipping > 0 && (
+                  <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Livraison de cette boutique</span>
+                    <span className="font-medium font-mono">{group.shipping.toLocaleString("fr-FR")} GNF</span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -94,8 +108,13 @@ export default function Cart() {
           <div className="lg:sticky lg:top-24 bg-card border border-border rounded-3xl p-6 shadow-elegant">
             <h2 className="font-display text-lg font-bold">Récapitulatif</h2>
             <div className="space-y-2 mt-4 text-sm">
-              <Row label={`Sous-total (${count} article${count > 1 ? "s" : ""})`} value={`${total.toLocaleString("fr-FR")} GNF`} />
-              <Row label="Livraison" value={<span className="text-muted-foreground">À convenir</span>} />
+              <Row label={`Sous-total (${count} article${count > 1 ? "s" : ""})`} value={`${subtotal.toLocaleString("fr-FR")} GNF`} />
+              <Row
+                label="Livraison"
+                value={shipping > 0
+                  ? <span className="font-medium">{shipping.toLocaleString("fr-FR")} GNF</span>
+                  : <span className="text-muted-foreground">Offerte</span>}
+              />
             </div>
             <div className="border-t border-border mt-4 pt-4 flex items-baseline justify-between">
               <span className="font-display font-bold">Total</span>
