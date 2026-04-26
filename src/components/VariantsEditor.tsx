@@ -9,7 +9,7 @@ import { toast } from "sonner";
 const LETTER_SIZES = ["XS", "S", "M", "L", "XL"] as const;
 const NUMERIC_SIZES = ["36","37","38","39","40","41","42","43","44","45"] as const;
 const ALL_SIZES = [...LETTER_SIZES, ...NUMERIC_SIZES] as const;
-type Size = typeof ALL_SIZES[number];
+export type Size = typeof ALL_SIZES[number];
 
 const COLOR_PRESETS: { name: string; swatch: string }[] = [
   { name: "Noir", swatch: "#111111" },
@@ -42,13 +42,13 @@ export interface DraftVariant {
   id: string;
   name: string;
   color: string;
-  size: Size | "";
-  price: string; // optional override
+  sizes: Size[]; // plusieurs tailles possibles
+  price: string; // PRIX OBLIGATOIRE (chaque variante a son propre prix)
   images: DraftVariantImage[]; // index 0 = principale, 1..4 = secondaires
 }
 
 export function makeEmptyVariant(): DraftVariant {
-  return { id: crypto.randomUUID(), name: "", color: "", size: "", price: "", images: [] };
+  return { id: crypto.randomUUID(), name: "", color: "", sizes: [], price: "", images: [] };
 }
 
 interface Props {
@@ -79,8 +79,7 @@ export default function VariantsEditor({ variants, onChange, mode, userId }: Pro
             Variantes (optionnel)
           </Label>
           <p className="text-xs text-muted-foreground mt-1 max-w-2xl">
-            Ajoutez des variantes pour proposer plusieurs photos et un prix différent selon la couleur ou la taille.
-            Chaque variante a <strong className="text-foreground">1 photo principale</strong> + jusqu'à <strong className="text-foreground">4 photos secondaires</strong>.
+            Chaque variante a son <strong className="text-foreground">propre prix</strong>, sa couleur, ses <strong className="text-foreground">tailles</strong> et jusqu'à <strong className="text-foreground">5 photos</strong> (1 principale + 4 secondaires).
           </p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={add} className="rounded-xl">
@@ -179,7 +178,7 @@ function VariantCard({
             {index + 1}
           </span>
           <p className="font-medium text-sm truncate">
-            {variant.name || variant.color || variant.size || `Variante ${index + 1}`}
+            {variant.name || variant.color || (variant.sizes.length ? variant.sizes.join("/") : `Variante ${index + 1}`)}
           </p>
         </div>
         <button
@@ -264,13 +263,16 @@ function VariantCard({
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs flex items-center gap-1.5"><Wallet className="h-3 w-3" /> Prix (GNF, optionnel)</Label>
+            <Label className="text-xs flex items-center gap-1.5">
+              <Wallet className="h-3 w-3" /> Prix (GNF) <span className="text-destructive">*</span>
+            </Label>
             <Input
               type="number"
               min={1}
+              required
               value={variant.price}
               onChange={(e) => onUpdate({ price: e.target.value })}
-              placeholder="Hérite du prix du produit"
+              placeholder="Ex. 150000"
               className="h-9"
             />
           </div>
@@ -308,18 +310,39 @@ function VariantCard({
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs flex items-center gap-1.5"><Ruler className="h-3 w-3" /> Taille (optionnel)</Label>
+          <Label className="text-xs flex items-center gap-1.5">
+            <Ruler className="h-3 w-3" /> Tailles disponibles (cochez plusieurs)
+          </Label>
           <div className="space-y-1.5">
             <div className="flex flex-wrap gap-1.5">
-              {LETTER_SIZES.map((s) => (
-                <SizeBtn key={s} label={s} active={variant.size === s} onClick={() => onUpdate({ size: variant.size === s ? "" : s })} />
-              ))}
+              {LETTER_SIZES.map((s) => {
+                const active = variant.sizes.includes(s);
+                return (
+                  <SizeBtn
+                    key={s}
+                    label={s}
+                    active={active}
+                    onClick={() => onUpdate({ sizes: active ? variant.sizes.filter((x) => x !== s) : [...variant.sizes, s] })}
+                  />
+                );
+              })}
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {NUMERIC_SIZES.map((s) => (
-                <SizeBtn key={s} label={s} active={variant.size === s} onClick={() => onUpdate({ size: variant.size === s ? "" : s })} />
-              ))}
+              {NUMERIC_SIZES.map((s) => {
+                const active = variant.sizes.includes(s);
+                return (
+                  <SizeBtn
+                    key={s}
+                    label={s}
+                    active={active}
+                    onClick={() => onUpdate({ sizes: active ? variant.sizes.filter((x) => x !== s) : [...variant.sizes, s] })}
+                  />
+                );
+              })}
             </div>
+            {variant.sizes.length === 0 && (
+              <p className="text-[11px] text-muted-foreground">Aucune taille — la variante sera proposée sans choix de taille.</p>
+            )}
           </div>
         </div>
       </div>
@@ -415,14 +438,16 @@ export async function persistVariants(productId: string, variants: DraftVariant[
     const validImages = v.images.filter((i) => !i.loading && i.url);
     if (validImages.length === 0) continue; // skip variantes sans photos
     const priceNum = Number(v.price);
+    if (!(priceNum > 0)) { toast.error(`Variante ${idx + 1}: prix obligatoire`); continue; }
     const { data: vrow, error: verr } = await supabase
       .from("product_variants")
       .insert({
         product_id: productId,
         name: v.name.trim() || null,
         color: v.color.trim() || null,
-        size: v.size || null,
-        price_gnf: priceNum > 0 ? priceNum : null,
+        size: v.sizes[0] ?? null, // legacy compat
+        sizes: v.sizes.length > 0 ? (v.sizes as any) : [],
+        price_gnf: priceNum,
         position: idx,
       })
       .select()

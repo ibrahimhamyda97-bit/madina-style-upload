@@ -15,6 +15,7 @@ interface Variant {
   name: string | null;
   color: string | null;
   size: string | null;
+  sizes: string[] | null;
   price_gnf: number | null;
   position: number;
   images: { image_url: string; position: number }[];
@@ -43,7 +44,7 @@ export default function ProductDetail() {
           .maybeSingle(),
         supabase
           .from("product_variants")
-          .select("id, name, color, size, price_gnf, position, images:product_variant_images(image_url, position)")
+          .select("id, name, color, size, sizes, price_gnf, position, images:product_variant_images(image_url, position)")
           .eq("product_id", id)
           .order("position"),
       ]);
@@ -55,13 +56,10 @@ export default function ProductDetail() {
       // Garder uniquement variantes ayant au moins une photo
       const usable = vs.filter((v) => v.images.length > 0);
       setVariants(usable);
-      if (usable.length > 0) {
-        setActiveVariantId(usable[0].id);
-        setActiveSize(usable[0].size);
-      } else {
-        const firstSize = prod?.images?.[0]?.size;
-        if (firstSize) setActiveSize(firstSize);
-      }
+      // Par défaut : sélectionner la photo principale (= produit), pas une variante
+      setActiveVariantId(null);
+      const firstSize = prod?.images?.[0]?.size;
+      if (firstSize) setActiveSize(firstSize);
     })();
   }, [id]);
 
@@ -73,21 +71,44 @@ export default function ProductDetail() {
   // Reset photo index when variant changes
   useEffect(() => { setActivePhotoIdx(0); }, [activeVariantId]);
 
-  // Map size -> first product_image (legacy fallback)
+  // Map size -> first product_image (photo principale fallback)
   const imagesBySize = useMemo(() => {
     const map: Record<string, any> = {};
     (product?.images ?? []).forEach((img: any) => { if (!map[img.size]) map[img.size] = img; });
     return map;
   }, [product]);
 
-  const availableSizes = useMemo(
+  const productSizes = useMemo(
     () => Object.keys(imagesBySize).sort((a, b) => SIZE_ORDER.indexOf(a) - SIZE_ORDER.indexOf(b)),
     [imagesBySize]
   );
 
+  // Tailles disponibles selon la sélection actuelle
+  const availableSizes: string[] = useMemo(() => {
+    if (activeVariant) {
+      const list = (activeVariant.sizes && activeVariant.sizes.length > 0)
+        ? activeVariant.sizes
+        : (activeVariant.size ? [activeVariant.size] : []);
+      return [...list].sort((a, b) => SIZE_ORDER.indexOf(a) - SIZE_ORDER.indexOf(b));
+    }
+    return productSizes;
+  }, [activeVariant, productSizes]);
+
+  // Reset taille quand on change de variante
+  useEffect(() => {
+    if (availableSizes.length === 0) { setActiveSize(null); return; }
+    if (!activeSize || !availableSizes.includes(activeSize)) {
+      setActiveSize(availableSizes[0]);
+    }
+  }, [activeVariantId, availableSizes.join(",")]);
+
   const galleryImages: string[] = activeVariant
     ? activeVariant.images.map((i) => i.image_url)
-    : (activeSize && imagesBySize[activeSize] ? [imagesBySize[activeSize].image_url] : []);
+    : (product?.images ?? [])
+        .slice()
+        .sort((a: any, b: any) => a.position - b.position)
+        .map((img: any) => img.image_url)
+        .filter((url: string, i: number, arr: string[]) => arr.indexOf(url) === i);
 
   const heroImage = galleryImages[activePhotoIdx] ?? galleryImages[0] ?? null;
 
@@ -133,25 +154,6 @@ export default function ProductDetail() {
                 </button>
               ))}
             </div>
-          ) : variants.length === 0 && availableSizes.length > 1 ? (
-            <div className="flex flex-wrap gap-2 mt-4">
-              {availableSizes.map((s) => {
-                const img = imagesBySize[s];
-                return (
-                  <button
-                    key={s}
-                    onClick={() => setActiveSize(s)}
-                    className={cn(
-                      "h-16 w-16 rounded-xl overflow-hidden border-2 relative transition-smooth shrink-0",
-                      activeSize === s ? "border-primary shadow-soft" : "border-transparent hover:border-border"
-                    )}
-                  >
-                    <img src={img.image_url} alt={`Taille ${s}`} className="h-full w-full object-cover" />
-                    <span className="absolute bottom-0 inset-x-0 bg-background/85 text-[10px] font-bold text-center py-0.5">{s}</span>
-                  </button>
-                );
-              })}
-            </div>
           ) : null}
         </div>
 
@@ -177,20 +179,46 @@ export default function ProductDetail() {
             {product.detected_object_type && <Badge variant="outline" className="rounded-full">{product.detected_object_type}</Badge>}
           </div>
 
-          {/* Sélecteur de variantes */}
+          {/* Sélecteur : Photo principale + variantes */}
           {variants.length > 0 && (
             <div className="mt-8">
               <h3 className="font-medium text-sm uppercase tracking-wider text-muted-foreground mb-3">
-                Choisir une variante ({variants.length})
+                Choisir une option ({variants.length + 1})
               </h3>
               <div className="flex flex-wrap gap-2">
+                {/* Carte "Photo principale" (= produit de base) */}
+                <button
+                  onClick={() => setActiveVariantId(null)}
+                  className={cn(
+                    "rounded-2xl border-2 px-3 py-2 transition-smooth flex items-center gap-2",
+                    activeVariantId === null ? "border-primary bg-primary/5 shadow-soft" : "border-border hover:border-primary/50"
+                  )}
+                >
+                  <img
+                    src={(product.images?.[0]?.image_url) ?? ""}
+                    alt=""
+                    className="h-10 w-10 rounded-lg object-cover bg-muted"
+                  />
+                  <div className="text-left">
+                    <p className="text-xs font-semibold leading-tight inline-flex items-center gap-1">
+                      <Star className="h-3 w-3 text-primary" /> Principale
+                    </p>
+                    <p className="text-[11px] text-primary font-bold">
+                      {Number(product.price_gnf).toLocaleString("fr-FR")} GNF
+                    </p>
+                  </div>
+                </button>
+
                 {variants.map((v) => {
                   const active = v.id === activeVariantId;
-                  const label = [v.name, v.color, v.size].filter(Boolean).join(" · ") || "Variante";
+                  const sizeLabel = (v.sizes && v.sizes.length > 0)
+                    ? v.sizes.join("/")
+                    : (v.size ?? "");
+                  const label = [v.name, v.color, sizeLabel].filter(Boolean).join(" · ") || "Variante";
                   return (
                     <button
                       key={v.id}
-                      onClick={() => { setActiveVariantId(v.id); setActiveSize(v.size); }}
+                      onClick={() => setActiveVariantId(v.id)}
                       className={cn(
                         "rounded-2xl border-2 px-3 py-2 transition-smooth flex items-center gap-2",
                         active ? "border-primary bg-primary/5 shadow-soft" : "border-border hover:border-primary/50"
@@ -203,7 +231,7 @@ export default function ProductDetail() {
                       />
                       <div className="text-left">
                         <p className="text-xs font-semibold leading-tight">{label}</p>
-                        {v.price_gnf != null && v.price_gnf !== product.price_gnf && (
+                        {v.price_gnf != null && (
                           <p className="text-[11px] text-primary font-bold">
                             {Number(v.price_gnf).toLocaleString("fr-FR")} GNF
                           </p>
@@ -216,8 +244,8 @@ export default function ProductDetail() {
             </div>
           )}
 
-          {/* Tailles : seulement si pas de variantes (legacy) */}
-          {variants.length === 0 && availableSizes.length > 0 && (
+          {/* Tailles : disponibles selon la variante choisie (ou produit principal) */}
+          {availableSizes.length > 0 && (
             <div className="mt-8">
               <h3 className="font-medium text-sm uppercase tracking-wider text-muted-foreground mb-3">Choisir une taille</h3>
               <div className="flex flex-wrap gap-2">
@@ -245,14 +273,13 @@ export default function ProductDetail() {
           <div className="flex flex-col sm:flex-row gap-2 mt-10">
             <Button
               size="lg"
-              disabled={adding || (variants.length === 0 && !activeSize)}
+              disabled={adding || (availableSizes.length > 0 && !activeSize)}
               onClick={async () => {
                 if (!user) return nav("/auth");
                 if (!product) return;
-                // Use variant size if available; else activeSize; else default 'M'
-                const sizeToUse = activeVariant?.size || activeSize || "M";
+                const sizeToUse = activeSize || "M";
                 setAdding(true);
-                await add(product.id, sizeToUse, 1, activeVariant?.id);
+                await add(product.id, sizeToUse, 1, activeVariant?.id ?? null);
                 setAdding(false);
               }}
               className="flex-1 rounded-2xl bg-gradient-gold text-secondary-foreground shadow-gold hover:opacity-95 h-14"
