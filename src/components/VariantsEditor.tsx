@@ -42,13 +42,13 @@ export interface DraftVariant {
   id: string;
   name: string;
   color: string;
-  size: Size | "";
-  price: string; // optional override
+  sizes: Size[]; // plusieurs tailles possibles
+  price: string; // PRIX OBLIGATOIRE (chaque variante a son propre prix)
   images: DraftVariantImage[]; // index 0 = principale, 1..4 = secondaires
 }
 
 export function makeEmptyVariant(): DraftVariant {
-  return { id: crypto.randomUUID(), name: "", color: "", size: "", price: "", images: [] };
+  return { id: crypto.randomUUID(), name: "", color: "", sizes: [], price: "", images: [] };
 }
 
 interface Props {
