@@ -18,7 +18,8 @@ export default function Cart() {
       const name = l.product.shop?.name ?? "Boutique";
       if (!m[sid]) m[sid] = { name, lines: [], subtotal: 0, shipping: 0 };
       m[sid].lines.push(l);
-      m[sid].subtotal += (l.product.price_gnf ?? 0) * l.quantity;
+      const unit = l.variant?.price_gnf ?? l.product.price_gnf ?? 0;
+      m[sid].subtotal += unit * l.quantity;
       m[sid].shipping += (l.product.shipping_fee_gnf ?? 0) * l.quantity;
     });
     return m;
