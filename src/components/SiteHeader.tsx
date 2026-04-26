@@ -180,8 +180,12 @@ export default function SiteHeader() {
             ))}
             {user && (
               <>
-                <DrawerLink to="/cart" icon={ShoppingCart} label="Mon panier" badge={count > 0 ? count : undefined} active={loc.pathname === "/cart"} />
-                <DrawerLink to="/orders" icon={ShoppingBag} label="Mes commandes" active={loc.pathname === "/orders"} />
+                {!isAdmin && (
+                  <>
+                    <DrawerLink to="/cart" icon={ShoppingCart} label="Mon panier" badge={count > 0 ? count : undefined} active={loc.pathname === "/cart"} />
+                    <DrawerLink to="/orders" icon={ShoppingBag} label="Mes commandes" active={loc.pathname === "/orders"} />
+                  </>
+                )}
 
                 <DrawerSectionLabel>Espace</DrawerSectionLabel>
                 {isAdmin && <DrawerLink to="/admin" icon={LayoutDashboard} label="Tableau de bord Admin" />}
