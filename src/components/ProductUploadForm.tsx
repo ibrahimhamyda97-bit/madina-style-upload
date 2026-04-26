@@ -635,6 +635,27 @@ export default function ProductUploadForm({ mode }: Props) {
         </div>
       </div>
 
+      {/* Variantes */}
+      <div className="bg-card border border-border rounded-3xl p-6 md:p-8 shadow-soft">
+        <div className="flex items-center gap-2 mb-1">
+          <Sparkles className="h-4 w-4 text-secondary" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Variantes (optionnel)
+          </span>
+        </div>
+        <h2 className="font-display text-xl font-bold mb-2">Plusieurs photos & prix par variante</h2>
+        <p className="text-sm text-muted-foreground mb-6">
+          Le client pourra choisir une variante (couleur/taille) et voir <strong className="text-foreground">jusqu'à 5 photos</strong> ainsi qu'un <strong className="text-foreground">prix spécifique</strong>.
+          {mode === "admin" && photos.length > 1 && " Les variantes seront attachées au dernier produit créé."}
+        </p>
+        <VariantsEditor
+          variants={variants}
+          onChange={setVariants}
+          mode={mode}
+          userId={user?.id}
+        />
+      </div>
+
       {/* Détails */}
       <div className="bg-card border border-border rounded-3xl p-6 md:p-8 shadow-soft">
         <h2 className="font-display text-xl font-bold mb-6">Détails du produit</h2>
