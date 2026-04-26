@@ -64,6 +64,7 @@ export default function Cart() {
                   {group.lines.map((l) => {
                     const sized = l.product.images?.find((i: any) => i.size === l.size);
                     const img = sized?.image_url ?? l.product.images?.[0]?.image_url;
+                    const ship = l.product.shipping_fee_gnf ?? 0;
                     return (
                       <div key={l.id} className="flex gap-4 py-4 first:pt-0 last:pb-0">
                         <Link to={`/product/${l.product.id}`} className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl overflow-hidden bg-muted shrink-0">
@@ -77,6 +78,11 @@ export default function Cart() {
                           <p className="font-display text-base font-bold text-primary mt-2">
                             {Number(l.product.price_gnf).toLocaleString("fr-FR")} <span className="text-xs text-muted-foreground font-medium">GNF</span>
                           </p>
+                          {ship > 0 && (
+                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                              + Livraison <strong className="text-foreground">{ship.toLocaleString("fr-FR")} GNF</strong> / article
+                            </p>
+                          )}
                         </div>
                         <div className="flex flex-col items-end justify-between gap-2 shrink-0">
                           <button onClick={() => remove(l.id)} className="text-muted-foreground hover:text-destructive transition-smooth" aria-label="Retirer">
@@ -88,6 +94,12 @@ export default function Cart() {
                     );
                   })}
                 </div>
+                {group.shipping > 0 && (
+                  <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Livraison de cette boutique</span>
+                    <span className="font-medium font-mono">{group.shipping.toLocaleString("fr-FR")} GNF</span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
