@@ -45,31 +45,38 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
-          <Route path="/shops" element={<PublicLayout><Shops /></PublicLayout>} />
-          <Route path="/shop/:slug" element={<PublicLayout><ShopDetail /></PublicLayout>} />
-          <Route path="/product/:id" element={<PublicLayout><ProductDetail /></PublicLayout>} />
-          <Route path="/auth" element={<><SiteHeader /><Auth /></>} />
-          <Route path="/onboarding/shop" element={<PublicLayout><ShopOnboarding /></PublicLayout>} />
+        <CartProvider>
+          <Routes>
+            <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
+            <Route path="/shops" element={<PublicLayout><Shops /></PublicLayout>} />
+            <Route path="/shop/:slug" element={<PublicLayout><ShopDetail /></PublicLayout>} />
+            <Route path="/product/:id" element={<PublicLayout><ProductDetail /></PublicLayout>} />
+            <Route path="/cart" element={<PublicLayout><Cart /></PublicLayout>} />
+            <Route path="/checkout" element={<PublicLayout><Checkout /></PublicLayout>} />
+            <Route path="/orders" element={<PublicLayout><Orders /></PublicLayout>} />
+            <Route path="/auth" element={<><SiteHeader /><Auth /></>} />
+            <Route path="/onboarding/shop" element={<PublicLayout><ShopOnboarding /></PublicLayout>} />
 
-          <Route path="/vendor" element={<><SiteHeader /><DashboardShell items={vendorNav} title="Vendeur" /></>}>
-            <Route index element={<VendorOverview />} />
-            <Route path="products" element={<ProductsList scope="vendor" />} />
-            <Route path="products/new" element={<NewProduct mode="vendor" />} />
-            <Route path="shop" element={<MyShop />} />
-          </Route>
+            <Route path="/vendor" element={<><SiteHeader /><DashboardShell items={vendorNav} title="Vendeur" /></>}>
+              <Route index element={<VendorOverview />} />
+              <Route path="products" element={<ProductsList scope="vendor" />} />
+              <Route path="products/new" element={<NewProduct mode="vendor" />} />
+              <Route path="shop" element={<MyShop />} />
+            </Route>
 
-          <Route path="/admin" element={<><SiteHeader /><DashboardShell items={adminNav} title="Admin" /></>}>
-            <Route index element={<AdminOverview />} />
-            <Route path="products" element={<ProductsList scope="admin" />} />
-            <Route path="products/new" element={<NewProduct mode="admin" />} />
-            <Route path="shops" element={<AdminShops />} />
-            <Route path="users" element={<AdminUsers />} />
-          </Route>
+            <Route path="/admin" element={<><SiteHeader /><DashboardShell items={adminNav} title="Admin" /></>}>
+              <Route index element={<AdminOverview />} />
+              <Route path="products" element={<ProductsList scope="admin" />} />
+              <Route path="products/new" element={<NewProduct mode="admin" />} />
+              <Route path="shops" element={<AdminShops />} />
+              <Route path="orders" element={<AdminOrders />} />
+              <Route path="finance" element={<AdminFinance />} />
+              <Route path="users" element={<AdminUsers />} />
+            </Route>
 
-          <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />
-        </Routes>
+            <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />
+          </Routes>
+        </CartProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
