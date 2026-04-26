@@ -452,3 +452,35 @@ function CopyRow({ value, icon, highlight }: { value: string; icon?: React.React
     </button>
   );
 }
+
+function SummaryRow({ label, value, className }: { label: string; value: string; className?: string }) {
+  return (
+    <div className={className}>
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</p>
+      <p className="text-sm font-medium text-foreground break-words">{value || "—"}</p>
+    </div>
+  );
+}
+
+function SummaryLine({
+  icon, label, value, mono, highlight,
+}: { icon: React.ReactNode; label: string; value: string; mono?: boolean; highlight?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-muted-foreground shrink-0">{icon}</span>
+      <span className="text-xs text-muted-foreground w-20 shrink-0">{label}</span>
+      <span className={cn("text-sm flex-1 truncate", mono && "font-mono font-bold", highlight && "text-primary")}>
+        {value}
+      </span>
+      <button
+        type="button"
+        onClick={() => { navigator.clipboard.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500); toast.success("Copié !"); }}
+        className="h-7 w-7 rounded-lg grid place-items-center hover:bg-muted transition-smooth shrink-0"
+        aria-label={`Copier ${label}`}
+      >
+        {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5 text-muted-foreground" />}
+      </button>
+    </div>
+  );
+}
