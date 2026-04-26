@@ -1,17 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Palette, Tag } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Palette, Tag, ShoppingCart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
 const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45"];
 
 export default function ProductDetail() {
   const { id } = useParams();
+  const { add } = useCart();
+  const { user } = useAuth();
+  const nav = useNavigate();
   const [product, setProduct] = useState<any>(null);
   const [activeSize, setActiveSize] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -121,9 +127,25 @@ export default function ProductDetail() {
             </div>
           )}
 
-          <Button size="lg" className="w-full mt-10 rounded-2xl bg-gradient-gold text-secondary-foreground shadow-gold hover:opacity-95">
-            Contacter la boutique
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 mt-10">
+            <Button
+              size="lg"
+              disabled={!activeSize || adding}
+              onClick={async () => {
+                if (!user) return nav("/auth");
+                if (!activeSize || !product) return;
+                setAdding(true);
+                await add(product.id, activeSize);
+                setAdding(false);
+              }}
+              className="flex-1 rounded-2xl bg-gradient-gold text-secondary-foreground shadow-gold hover:opacity-95 h-14"
+            >
+              <ShoppingCart className="h-5 w-5" /> {adding ? "Ajout..." : "Ajouter au panier"}
+            </Button>
+            <Button asChild size="lg" variant="outline" className="rounded-2xl h-14">
+              <Link to="/cart">Voir le panier</Link>
+            </Button>
+          </div>
         </div>
       </div>
     </div>
