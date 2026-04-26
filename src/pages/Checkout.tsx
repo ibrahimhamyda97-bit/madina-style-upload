@@ -256,6 +256,11 @@ export default function Checkout() {
                 <div className="text-right shrink-0">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Montant</p>
                   <p className="font-display font-bold text-primary">{g.subtotal.toLocaleString("fr-FR")} <span className="text-[11px] text-muted-foreground">GNF</span></p>
+                  {g.shippingTotal > 0 && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      dont {g.shippingTotal.toLocaleString("fr-FR")} livraison
+                    </p>
+                  )}
                 </div>
               </div>
 
