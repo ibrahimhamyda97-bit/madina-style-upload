@@ -477,11 +477,12 @@ export default function ProductUploadForm({ mode }: Props) {
                                 <button type="button" onClick={() => updatePhoto(p.id, { color: "" })} className="text-[10px] text-muted-foreground hover:text-destructive">Effacer</button>
                               )}
                             </div>
+                            <ColorPalette value={p.color ?? ""} onChange={(name) => updatePhoto(p.id, { color: name })} size="sm" />
                             <Input
                               maxLength={40}
                               value={p.color ?? ""}
                               onChange={(e) => updatePhoto(p.id, { color: e.target.value })}
-                              placeholder={color ? `Hérite : ${color}` : "Optionnel"}
+                              placeholder={color ? `Hérite : ${color}` : "Ou saisir une couleur..."}
                               className="h-9"
                             />
                           </div>
