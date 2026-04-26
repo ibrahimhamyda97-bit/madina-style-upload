@@ -55,11 +55,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase
       .from("cart_items")
       .select(`
-        id, product_id, size, quantity,
+        id, product_id, variant_id, size, quantity,
         product:products(
           id, title, price_gnf, shipping_fee_gnf, shop_id,
           shop:shops(id, name, slug, commission_rate, payment_operator, payment_number),
           images:product_images(image_url, size)
+        ),
+        variant:product_variants(
+          id, name, color, size, price_gnf,
+          images:product_variant_images(image_url, position)
         )
       `)
       .eq("user_id", user.id)
@@ -71,20 +75,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => { refresh(); }, [refresh]);
 
   const count = items.reduce((s, l) => s + l.quantity, 0);
-  const subtotal = items.reduce((s, l) => s + (l.product?.price_gnf ?? 0) * l.quantity, 0);
+  const subtotal = items.reduce(
+    (s, l) => s + ((l.variant?.price_gnf ?? l.product?.price_gnf) ?? 0) * l.quantity,
+    0
+  );
   const shipping = items.reduce((s, l) => s + (l.product?.shipping_fee_gnf ?? 0) * l.quantity, 0);
   const total = subtotal + shipping;
 
-  async function add(productId: string, size: string, quantity = 1) {
+  async function add(productId: string, size: string, quantity = 1, variantId: string | null = null) {
     if (!user) { toast.error("Connectez-vous pour ajouter au panier"); return; }
-    const existing = items.find((i) => i.product_id === productId && i.size === size);
+    const existing = items.find(
+      (i) => i.product_id === productId && i.size === size && (i.variant_id ?? null) === (variantId ?? null)
+    );
     if (existing) {
       await setQuantity(existing.id, existing.quantity + quantity);
       toast.success("Quantité mise à jour");
       return;
     }
     const { error } = await supabase.from("cart_items").insert({
-      user_id: user.id, product_id: productId, size: size as any, quantity,
+      user_id: user.id, product_id: productId, size: size as any, quantity, variant_id: variantId,
     });
     if (error) { toast.error(error.message); return; }
     toast.success("Ajouté au panier");
