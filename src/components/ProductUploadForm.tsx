@@ -306,8 +306,11 @@ export default function ProductUploadForm({ mode }: Props) {
     });
 
     const { error: imgErr } = await supabase.from("product_images").insert(rows);
+    if (imgErr) { setSubmitting(false); return toast.error(imgErr.message); }
+    if (variants.length > 0) {
+      await persistVariants(prod.id, variants);
+    }
     setSubmitting(false);
-    if (imgErr) return toast.error(imgErr.message);
     toast.success("Produit publié sur Madina !");
     nav("/vendor/products");
   }
