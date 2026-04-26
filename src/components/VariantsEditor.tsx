@@ -439,14 +439,16 @@ export async function persistVariants(productId: string, variants: DraftVariant[
     const validImages = v.images.filter((i) => !i.loading && i.url);
     if (validImages.length === 0) continue; // skip variantes sans photos
     const priceNum = Number(v.price);
+    if (!(priceNum > 0)) { toast.error(`Variante ${idx + 1}: prix obligatoire`); continue; }
     const { data: vrow, error: verr } = await supabase
       .from("product_variants")
       .insert({
         product_id: productId,
         name: v.name.trim() || null,
         color: v.color.trim() || null,
-        size: v.size || null,
-        price_gnf: priceNum > 0 ? priceNum : null,
+        size: v.sizes[0] ?? null, // legacy compat
+        sizes: v.sizes.length > 0 ? (v.sizes as any) : [],
+        price_gnf: priceNum,
         position: idx,
       })
       .select()
