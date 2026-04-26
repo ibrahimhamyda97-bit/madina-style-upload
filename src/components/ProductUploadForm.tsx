@@ -51,6 +51,30 @@ const CATEGORY_GROUPS: { label: string; items: string[] }[] = [
 ];
 const CATEGORIES = CATEGORY_GROUPS.flatMap((g) => g.items);
 
+// Palette de couleurs par défaut sélectionnables (nom FR + swatch HEX).
+// `swatch` est uniquement visuel — la valeur enregistrée reste le nom (ex: "Bleu marine").
+const COLOR_PRESETS: { name: string; swatch: string }[] = [
+  { name: "Noir", swatch: "#111111" },
+  { name: "Blanc", swatch: "#ffffff" },
+  { name: "Gris", swatch: "#9ca3af" },
+  { name: "Beige", swatch: "#e7d3b1" },
+  { name: "Marron", swatch: "#7a4a2b" },
+  { name: "Rouge", swatch: "#dc2626" },
+  { name: "Bordeaux", swatch: "#7f1d1d" },
+  { name: "Rose", swatch: "#f472b6" },
+  { name: "Orange", swatch: "#f97316" },
+  { name: "Jaune", swatch: "#facc15" },
+  { name: "Vert", swatch: "#16a34a" },
+  { name: "Vert émeraude", swatch: "#047857" },
+  { name: "Bleu ciel", swatch: "#38bdf8" },
+  { name: "Bleu", swatch: "#2563eb" },
+  { name: "Bleu marine", swatch: "#1e3a8a" },
+  { name: "Violet", swatch: "#7c3aed" },
+  { name: "Doré", swatch: "#d4af37" },
+  { name: "Argenté", swatch: "#c0c0c0" },
+  { name: "Multicolore", swatch: "linear-gradient(135deg,#f43f5e,#f59e0b,#10b981,#3b82f6,#8b5cf6)" },
+];
+
 interface PhotoItem {
   id: string;
   url: string;
