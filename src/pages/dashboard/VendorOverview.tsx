@@ -3,12 +3,16 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Package, Plus, Store, Clock, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+
+const fmt = (n: number) => new Intl.NumberFormat("fr-FR").format(n) + " GNF";
 
 export default function VendorOverview() {
   const { user } = useAuth();
   const [shop, setShop] = useState<any>(null);
   const [productCount, setProductCount] = useState(0);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,6 +27,12 @@ export default function VendorOverview() {
       if (data) {
         const { count } = await supabase.from("products").select("id", { count: "exact", head: true }).eq("shop_id", data.id);
         setProductCount(count ?? 0);
+        const { data: prods } = await supabase
+          .from("products")
+          .select("id,title,price_gnf,shipping_fee_gnf,status,rejection_reason,created_at,category,product_images(image_url,position)")
+          .eq("shop_id", data.id)
+          .order("created_at", { ascending: false });
+        setProducts(prods ?? []);
       }
       setLoading(false);
     })();
@@ -96,6 +106,65 @@ export default function VendorOverview() {
           <Button disabled variant="secondary"><Plus className="h-4 w-4" /> Ajout de produit indisponible</Button>
         )}
         <Button asChild variant="ghost"><Link to="/vendor/shop"><Store className="h-4 w-4" /> Ma boutique</Link></Button>
+      </div>
+
+      {/* All vendor's products */}
+      <div className="mt-10">
+        <div className="flex items-end justify-between mb-4">
+          <div>
+            <h2 className="font-display text-xl font-bold">Mes articles publiés</h2>
+            <p className="text-sm text-muted-foreground">Tous les produits de votre boutique sur Madina.</p>
+          </div>
+          {isApproved && (
+            <Button asChild size="sm" variant="outline"><Link to="/vendor/products">Gérer</Link></Button>
+          )}
+        </div>
+
+        {products.length === 0 ? (
+          <div className="text-center py-12 border border-dashed border-border rounded-2xl">
+            <Package className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+            <p className="text-muted-foreground text-sm">Aucun article pour le moment.</p>
+            {isApproved && (
+              <Button asChild className="mt-4" size="sm"><Link to="/vendor/products/new"><Plus className="h-4 w-4" /> Ajouter un produit</Link></Button>
+            )}
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {products.map((p) => {
+              const img = (p.product_images ?? []).sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0))[0]?.image_url;
+              const statusVariant: any = p.status === "approved" ? "default" : p.status === "rejected" ? "destructive" : "secondary";
+              const statusLabel = p.status === "approved" ? "Publié" : p.status === "rejected" ? "Rejeté" : "En attente";
+              return (
+                <Link
+                  key={p.id}
+                  to={p.status === "approved" ? `/produit/${p.id}` : "/vendor/products"}
+                  className="group bg-card border border-border rounded-2xl overflow-hidden shadow-soft hover:shadow-lg transition-smooth"
+                >
+                  <div className="aspect-square bg-muted overflow-hidden">
+                    {img ? (
+                      <img src={img} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-smooth" loading="lazy" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground"><Package className="h-8 w-8" /></div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <h3 className="font-medium text-sm line-clamp-2">{p.title}</h3>
+                      <Badge variant={statusVariant} className="shrink-0 text-[10px]">{statusLabel}</Badge>
+                    </div>
+                    <p className="font-display font-bold text-base">{fmt(p.price_gnf)}</p>
+                    {p.shipping_fee_gnf > 0 && (
+                      <p className="text-[11px] text-muted-foreground">+ {fmt(p.shipping_fee_gnf)} livraison</p>
+                    )}
+                    {p.status === "rejected" && p.rejection_reason && (
+                      <p className="text-[11px] text-destructive mt-2 line-clamp-2">Raison : {p.rejection_reason}</p>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
