@@ -94,37 +94,36 @@ export default function ProductUploadForm({ mode }: Props) {
   useEffect(() => {
     if (!user) return;
     if (mode === "admin") {
-      // En mode admin : on charge UNIQUEMENT les boutiques officielles
-      // (celles détenues par un compte admin) — ex: ZARA, NOCIBE, SHEIN, TÉLÉPHONE, ORDINATEUR.
-      (async () => {
-        const { data: adminRoles, error: rolesErr } = await supabase
-          .from("user_roles")
-          .select("user_id")
-          .eq("role", "admin");
-        if (rolesErr) { toast.error(rolesErr.message); return; }
-        const adminIds = (adminRoles ?? []).map((r: any) => r.user_id);
-        if (adminIds.length === 0) { setShops([]); return; }
-        const { data, error } = await supabase
-          .from("shops")
-          .select("id,name,status,commission_rate")
-          .in("owner_id", adminIds)
-          .order("name", { ascending: true });
-        if (error) { toast.error(error.message); return; }
-        // Dédupliquer par id (au cas où plusieurs lignes remontent)
-        const map = new Map<string, any>();
-        (data ?? []).forEach((s: any) => { if (!map.has(s.id)) map.set(s.id, s); });
-        const officialOrder = ["ZARA", "NOCIBE", "SHEIN", "TÉLÉPHONE", "TELEPHONE", "ORDINATEUR"];
-        const list = Array.from(map.values()).sort((a, b) => {
-          const ia = officialOrder.indexOf((a.name || "").toUpperCase());
-          const ib = officialOrder.indexOf((b.name || "").toUpperCase());
-          if (ia !== -1 && ib !== -1) return ia - ib;
-          if (ia !== -1) return -1;
-          if (ib !== -1) return 1;
-          return (a.name || "").localeCompare(b.name || "");
+      // En mode admin : on charge TOUTES les boutiques (la policy admin l'autorise).
+      // Les 5 boutiques officielles ZARA / NOCIBE / SHEIN / TÉLÉPHONE / ORDINATEUR
+      // sont mises en tête de liste.
+      console.log("[ProductUploadForm] Loading shops for admin user:", user.id);
+      supabase
+        .from("shops")
+        .select("id,name,status,commission_rate")
+        .order("name", { ascending: true })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error("[ProductUploadForm] shops fetch error:", error);
+            toast.error(`Boutiques: ${error.message}`);
+            return;
+          }
+          console.log("[ProductUploadForm] shops loaded:", data?.length, data);
+          // Dédupliquer par id (au cas où)
+          const map = new Map<string, any>();
+          (data ?? []).forEach((s: any) => { if (!map.has(s.id)) map.set(s.id, s); });
+          const officialOrder = ["ZARA", "NOCIBE", "SHEIN", "TÉLÉPHONE", "TELEPHONE", "ORDINATEUR"];
+          const list = Array.from(map.values()).sort((a, b) => {
+            const ia = officialOrder.indexOf((a.name || "").toUpperCase());
+            const ib = officialOrder.indexOf((b.name || "").toUpperCase());
+            if (ia !== -1 && ib !== -1) return ia - ib;
+            if (ia !== -1) return -1;
+            if (ib !== -1) return 1;
+            return (a.name || "").localeCompare(b.name || "");
+          });
+          setShops(list);
+          if (list.length === 1) setShopId(list[0].id);
         });
-        setShops(list);
-        if (list.length === 1) setShopId(list[0].id);
-      })();
     } else {
       supabase
         .from("shops")
