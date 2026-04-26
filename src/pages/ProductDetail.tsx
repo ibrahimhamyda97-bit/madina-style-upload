@@ -92,6 +92,11 @@ export default function ProductDetail() {
           <p className="font-display text-3xl font-bold text-primary mt-4">
             {Number(product.price_gnf).toLocaleString("fr-FR")} <span className="text-base font-medium text-muted-foreground">GNF</span>
           </p>
+          <p className="text-xs text-muted-foreground mt-1.5">
+            {Number(product.shipping_fee_gnf ?? 0) > 0
+              ? <>+ Livraison <strong className="text-foreground">{Number(product.shipping_fee_gnf).toLocaleString("fr-FR")} GNF</strong></>
+              : <>Livraison <strong className="text-emerald-600">offerte</strong></>}
+          </p>
 
           <div className="flex flex-wrap gap-2 mt-5">
             <Badge variant="secondary" className="rounded-full"><Tag className="h-3 w-3 mr-1" />{product.category}</Badge>
