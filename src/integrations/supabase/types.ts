@@ -305,6 +305,7 @@ export type Database = {
           price_gnf: number | null
           product_id: string
           size: Database["public"]["Enums"]["product_size"] | null
+          sizes: Database["public"]["Enums"]["product_size"][]
           updated_at: string
         }
         Insert: {
@@ -316,6 +317,7 @@ export type Database = {
           price_gnf?: number | null
           product_id: string
           size?: Database["public"]["Enums"]["product_size"] | null
+          sizes?: Database["public"]["Enums"]["product_size"][]
           updated_at?: string
         }
         Update: {
@@ -327,6 +329,7 @@ export type Database = {
           price_gnf?: number | null
           product_id?: string
           size?: Database["public"]["Enums"]["product_size"] | null
+          sizes?: Database["public"]["Enums"]["product_size"][]
           updated_at?: string
         }
         Relationships: []
