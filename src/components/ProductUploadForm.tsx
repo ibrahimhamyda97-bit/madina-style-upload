@@ -622,8 +622,20 @@ export default function ProductUploadForm({ mode }: Props) {
             <Label>Catégorie *</Label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
-              <SelectContent>
-                {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              <SelectContent className="max-h-80">
+                {CATEGORY_GROUPS.map((g, gi) => (
+                  <div key={g.label}>
+                    {gi > 0 && <SelectSeparator />}
+                    <SelectGroup>
+                      <SelectLabel>{g.label}</SelectLabel>
+                      {g.items.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c.startsWith("Vêtements - ") ? c.replace("Vêtements - ", "  ") : c}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </div>
+                ))}
               </SelectContent>
             </Select>
           </div>
