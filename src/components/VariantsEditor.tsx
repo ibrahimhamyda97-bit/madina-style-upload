@@ -311,18 +311,39 @@ function VariantCard({
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs flex items-center gap-1.5"><Ruler className="h-3 w-3" /> Taille (optionnel)</Label>
+          <Label className="text-xs flex items-center gap-1.5">
+            <Ruler className="h-3 w-3" /> Tailles disponibles (cochez plusieurs)
+          </Label>
           <div className="space-y-1.5">
             <div className="flex flex-wrap gap-1.5">
-              {LETTER_SIZES.map((s) => (
-                <SizeBtn key={s} label={s} active={variant.size === s} onClick={() => onUpdate({ size: variant.size === s ? "" : s })} />
-              ))}
+              {LETTER_SIZES.map((s) => {
+                const active = variant.sizes.includes(s);
+                return (
+                  <SizeBtn
+                    key={s}
+                    label={s}
+                    active={active}
+                    onClick={() => onUpdate({ sizes: active ? variant.sizes.filter((x) => x !== s) : [...variant.sizes, s] })}
+                  />
+                );
+              })}
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {NUMERIC_SIZES.map((s) => (
-                <SizeBtn key={s} label={s} active={variant.size === s} onClick={() => onUpdate({ size: variant.size === s ? "" : s })} />
-              ))}
+              {NUMERIC_SIZES.map((s) => {
+                const active = variant.sizes.includes(s);
+                return (
+                  <SizeBtn
+                    key={s}
+                    label={s}
+                    active={active}
+                    onClick={() => onUpdate({ sizes: active ? variant.sizes.filter((x) => x !== s) : [...variant.sizes, s] })}
+                  />
+                );
+              })}
             </div>
+            {variant.sizes.length === 0 && (
+              <p className="text-[11px] text-muted-foreground">Aucune taille — la variante sera proposée sans choix de taille.</p>
+            )}
           </div>
         </div>
       </div>
