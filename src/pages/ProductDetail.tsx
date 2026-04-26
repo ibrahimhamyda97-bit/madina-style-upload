@@ -154,25 +154,6 @@ export default function ProductDetail() {
                 </button>
               ))}
             </div>
-          ) : variants.length === 0 && availableSizes.length > 1 ? (
-            <div className="flex flex-wrap gap-2 mt-4">
-              {availableSizes.map((s) => {
-                const img = imagesBySize[s];
-                return (
-                  <button
-                    key={s}
-                    onClick={() => setActiveSize(s)}
-                    className={cn(
-                      "h-16 w-16 rounded-xl overflow-hidden border-2 relative transition-smooth shrink-0",
-                      activeSize === s ? "border-primary shadow-soft" : "border-transparent hover:border-border"
-                    )}
-                  >
-                    <img src={img.image_url} alt={`Taille ${s}`} className="h-full w-full object-cover" />
-                    <span className="absolute bottom-0 inset-x-0 bg-background/85 text-[10px] font-bold text-center py-0.5">{s}</span>
-                  </button>
-                );
-              })}
-            </div>
           ) : null}
         </div>
 
