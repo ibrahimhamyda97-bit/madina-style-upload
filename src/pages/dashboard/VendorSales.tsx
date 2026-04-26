@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Wallet, TrendingUp, Banknote, Package, Loader2, Calendar, ShoppingBag } from "lucide-react";
+import { Wallet, TrendingUp, Banknote, Package, Loader2, Calendar, ShoppingBag, KeyRound, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -17,7 +17,7 @@ interface SoldLine {
   commission_rate: number;
   size: string;
   product_id: string;
-  order: { id: string; reference: string; created_at: string; status: string };
+  order: { id: string; reference: string; created_at: string; status: string; pickup_code: string | null; delivery_status: string };
 }
 
 interface PayoutRow { id: string; amount_gnf: number; paid_at: string; method: string | null; reference: string | null; note: string | null }
@@ -44,7 +44,7 @@ export default function VendorSales() {
         const [{ data: items }, { data: payoutData }] = await Promise.all([
           supabase
             .from("order_items")
-            .select("id, title, image_url, quantity, unit_price_gnf, commission_rate, size, product_id, order:orders!inner(id, reference, created_at, status)")
+            .select("id, title, image_url, quantity, unit_price_gnf, commission_rate, size, product_id, order:orders!inner(id, reference, created_at, status, pickup_code, delivery_status)")
             .eq("shop_id", (shopData as any).id)
             .eq("order.status", "paid")
             .order("created_at", { ascending: false }),
@@ -115,6 +115,49 @@ export default function VendorSales() {
           Montant que l'administration de Madina vous doit après commission et versements déjà effectués.
         </p>
       </div>
+
+      {/* Pickup codes for orders awaiting handover */}
+      {(() => {
+        const seen = new Set<string>();
+        const pending = lines.filter((l) => {
+          const ds = l.order.delivery_status;
+          if (seen.has(l.order.id)) return false;
+          if (!["unassigned", "assigned", "picked_up"].includes(ds)) return false;
+          seen.add(l.order.id);
+          return true;
+        });
+        if (pending.length === 0) return null;
+        return (
+          <div className="bg-card border border-border rounded-3xl shadow-soft overflow-hidden">
+            <div className="px-5 py-4 border-b border-border">
+              <h2 className="font-display text-lg font-bold flex items-center gap-2">
+                <KeyRound className="h-4 w-4 text-primary" /> Codes de prise en charge
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Donnez ce code au livreur quand il vient récupérer le colis. Ne le partagez jamais avant.
+              </p>
+            </div>
+            <ul className="divide-y divide-border">
+              {pending.map((l) => (
+                <li key={l.order.id} className="px-5 py-4 flex items-center gap-4 flex-wrap">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-mono text-xs text-muted-foreground">{l.order.reference}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                      <Truck className="h-3 w-3" />
+                      {l.order.delivery_status === "unassigned" && "En attente d'un livreur"}
+                      {l.order.delivery_status === "assigned" && "Livreur en route — préparez le colis"}
+                      {l.order.delivery_status === "picked_up" && "Colis récupéré ✓"}
+                    </p>
+                  </div>
+                  <p className="font-mono text-2xl font-bold tracking-[0.3em] text-primary">
+                    {l.order.pickup_code ?? "—"}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })()}
 
       {/* Sold items */}
       <div className="bg-card border border-border rounded-3xl shadow-soft overflow-hidden">

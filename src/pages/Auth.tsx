@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ShoppingBag, User, Store, Check } from "lucide-react";
+import { ShoppingBag, User, Store, Check, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-type AccountType = "buyer" | "shop";
+type AccountType = "buyer" | "shop" | "courier";
 
 export default function Auth() {
   const nav = useNavigate();
@@ -33,6 +33,7 @@ export default function Auth() {
       const roles = (rolesData ?? []).map((r) => r.role);
       if (roles.includes("admin")) dest = "/admin";
       else if (roles.includes("vendor")) dest = "/vendor";
+      else if (roles.includes("courier")) dest = "/courier";
     }
     setLoading(false);
     toast.success("Bienvenue sur Madina !");
@@ -67,10 +68,16 @@ export default function Auth() {
       first_name, last_name, phone, city, neighborhood,
     }).eq("id", data.user.id);
 
+    if (accountType === "courier") {
+      const { error: roleErr } = await supabase.rpc("assign_courier_role");
+      if (roleErr) { setLoading(false); return toast.error(roleErr.message); }
+    }
+
     setLoading(false);
     toast.success("Compte créé avec succès !");
 
     if (accountType === "shop") nav("/onboarding/shop");
+    else if (accountType === "courier") nav("/courier");
     else nav("/account");
   }
 
@@ -111,20 +118,27 @@ export default function Auth() {
 
             <TabsContent value="signup">
               {/* Type de compte */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="grid grid-cols-3 gap-2 mb-6">
                 <AccountCard
                   selected={accountType === "buyer"}
                   onClick={() => setAccountType("buyer")}
                   icon={<User className="h-5 w-5" />}
                   title="Client"
-                  desc="Acheter sur la marketplace"
+                  desc="Acheter"
                 />
                 <AccountCard
                   selected={accountType === "shop"}
                   onClick={() => setAccountType("shop")}
                   icon={<Store className="h-5 w-5" />}
                   title="Boutique"
-                  desc="Vendre mes produits"
+                  desc="Vendre"
+                />
+                <AccountCard
+                  selected={accountType === "courier"}
+                  onClick={() => setAccountType("courier")}
+                  icon={<Truck className="h-5 w-5" />}
+                  title="Livreur"
+                  desc="Livrer"
                 />
               </div>
 
@@ -147,9 +161,21 @@ export default function Auth() {
                     Après inscription, vous renseignerez les infos de votre boutique et téléverserez votre pièce d'identité pour validation par l'admin.
                   </div>
                 )}
+                {accountType === "courier" && (
+                  <div className="rounded-xl bg-primary/10 border border-primary/30 p-3 text-xs text-muted-foreground">
+                    <Truck className="inline h-3.5 w-3.5 mr-1 text-primary" />
+                    En tant que livreur, vous verrez les commandes payées à récupérer chez les vendeurs et à livrer aux clients.
+                  </div>
+                )}
 
                 <Button disabled={loading} className="w-full" size="lg">
-                  {loading ? "Création..." : accountType === "shop" ? "Continuer vers ma boutique" : "Créer mon compte client"}
+                  {loading
+                    ? "Création..."
+                    : accountType === "shop"
+                      ? "Continuer vers ma boutique"
+                      : accountType === "courier"
+                        ? "Créer mon compte livreur"
+                        : "Créer mon compte client"}
                 </Button>
               </form>
             </TabsContent>

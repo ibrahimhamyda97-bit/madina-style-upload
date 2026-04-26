@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/hooks/useCart";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
-import DashboardShell, { vendorNav, adminNav, clientNav } from "./components/DashboardShell";
+import DashboardShell, { vendorNav, adminNav, clientNav, courierNav } from "./components/DashboardShell";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Shops from "./pages/Shops";
@@ -28,6 +28,7 @@ import AdminFinance from "./pages/dashboard/AdminFinance";
 import AdminOrders from "./pages/dashboard/AdminOrders";
 import ClientOverview from "./pages/dashboard/ClientOverview";
 import ClientProfile from "./pages/dashboard/ClientProfile";
+import CourierDeliveries from "./pages/dashboard/CourierDeliveries";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -73,6 +74,10 @@ const App = () => (
               <Route path="products/new" element={<NewProduct mode="vendor" />} />
               <Route path="sales" element={<VendorSales />} />
               <Route path="shop" element={<MyShop />} />
+            </Route>
+
+            <Route path="/courier" element={<><SiteHeader /><DashboardShell items={courierNav} title="Livreur" /></>}>
+              <Route index element={<CourierDeliveries />} />
             </Route>
 
             <Route path="/admin" element={<><SiteHeader /><DashboardShell items={adminNav} title="Admin" /></>}>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, Clock, Check, X, ChevronRight } from "lucide-react";
+import { Package, Clock, Check, X, ChevronRight, KeyRound, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,6 +12,15 @@ const statusMeta: Record<string, { label: string; icon: any; className: string }
   paid: { label: "Payée", icon: Check, className: "bg-primary/15 text-primary border-primary/30" },
   cancelled: { label: "Annulée", icon: X, className: "bg-destructive/10 text-destructive border-destructive/30" },
   refunded: { label: "Remboursée", icon: X, className: "bg-muted text-muted-foreground border-border" },
+};
+
+const deliveryLabels: Record<string, string> = {
+  unassigned: "En attente d'un livreur",
+  assigned: "Livreur en route vers la boutique",
+  picked_up: "Colis récupéré",
+  in_transit: "En cours de livraison",
+  delivered: "Livrée ✓",
+  failed: "Livraison échouée",
 };
 
 export default function Orders() {
@@ -93,6 +102,30 @@ export default function Orders() {
                     {o.items?.length ?? 0} article{(o.items?.length ?? 0) > 1 ? "s" : ""} <ChevronRight className="h-3 w-3" />
                   </div>
                 </div>
+
+                {o.status === "paid" && o.delivery_code && o.delivery_status !== "delivered" && (
+                  <div className="mt-4 rounded-2xl border-2 border-primary/30 bg-primary/5 p-4">
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest font-semibold text-primary flex items-center gap-1.5">
+                          <KeyRound className="h-3 w-3" /> Votre code de livraison
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-1 max-w-xs">
+                          Donnez ce code au livreur uniquement à la remise du colis.
+                        </p>
+                      </div>
+                      <p className="font-mono text-3xl font-bold tracking-[0.3em] text-primary">{o.delivery_code}</p>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-3 flex items-center gap-1.5">
+                      <Truck className="h-3 w-3" /> {deliveryLabels[o.delivery_status] ?? o.delivery_status}
+                    </p>
+                  </div>
+                )}
+                {o.status === "paid" && o.delivery_status === "delivered" && (
+                  <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+                    <Check className="h-4 w-4" /> Colis livré le {o.delivered_at ? new Date(o.delivered_at).toLocaleDateString("fr-FR") : "—"}
+                  </div>
+                )}
               </div>
             );
           })}

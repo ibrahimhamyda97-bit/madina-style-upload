@@ -99,16 +99,23 @@ export type Database = {
       }
       orders: {
         Row: {
+          courier_id: string | null
           created_at: string
           customer_address: string | null
           customer_name: string | null
           customer_phone: string | null
+          delivered_at: string | null
+          delivery_code: string | null
+          delivery_notes: string | null
+          delivery_status: Database["public"]["Enums"]["delivery_status"]
           id: string
           notes: string | null
           paid_at: string | null
           payment_method: string | null
           payment_operator: string | null
           payment_reference: string | null
+          picked_up_at: string | null
+          pickup_code: string | null
           reference: string
           status: Database["public"]["Enums"]["order_status"]
           total_gnf: number
@@ -116,16 +123,23 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          courier_id?: string | null
           created_at?: string
           customer_address?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          delivered_at?: string | null
+          delivery_code?: string | null
+          delivery_notes?: string | null
+          delivery_status?: Database["public"]["Enums"]["delivery_status"]
           id?: string
           notes?: string | null
           paid_at?: string | null
           payment_method?: string | null
           payment_operator?: string | null
           payment_reference?: string | null
+          picked_up_at?: string | null
+          pickup_code?: string | null
           reference: string
           status?: Database["public"]["Enums"]["order_status"]
           total_gnf?: number
@@ -133,16 +147,23 @@ export type Database = {
           user_id: string
         }
         Update: {
+          courier_id?: string | null
           created_at?: string
           customer_address?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          delivered_at?: string | null
+          delivery_code?: string | null
+          delivery_notes?: string | null
+          delivery_status?: Database["public"]["Enums"]["delivery_status"]
           id?: string
           notes?: string | null
           paid_at?: string | null
           payment_method?: string | null
           payment_operator?: string | null
           payment_reference?: string | null
+          picked_up_at?: string | null
+          pickup_code?: string | null
           reference?: string
           status?: Database["public"]["Enums"]["order_status"]
           total_gnf?: number
@@ -418,6 +439,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_courier_role: { Args: never; Returns: undefined }
+      courier_claim_order: { Args: { p_order_id: string }; Returns: undefined }
+      courier_confirm_delivery: {
+        Args: { p_code: string; p_order_id: string }
+        Returns: undefined
+      }
+      courier_confirm_pickup: {
+        Args: { p_code: string; p_order_id: string }
+        Returns: undefined
+      }
+      courier_set_in_transit: {
+        Args: { p_order_id: string }
+        Returns: undefined
+      }
+      generate_auth_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -440,7 +476,14 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "vendor" | "buyer"
+      app_role: "admin" | "vendor" | "buyer" | "courier"
+      delivery_status:
+        | "unassigned"
+        | "assigned"
+        | "picked_up"
+        | "in_transit"
+        | "delivered"
+        | "failed"
       order_status: "pending" | "paid" | "cancelled" | "refunded"
       product_size:
         | "XS"
@@ -587,7 +630,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "vendor", "buyer"],
+      app_role: ["admin", "vendor", "buyer", "courier"],
+      delivery_status: [
+        "unassigned",
+        "assigned",
+        "picked_up",
+        "in_transit",
+        "delivered",
+        "failed",
+      ],
       order_status: ["pending", "paid", "cancelled", "refunded"],
       product_size: [
         "XS",
