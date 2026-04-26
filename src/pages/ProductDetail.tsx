@@ -179,20 +179,46 @@ export default function ProductDetail() {
             {product.detected_object_type && <Badge variant="outline" className="rounded-full">{product.detected_object_type}</Badge>}
           </div>
 
-          {/* Sélecteur de variantes */}
+          {/* Sélecteur : Photo principale + variantes */}
           {variants.length > 0 && (
             <div className="mt-8">
               <h3 className="font-medium text-sm uppercase tracking-wider text-muted-foreground mb-3">
-                Choisir une variante ({variants.length})
+                Choisir une option ({variants.length + 1})
               </h3>
               <div className="flex flex-wrap gap-2">
+                {/* Carte "Photo principale" (= produit de base) */}
+                <button
+                  onClick={() => setActiveVariantId(null)}
+                  className={cn(
+                    "rounded-2xl border-2 px-3 py-2 transition-smooth flex items-center gap-2",
+                    activeVariantId === null ? "border-primary bg-primary/5 shadow-soft" : "border-border hover:border-primary/50"
+                  )}
+                >
+                  <img
+                    src={(product.images?.[0]?.image_url) ?? ""}
+                    alt=""
+                    className="h-10 w-10 rounded-lg object-cover bg-muted"
+                  />
+                  <div className="text-left">
+                    <p className="text-xs font-semibold leading-tight inline-flex items-center gap-1">
+                      <Star className="h-3 w-3 text-primary" /> Principale
+                    </p>
+                    <p className="text-[11px] text-primary font-bold">
+                      {Number(product.price_gnf).toLocaleString("fr-FR")} GNF
+                    </p>
+                  </div>
+                </button>
+
                 {variants.map((v) => {
                   const active = v.id === activeVariantId;
-                  const label = [v.name, v.color, v.size].filter(Boolean).join(" · ") || "Variante";
+                  const sizeLabel = (v.sizes && v.sizes.length > 0)
+                    ? v.sizes.join("/")
+                    : (v.size ?? "");
+                  const label = [v.name, v.color, sizeLabel].filter(Boolean).join(" · ") || "Variante";
                   return (
                     <button
                       key={v.id}
-                      onClick={() => { setActiveVariantId(v.id); setActiveSize(v.size); }}
+                      onClick={() => setActiveVariantId(v.id)}
                       className={cn(
                         "rounded-2xl border-2 px-3 py-2 transition-smooth flex items-center gap-2",
                         active ? "border-primary bg-primary/5 shadow-soft" : "border-border hover:border-primary/50"
@@ -205,7 +231,7 @@ export default function ProductDetail() {
                       />
                       <div className="text-left">
                         <p className="text-xs font-semibold leading-tight">{label}</p>
-                        {v.price_gnf != null && v.price_gnf !== product.price_gnf && (
+                        {v.price_gnf != null && (
                           <p className="text-[11px] text-primary font-bold">
                             {Number(v.price_gnf).toLocaleString("fr-FR")} GNF
                           </p>
@@ -218,8 +244,8 @@ export default function ProductDetail() {
             </div>
           )}
 
-          {/* Tailles : seulement si pas de variantes (legacy) */}
-          {variants.length === 0 && availableSizes.length > 0 && (
+          {/* Tailles : disponibles selon la variante choisie (ou produit principal) */}
+          {availableSizes.length > 0 && (
             <div className="mt-8">
               <h3 className="font-medium text-sm uppercase tracking-wider text-muted-foreground mb-3">Choisir une taille</h3>
               <div className="flex flex-wrap gap-2">
