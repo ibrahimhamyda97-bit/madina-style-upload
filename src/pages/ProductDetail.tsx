@@ -273,14 +273,13 @@ export default function ProductDetail() {
           <div className="flex flex-col sm:flex-row gap-2 mt-10">
             <Button
               size="lg"
-              disabled={adding || (variants.length === 0 && !activeSize)}
+              disabled={adding || (availableSizes.length > 0 && !activeSize)}
               onClick={async () => {
                 if (!user) return nav("/auth");
                 if (!product) return;
-                // Use variant size if available; else activeSize; else default 'M'
-                const sizeToUse = activeVariant?.size || activeSize || "M";
+                const sizeToUse = activeSize || "M";
                 setAdding(true);
-                await add(product.id, sizeToUse, 1, activeVariant?.id);
+                await add(product.id, sizeToUse, 1, activeVariant?.id ?? null);
                 setAdding(false);
               }}
               className="flex-1 rounded-2xl bg-gradient-gold text-secondary-foreground shadow-gold hover:opacity-95 h-14"
