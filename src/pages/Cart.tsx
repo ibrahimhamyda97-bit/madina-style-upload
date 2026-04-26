@@ -7,17 +7,19 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
 export default function Cart() {
-  const { items, total, count, setQuantity, remove, loading } = useCart();
+  const { items, total, subtotal, shipping, count, setQuantity, remove, loading } = useCart();
   const { user } = useAuth();
   const nav = useNavigate();
 
   const byShop = useMemo(() => {
-    const m: Record<string, { name: string; lines: typeof items }> = {};
+    const m: Record<string, { name: string; lines: typeof items; subtotal: number; shipping: number }> = {};
     items.forEach((l) => {
       const sid = l.product.shop?.id ?? "—";
       const name = l.product.shop?.name ?? "Boutique";
-      if (!m[sid]) m[sid] = { name, lines: [] };
+      if (!m[sid]) m[sid] = { name, lines: [], subtotal: 0, shipping: 0 };
       m[sid].lines.push(l);
+      m[sid].subtotal += (l.product.price_gnf ?? 0) * l.quantity;
+      m[sid].shipping += (l.product.shipping_fee_gnf ?? 0) * l.quantity;
     });
     return m;
   }, [items]);
