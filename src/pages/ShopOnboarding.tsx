@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import ImageUploader from "@/components/ImageUploader";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Nom trop court").max(80),
@@ -105,9 +106,25 @@ export default function ShopOnboarding() {
           <div className="space-y-1.5"><Label>Description</Label><Textarea maxLength={500} rows={6} value={data.description} onChange={(e) => setData({ ...data, description: e.target.value })} placeholder="Que vendez-vous ? Quelle est l'âme de votre boutique ?" /></div>
         )}
         {step === 2 && (
-          <div className="space-y-4">
-            <div className="space-y-1.5"><Label>URL du logo</Label><Input value={data.logo_url} onChange={(e) => setData({ ...data, logo_url: e.target.value })} placeholder="https://..." /></div>
-            <div className="space-y-1.5"><Label>URL de la bannière</Label><Input value={data.banner_url} onChange={(e) => setData({ ...data, banner_url: e.target.value })} placeholder="https://..." /></div>
+          <div className="space-y-5">
+            <ImageUploader
+              userId={user.id}
+              folder="shop-logos"
+              value={data.logo_url}
+              onChange={(url) => setData({ ...data, logo_url: url })}
+              label="Logo de la boutique"
+              aspect="square"
+              maxSizeMb={2}
+            />
+            <ImageUploader
+              userId={user.id}
+              folder="shop-banners"
+              value={data.banner_url}
+              onChange={(url) => setData({ ...data, banner_url: url })}
+              label="Bannière"
+              aspect="banner"
+              maxSizeMb={5}
+            />
             <div className="bg-secondary/10 border border-secondary/30 rounded-xl p-3 text-xs text-muted-foreground flex gap-2">
               <Sparkles className="h-4 w-4 text-secondary shrink-0 mt-0.5" />
               <span>Vous pouvez ajouter ou changer ces images plus tard depuis votre tableau de bord.</span>
