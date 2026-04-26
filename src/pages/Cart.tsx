@@ -108,8 +108,13 @@ export default function Cart() {
           <div className="lg:sticky lg:top-24 bg-card border border-border rounded-3xl p-6 shadow-elegant">
             <h2 className="font-display text-lg font-bold">Récapitulatif</h2>
             <div className="space-y-2 mt-4 text-sm">
-              <Row label={`Sous-total (${count} article${count > 1 ? "s" : ""})`} value={`${total.toLocaleString("fr-FR")} GNF`} />
-              <Row label="Livraison" value={<span className="text-muted-foreground">À convenir</span>} />
+              <Row label={`Sous-total (${count} article${count > 1 ? "s" : ""})`} value={`${subtotal.toLocaleString("fr-FR")} GNF`} />
+              <Row
+                label="Livraison"
+                value={shipping > 0
+                  ? <span className="font-medium">{shipping.toLocaleString("fr-FR")} GNF</span>
+                  : <span className="text-muted-foreground">Offerte</span>}
+              />
             </div>
             <div className="border-t border-border mt-4 pt-4 flex items-baseline justify-between">
               <span className="font-display font-bold">Total</span>
