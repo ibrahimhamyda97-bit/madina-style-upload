@@ -29,15 +29,19 @@ export default function Auth() {
     if (error) { setLoading(false); return toast.error(error.message); }
     let dest = "/account";
     if (data.user) {
-      const { data: rolesData } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
+      const [{ data: rolesData }, { data: shopsData }] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", data.user.id),
+        supabase.from("shops").select("id").eq("owner_id", data.user.id).limit(1),
+      ]);
       const roles = (rolesData ?? []).map((r) => r.role);
+      const hasShop = (shopsData ?? []).length > 0;
       if (roles.includes("admin")) dest = "/admin";
-      else if (roles.includes("vendor")) dest = "/vendor";
       else if (roles.includes("courier")) dest = "/courier";
+      else if (roles.includes("vendor") || hasShop) dest = "/vendor";
     }
     setLoading(false);
     toast.success("Bienvenue sur Madina !");
-    nav(dest);
+    nav(dest, { replace: true });
   }
 
   async function handleSignUp(e: React.FormEvent<HTMLFormElement>) {
