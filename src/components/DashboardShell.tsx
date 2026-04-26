@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, Plus, Store, ArrowLeft, Users, Wallet, ShoppingBag, ShoppingCart, User, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Package, Plus, Store, ArrowLeft, Users, Wallet, ShoppingBag, ShoppingCart, User, TrendingUp, Truck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -71,4 +71,9 @@ export const clientNav: Item[] = [
   { to: "/account/profile", label: "Mon profil", icon: User },
   { to: "/account/cart", label: "Mon panier", icon: ShoppingCart },
   { to: "/account/orders", label: "Mes commandes", icon: ShoppingBag },
+];
+
+export const courierNav: Item[] = [
+  { to: "/courier", label: "Livraisons", icon: Truck, end: true },
+  { to: "/account/profile", label: "Mon profil", icon: User },
 ];
