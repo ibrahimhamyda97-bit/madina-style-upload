@@ -388,23 +388,64 @@ export default function Checkout() {
                       </li>
                     ))}
                 </ul>
+                <div className="mt-3 pt-3 border-t border-dashed border-border space-y-1 text-xs">
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Sous-total articles</span>
+                    <span className="font-mono">{g.itemsSubtotal.toLocaleString("fr-FR")} GNF</span>
+                  </div>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Livraison</span>
+                    <span className="font-mono">
+                      {g.shippingTotal > 0 ? `${g.shippingTotal.toLocaleString("fr-FR")} GNF` : "Offerte"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between font-semibold text-foreground pt-1">
+                    <span>Total à transférer</span>
+                    <span className="font-mono text-primary">{g.subtotal.toLocaleString("fr-FR")} GNF</span>
+                  </div>
+                </div>
               </div>
+
+              {/* Confirmation par boutique */}
+              <label className={cn(
+                "mt-4 flex items-start gap-3 rounded-2xl border p-3 cursor-pointer transition-smooth",
+                confirmedByShop[g.shopId]
+                  ? "bg-primary/5 border-primary/40"
+                  : "bg-muted/30 border-border hover:border-primary/40"
+              )}>
+                <Checkbox
+                  checked={!!confirmedByShop[g.shopId]}
+                  onCheckedChange={(v) => setConfirmedByShop((prev) => ({ ...prev, [g.shopId]: v === true }))}
+                  className="mt-0.5"
+                />
+                <span className="text-xs text-foreground">
+                  J'ai effectué le paiement de <strong>{g.subtotal.toLocaleString("fr-FR")} GNF</strong> à <strong>{g.shopName}</strong> via {g.meta.name}.
+                </span>
+              </label>
             </div>
           ))}
 
           {/* Total */}
-          <div className="bg-gradient-gold text-secondary-foreground rounded-3xl p-5 shadow-gold flex items-center justify-between">
-            <span className="font-display font-bold text-base">Total à payer</span>
-            <span className="font-display font-bold text-2xl">{total.toLocaleString("fr-FR")} <span className="text-sm opacity-70">GNF</span></span>
+          <div className="bg-gradient-gold text-secondary-foreground rounded-3xl p-5 shadow-gold space-y-1">
+            <div className="flex items-center justify-between text-xs opacity-80">
+              <span>Articles</span>
+              <span className="font-mono">{subtotal.toLocaleString("fr-FR")} GNF</span>
+            </div>
+            <div className="flex items-center justify-between text-xs opacity-80">
+              <span>Livraison</span>
+              <span className="font-mono">{shipping > 0 ? `${shipping.toLocaleString("fr-FR")} GNF` : "Offerte"}</span>
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-secondary-foreground/20">
+              <span className="font-display font-bold text-base">Total à payer</span>
+              <span className="font-display font-bold text-2xl">{total.toLocaleString("fr-FR")} <span className="text-sm opacity-70">GNF</span></span>
+            </div>
           </div>
 
-          {/* Confirmation case à cocher */}
-          <label className="flex items-start gap-3 bg-card border border-border rounded-2xl p-4 cursor-pointer hover:border-primary/50 transition-smooth">
-            <Checkbox checked={confirmed} onCheckedChange={(v) => setConfirmed(v === true)} className="mt-0.5" />
-            <span className="text-sm text-muted-foreground">
-              Je confirme avoir effectué le(s) paiement(s) Mobile Money en utilisant les numéros et la référence indiqués ci-dessus.
-            </span>
-          </label>
+          {!allConfirmed && (
+            <p className="text-xs text-muted-foreground text-center">
+              Cochez la confirmation pour <strong>chaque boutique</strong> avant de valider.
+            </p>
+          )}
 
           <div className="flex gap-3">
             <Button variant="ghost" size="lg" onClick={() => setStep(1)} className="rounded-2xl">
@@ -412,7 +453,7 @@ export default function Checkout() {
             </Button>
             <Button
               size="lg"
-              disabled={submitting || !confirmed}
+              disabled={submitting || !allConfirmed}
               onClick={placeOrder}
               className="flex-1 rounded-2xl bg-gradient-gold text-secondary-foreground shadow-gold h-14 text-base"
             >
