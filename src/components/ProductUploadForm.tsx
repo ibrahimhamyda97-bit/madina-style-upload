@@ -53,7 +53,13 @@ export default function ProductUploadForm({ mode }: Props) {
     if (!user) return;
     const q = mode === "admin"
       ? supabase.from("shops").select("id,name,status,commission_rate").order("name")
-      : supabase.from("shops").select("id,name,status,commission_rate").eq("owner_id", user.id).eq("status", "approved").order("name");
+      : supabase
+          .from("shops")
+          .select("id,name,status,commission_rate,created_at")
+          .eq("owner_id", user.id)
+          .eq("status", "approved")
+          .order("created_at", { ascending: true })
+          .limit(1);
     q.then(({ data }) => {
       const list = (data ?? []) as any;
       setShops(list);
