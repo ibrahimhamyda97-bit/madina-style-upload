@@ -17,16 +17,41 @@ export default function Auth() {
   const initialTab = params.get("mode") === "signup" ? "signup" : "signin";
   const [loading, setLoading] = useState(false);
   const [accountType, setAccountType] = useState<AccountType>("buyer");
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+  const [signinEmail, setSigninEmail] = useState("");
+
+  async function handleResendConfirmation() {
+    if (!unconfirmedEmail) return;
+    setResending(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: unconfirmedEmail,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    setResending(false);
+    if (error) return toast.error(error.message);
+    toast.success("Email de confirmation renvoyé ! Vérifiez votre boîte de réception (et vos spams).");
+  }
 
   async function handleSignIn(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
+    setUnconfirmedEmail(null);
     const fd = new FormData(e.currentTarget);
+    const email = String(fd.get("email"));
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: String(fd.get("email")),
+      email,
       password: String(fd.get("password")),
     });
-    if (error) { setLoading(false); return toast.error(error.message); }
+    if (error) {
+      setLoading(false);
+      const msg = error.message.toLowerCase();
+      if (msg.includes("not confirmed") || msg.includes("email not confirmed") || msg.includes("confirm")) {
+        setUnconfirmedEmail(email);
+      }
+      return toast.error(error.message);
+    }
     let dest = "/account";
     if (data.user) {
       const [{ data: rolesData }, { data: shopsData }] = await Promise.all([
@@ -114,10 +139,28 @@ export default function Auth() {
 
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-1.5"><Label htmlFor="email">Email</Label><Input id="email" name="email" type="email" required autoComplete="email" /></div>
+                <div className="space-y-1.5"><Label htmlFor="email">Email</Label><Input id="email" name="email" type="email" required autoComplete="email" value={signinEmail} onChange={(e) => setSigninEmail(e.target.value)} /></div>
                 <div className="space-y-1.5"><Label htmlFor="password">Mot de passe</Label><Input id="password" name="password" type="password" required autoComplete="current-password" /></div>
                 <Button disabled={loading} className="w-full" size="lg">{loading ? "Connexion..." : "Se connecter"}</Button>
               </form>
+
+              {unconfirmedEmail && (
+                <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
+                  <p className="text-sm">
+                    Votre adresse <span className="font-semibold">{unconfirmedEmail}</span> n'a pas encore été confirmée.
+                    Vérifiez votre boîte de réception (et vos spams) ou renvoyez l'email de confirmation.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={resending}
+                    onClick={handleResendConfirmation}
+                  >
+                    {resending ? "Envoi en cours..." : "Renvoyer l'email de confirmation"}
+                  </Button>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="signup">
