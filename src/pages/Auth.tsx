@@ -161,9 +161,21 @@ export default function Auth() {
                     Après inscription, vous renseignerez les infos de votre boutique et téléverserez votre pièce d'identité pour validation par l'admin.
                   </div>
                 )}
+                {accountType === "courier" && (
+                  <div className="rounded-xl bg-primary/10 border border-primary/30 p-3 text-xs text-muted-foreground">
+                    <Truck className="inline h-3.5 w-3.5 mr-1 text-primary" />
+                    En tant que livreur, vous verrez les commandes payées à récupérer chez les vendeurs et à livrer aux clients.
+                  </div>
+                )}
 
                 <Button disabled={loading} className="w-full" size="lg">
-                  {loading ? "Création..." : accountType === "shop" ? "Continuer vers ma boutique" : "Créer mon compte client"}
+                  {loading
+                    ? "Création..."
+                    : accountType === "shop"
+                      ? "Continuer vers ma boutique"
+                      : accountType === "courier"
+                        ? "Créer mon compte livreur"
+                        : "Créer mon compte client"}
                 </Button>
               </form>
             </TabsContent>
