@@ -17,16 +17,41 @@ export default function Auth() {
   const initialTab = params.get("mode") === "signup" ? "signup" : "signin";
   const [loading, setLoading] = useState(false);
   const [accountType, setAccountType] = useState<AccountType>("buyer");
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+  const [signinEmail, setSigninEmail] = useState("");
+
+  async function handleResendConfirmation() {
+    if (!unconfirmedEmail) return;
+    setResending(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: unconfirmedEmail,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    setResending(false);
+    if (error) return toast.error(error.message);
+    toast.success("Email de confirmation renvoyé ! Vérifiez votre boîte de réception (et vos spams).");
+  }
 
   async function handleSignIn(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
+    setUnconfirmedEmail(null);
     const fd = new FormData(e.currentTarget);
+    const email = String(fd.get("email"));
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: String(fd.get("email")),
+      email,
       password: String(fd.get("password")),
     });
-    if (error) { setLoading(false); return toast.error(error.message); }
+    if (error) {
+      setLoading(false);
+      const msg = error.message.toLowerCase();
+      if (msg.includes("not confirmed") || msg.includes("email not confirmed") || msg.includes("confirm")) {
+        setUnconfirmedEmail(email);
+      }
+      return toast.error(error.message);
+    }
     let dest = "/account";
     if (data.user) {
       const [{ data: rolesData }, { data: shopsData }] = await Promise.all([
