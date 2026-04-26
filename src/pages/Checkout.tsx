@@ -33,7 +33,7 @@ function operatorMeta(name?: string | null) {
 }
 
 export default function Checkout() {
-  const { items, total, clear } = useCart();
+  const { items, total, subtotal, shipping, clear, refresh } = useCart();
   const { user } = useAuth();
   const nav = useNavigate();
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
@@ -44,7 +44,7 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false);
   const [orderRef, setOrderRef] = useState<string | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmedByShop, setConfirmedByShop] = useState<Record<string, boolean>>({});
 
   useEffect(() => { if (!user) nav("/auth"); }, [user, nav]);
   useEffect(() => { if (items.length === 0 && !orderRef) nav("/cart"); }, [items, orderRef, nav]);
