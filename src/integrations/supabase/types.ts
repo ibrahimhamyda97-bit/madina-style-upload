@@ -440,6 +440,10 @@ export type Database = {
     }
     Functions: {
       assign_courier_role: { Args: never; Returns: undefined }
+      courier_can_see_order: {
+        Args: { _order_id: string; _user_id: string }
+        Returns: boolean
+      }
       courier_claim_order: { Args: { p_order_id: string }; Returns: undefined }
       courier_confirm_delivery: {
         Args: { p_code: string; p_order_id: string }
@@ -448,6 +452,10 @@ export type Database = {
       courier_confirm_pickup: {
         Args: { p_code: string; p_order_id: string }
         Returns: undefined
+      }
+      courier_handles_shop: {
+        Args: { _shop_id: string; _user_id: string }
+        Returns: boolean
       }
       courier_set_in_transit: {
         Args: { p_order_id: string }
@@ -473,6 +481,10 @@ export type Database = {
           p_reference: string
         }
         Returns: string
+      }
+      shop_owner_in_order: {
+        Args: { _order_id: string; _user_id: string }
+        Returns: boolean
       }
     }
     Enums: {
