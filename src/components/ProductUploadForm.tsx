@@ -51,6 +51,30 @@ const CATEGORY_GROUPS: { label: string; items: string[] }[] = [
 ];
 const CATEGORIES = CATEGORY_GROUPS.flatMap((g) => g.items);
 
+// Palette de couleurs par défaut sélectionnables (nom FR + swatch HEX).
+// `swatch` est uniquement visuel — la valeur enregistrée reste le nom (ex: "Bleu marine").
+const COLOR_PRESETS: { name: string; swatch: string }[] = [
+  { name: "Noir", swatch: "#111111" },
+  { name: "Blanc", swatch: "#ffffff" },
+  { name: "Gris", swatch: "#9ca3af" },
+  { name: "Beige", swatch: "#e7d3b1" },
+  { name: "Marron", swatch: "#7a4a2b" },
+  { name: "Rouge", swatch: "#dc2626" },
+  { name: "Bordeaux", swatch: "#7f1d1d" },
+  { name: "Rose", swatch: "#f472b6" },
+  { name: "Orange", swatch: "#f97316" },
+  { name: "Jaune", swatch: "#facc15" },
+  { name: "Vert", swatch: "#16a34a" },
+  { name: "Vert émeraude", swatch: "#047857" },
+  { name: "Bleu ciel", swatch: "#38bdf8" },
+  { name: "Bleu", swatch: "#2563eb" },
+  { name: "Bleu marine", swatch: "#1e3a8a" },
+  { name: "Violet", swatch: "#7c3aed" },
+  { name: "Doré", swatch: "#d4af37" },
+  { name: "Argenté", swatch: "#c0c0c0" },
+  { name: "Multicolore", swatch: "linear-gradient(135deg,#f43f5e,#f59e0b,#10b981,#3b82f6,#8b5cf6)" },
+];
+
 interface PhotoItem {
   id: string;
   url: string;
@@ -453,11 +477,12 @@ export default function ProductUploadForm({ mode }: Props) {
                                 <button type="button" onClick={() => updatePhoto(p.id, { color: "" })} className="text-[10px] text-muted-foreground hover:text-destructive">Effacer</button>
                               )}
                             </div>
+                            <ColorPalette value={p.color ?? ""} onChange={(name) => updatePhoto(p.id, { color: name })} size="sm" />
                             <Input
                               maxLength={40}
                               value={p.color ?? ""}
                               onChange={(e) => updatePhoto(p.id, { color: e.target.value })}
-                              placeholder={color ? `Hérite : ${color}` : "Optionnel"}
+                              placeholder={color ? `Hérite : ${color}` : "Ou saisir une couleur..."}
                               className="h-9"
                             />
                           </div>
@@ -591,9 +616,10 @@ export default function ProductUploadForm({ mode }: Props) {
             </div>
           </div>
 
-          <div className="space-y-1.5 max-w-sm">
+          <div className="space-y-2 max-w-xl">
             <Label>Couleur {mode === "admin" ? "globale" : ""} (optionnel)</Label>
-            <Input maxLength={40} value={color} onChange={(e) => setColor(e.target.value)} placeholder="Bleu marine, Rouge..." />
+            <ColorPalette value={color} onChange={setColor} />
+            <Input maxLength={40} value={color} onChange={(e) => setColor(e.target.value)} placeholder="Ou saisir une couleur personnalisée..." className="h-9" />
           </div>
         </div>
       </div>
@@ -754,3 +780,32 @@ function ValueChip({ icon, label, value, source }: { icon: React.ReactNode; labe
     </div>
   );
 }
+
+function ColorPalette({ value, onChange, size = "md" }: { value: string; onChange: (name: string) => void; size?: "sm" | "md" }) {
+  const dim = size === "sm" ? "h-6 w-6" : "h-8 w-8";
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {COLOR_PRESETS.map((c) => {
+        const active = value.trim().toLowerCase() === c.name.toLowerCase();
+        const isWhite = c.name === "Blanc";
+        return (
+          <button
+            key={c.name}
+            type="button"
+            onClick={() => onChange(active ? "" : c.name)}
+            title={c.name}
+            aria-label={c.name}
+            aria-pressed={active}
+            className={[
+              dim,
+              "rounded-full border-2 transition-smooth shrink-0",
+              active ? "border-primary ring-2 ring-primary/30 scale-110" : isWhite ? "border-border hover:border-primary/40" : "border-transparent hover:border-primary/40",
+            ].join(" ")}
+            style={{ background: c.swatch }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
