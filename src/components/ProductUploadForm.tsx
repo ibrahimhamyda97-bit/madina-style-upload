@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSepa
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import VariantsEditor, { DraftVariant, persistVariants } from "@/components/VariantsEditor";
 
 const LETTER_SIZES = ["XS", "S", "M", "L", "XL"] as const;
 const NUMERIC_SIZES = ["36","37","38","39","40","41","42","43","44","45"] as const;
