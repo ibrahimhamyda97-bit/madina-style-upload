@@ -63,7 +63,7 @@ export default function SiteHeader() {
           </nav>
 
           <div className="hidden md:flex items-center gap-2">
-            {user && (
+            {user && !isAdmin && (
               <Button asChild variant="ghost" size="icon" className="relative" aria-label="Panier">
                 <Link to="/cart">
                   <ShoppingCart className="h-4.5 w-4.5" />
@@ -108,7 +108,7 @@ export default function SiteHeader() {
 
           {/* Mobile right side: cart + burger */}
           <div className="flex md:hidden items-center gap-1">
-            {user && (
+            {user && !isAdmin && (
               <Link to="/cart" className="relative h-10 w-10 grid place-items-center rounded-full hover:bg-muted transition-smooth" aria-label="Panier">
                 <ShoppingCart className="h-5 w-5" />
                 {count > 0 && (
@@ -180,8 +180,12 @@ export default function SiteHeader() {
             ))}
             {user && (
               <>
-                <DrawerLink to="/cart" icon={ShoppingCart} label="Mon panier" badge={count > 0 ? count : undefined} active={loc.pathname === "/cart"} />
-                <DrawerLink to="/orders" icon={ShoppingBag} label="Mes commandes" active={loc.pathname === "/orders"} />
+                {!isAdmin && (
+                  <>
+                    <DrawerLink to="/cart" icon={ShoppingCart} label="Mon panier" badge={count > 0 ? count : undefined} active={loc.pathname === "/cart"} />
+                    <DrawerLink to="/orders" icon={ShoppingBag} label="Mes commandes" active={loc.pathname === "/orders"} />
+                  </>
+                )}
 
                 <DrawerSectionLabel>Espace</DrawerSectionLabel>
                 {isAdmin && <DrawerLink to="/admin" icon={LayoutDashboard} label="Tableau de bord Admin" />}
