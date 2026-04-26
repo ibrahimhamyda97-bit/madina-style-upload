@@ -179,7 +179,7 @@ function VariantCard({
             {index + 1}
           </span>
           <p className="font-medium text-sm truncate">
-            {variant.name || variant.color || variant.size || `Variante ${index + 1}`}
+            {variant.name || variant.color || (variant.sizes.length ? variant.sizes.join("/") : `Variante ${index + 1}`)}
           </p>
         </div>
         <button
