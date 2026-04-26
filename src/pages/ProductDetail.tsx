@@ -127,9 +127,25 @@ export default function ProductDetail() {
             </div>
           )}
 
-          <Button size="lg" className="w-full mt-10 rounded-2xl bg-gradient-gold text-secondary-foreground shadow-gold hover:opacity-95">
-            Contacter la boutique
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 mt-10">
+            <Button
+              size="lg"
+              disabled={!activeSize || adding}
+              onClick={async () => {
+                if (!user) return nav("/auth");
+                if (!activeSize || !product) return;
+                setAdding(true);
+                await add(product.id, activeSize);
+                setAdding(false);
+              }}
+              className="flex-1 rounded-2xl bg-gradient-gold text-secondary-foreground shadow-gold hover:opacity-95 h-14"
+            >
+              <ShoppingCart className="h-5 w-5" /> {adding ? "Ajout..." : "Ajouter au panier"}
+            </Button>
+            <Button asChild size="lg" variant="outline" className="rounded-2xl h-14">
+              <Link to="/cart">Voir le panier</Link>
+            </Button>
+          </div>
         </div>
       </div>
     </div>
