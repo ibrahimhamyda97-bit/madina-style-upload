@@ -149,7 +149,7 @@ export default function Checkout() {
     setStep(3);
   }
 
-  if (orderRef && step === 2) {
+  if (orderRef && step === 3) {
     return (
       <div className="container max-w-lg py-16 text-center animate-fade-in">
         <div className="inline-flex h-16 w-16 rounded-2xl bg-primary/10 grid place-items-center mb-5">
