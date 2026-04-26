@@ -77,16 +77,17 @@ export default function SiteHeader() {
             )}
             {user ? (
               <>
-                {(isAdmin || isVendor) && (
+                {(isAdmin || isVendor) ? (
                   <Button asChild variant="ghost" size="sm">
                     <Link to={isAdmin ? "/admin" : "/vendor"}>
                       <LayoutDashboard className="h-4 w-4" /> Tableau de bord
                     </Link>
                   </Button>
-                )}
-                {!isVendor && !isAdmin && (
-                  <Button asChild variant="secondary" size="sm">
-                    <Link to="/onboarding/shop"><Store className="h-4 w-4" /> Ouvrir ma boutique</Link>
+                ) : (
+                  <Button asChild variant="ghost" size="sm">
+                    <Link to="/account">
+                      <LayoutDashboard className="h-4 w-4" /> Mon compte
+                    </Link>
                   </Button>
                 )}
                 <button
@@ -185,6 +186,7 @@ export default function SiteHeader() {
                 <DrawerSectionLabel>Espace</DrawerSectionLabel>
                 {isAdmin && <DrawerLink to="/admin" icon={LayoutDashboard} label="Tableau de bord Admin" />}
                 {isVendor && !isAdmin && <DrawerLink to="/vendor" icon={LayoutDashboard} label="Tableau de bord Vendeur" />}
+                {!isVendor && !isAdmin && <DrawerLink to="/account" icon={LayoutDashboard} label="Mon compte" />}
                 {!isVendor && !isAdmin && <DrawerLink to="/onboarding/shop" icon={Store} label="Ouvrir ma boutique" />}
               </>
             )}
