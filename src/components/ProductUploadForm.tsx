@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -16,7 +16,40 @@ const NUMERIC_SIZES = ["36","37","38","39","40","41","42","43","44","45"] as con
 const SIZES = [...LETTER_SIZES, ...NUMERIC_SIZES] as const;
 type Size = typeof SIZES[number];
 
-const CATEGORIES = ["Vêtements", "Chaussures", "Accessoires", "Sacs", "Bijoux", "Beauté", "Maison", "Enfants", "Autre"];
+// Catégories groupées. Les sous-catégories de Vêtements sont stockées telles quelles
+// (ex: "Vêtements - Robes") pour rester filtrables côté boutique.
+const CATEGORY_GROUPS: { label: string; items: string[] }[] = [
+  {
+    label: "Vêtements",
+    items: [
+      "Vêtements - Robes",
+      "Vêtements - Vestes",
+      "Vêtements - Blazers",
+      "Vêtements - Pantalons",
+      "Vêtements - Jeans",
+      "Vêtements - Chemises",
+      "Vêtements - T-shirts",
+      "Vêtements - Pulls & Sweats",
+      "Vêtements - Jupes",
+      "Vêtements - Shorts",
+      "Vêtements - Manteaux",
+      "Vêtements - Sous-vêtements",
+      "Vêtements - Tenues traditionnelles",
+      "Vêtements - Autre",
+    ],
+  },
+  { label: "Chaussures", items: ["Chaussures"] },
+  { label: "Accessoires", items: ["Accessoires", "Sacs", "Bijoux"] },
+  { label: "Beauté", items: ["Beauté"] },
+  {
+    label: "Électronique",
+    items: ["Téléphones", "Ordinateurs", "Tablettes", "Accessoires Tech"],
+  },
+  { label: "Maison", items: ["Maison"] },
+  { label: "Enfants", items: ["Enfants"] },
+  { label: "Autre", items: ["Autre"] },
+];
+const CATEGORIES = CATEGORY_GROUPS.flatMap((g) => g.items);
 
 interface PhotoItem {
   id: string;
@@ -589,8 +622,20 @@ export default function ProductUploadForm({ mode }: Props) {
             <Label>Catégorie *</Label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
-              <SelectContent>
-                {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              <SelectContent className="max-h-80">
+                {CATEGORY_GROUPS.map((g, gi) => (
+                  <div key={g.label}>
+                    {gi > 0 && <SelectSeparator />}
+                    <SelectGroup>
+                      <SelectLabel>{g.label}</SelectLabel>
+                      {g.items.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c.startsWith("Vêtements - ") ? c.replace("Vêtements - ", "  ") : c}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </div>
+                ))}
               </SelectContent>
             </Select>
           </div>
