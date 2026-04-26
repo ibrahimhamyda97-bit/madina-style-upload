@@ -234,6 +234,7 @@ export default function ProductUploadForm({ mode }: Props) {
     if (mode === "admin") {
       // Each image with overrides becomes ITS OWN product (so each can have its own price/color/sizes/title)
       let createdCount = 0;
+      let lastProductId: string | null = null;
       for (const photo of photos) {
         const photoPrice = Number(photo.price) > 0 ? Number(photo.price) : Number(price);
         const photoColor = (photo.color ?? "").trim() || color || null;
@@ -264,7 +265,12 @@ export default function ProductUploadForm({ mode }: Props) {
         }));
         const { error: imgErr } = await supabase.from("product_images").insert(rows);
         if (imgErr) { setSubmitting(false); return toast.error(imgErr.message); }
+        lastProductId = prod.id;
         createdCount++;
+      }
+      // Variantes : appliquées au dernier produit créé (mode admin)
+      if (variants.length > 0 && lastProductId) {
+        await persistVariants(lastProductId, variants);
       }
       setSubmitting(false);
       toast.success(`${createdCount} produit(s) publié(s) sur Madina !`);
