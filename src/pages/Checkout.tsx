@@ -79,15 +79,20 @@ export default function Checkout() {
       shopName: string;
       operatorName: string;
       paymentNumber: string;
-      subtotal: number;
+      itemsSubtotal: number;
+      shippingTotal: number;
+      subtotal: number; // itemsSubtotal + shippingTotal — what to send via mobile money
       meta: ReturnType<typeof operatorMeta>;
     }>();
     items.forEach((l) => {
       const sid = l.product.shop?.id ?? "—";
+      const itemSub = (l.product?.price_gnf ?? 0) * l.quantity;
+      const shipSub = (l.product?.shipping_fee_gnf ?? 0) * l.quantity;
       const existing = m.get(sid);
-      const sub = (l.product?.price_gnf ?? 0) * l.quantity;
       if (existing) {
-        existing.subtotal += sub;
+        existing.itemsSubtotal += itemSub;
+        existing.shippingTotal += shipSub;
+        existing.subtotal = existing.itemsSubtotal + existing.shippingTotal;
       } else {
         const operatorName = l.product.shop?.payment_operator || FALLBACK_OPERATORS[0].name;
         const paymentNumber = l.product.shop?.payment_number || FALLBACK_OPERATORS[0].number;
@@ -96,7 +101,9 @@ export default function Checkout() {
           shopName: l.product.shop?.name ?? "Boutique",
           operatorName,
           paymentNumber,
-          subtotal: sub,
+          itemsSubtotal: itemSub,
+          shippingTotal: shipSub,
+          subtotal: itemSub + shipSub,
           meta: operatorMeta(operatorName),
         });
       }
@@ -105,45 +112,37 @@ export default function Checkout() {
   }, [items]);
 
   const primary = shopGroups[0];
+  const allConfirmed = shopGroups.length > 0 && shopGroups.every((g) => confirmedByShop[g.shopId]);
 
   async function placeOrder() {
     if (!user) return;
     const parsed = schema.safeParse(data);
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
+    if (!allConfirmed) return toast.error("Confirmez le paiement de chaque boutique");
 
     setSubmitting(true);
     const reference = paymentReference || `MAD-${Date.now().toString(36).toUpperCase()}`;
-    const { data: order, error } = await supabase.from("orders").insert({
-      user_id: user.id,
-      reference,
-      total_gnf: total,
-      payment_method: "mobile_money",
-      payment_operator: primary?.operatorName ?? "Mobile Money",
-      payment_reference: reference,
-      customer_name: parsed.data.customer_name,
-      customer_phone: parsed.data.customer_phone,
-      customer_address: parsed.data.customer_address,
-      notes: parsed.data.notes || null,
-      status: "pending",
-    }).select().single();
+    const confirmedIds = shopGroups
+      .filter((g) => confirmedByShop[g.shopId])
+      .map((g) => g.shopId);
 
-    if (error || !order) { setSubmitting(false); return toast.error(error?.message ?? "Erreur"); }
+    const { data: orderId, error } = await supabase.rpc("place_order", {
+      p_reference: reference,
+      p_customer_name: parsed.data.customer_name,
+      p_customer_phone: parsed.data.customer_phone,
+      p_customer_address: parsed.data.customer_address,
+      p_notes: parsed.data.notes || null,
+      p_payment_operator: primary?.operatorName ?? "Mobile Money",
+      p_payment_reference: reference,
+      p_confirmed_shop_ids: confirmedIds,
+    });
 
-    const lines = items.map((l) => ({
-      order_id: order.id,
-      product_id: l.product.id,
-      shop_id: l.product.shop?.id,
-      title: l.product.title,
-      image_url: l.product.images?.find((i: any) => i.size === l.size)?.image_url ?? l.product.images?.[0]?.image_url ?? null,
-      size: l.size as any,
-      quantity: l.quantity,
-      unit_price_gnf: l.product.price_gnf,
-      commission_rate: l.product.shop?.commission_rate ?? 10,
-    }));
-    const { error: liErr } = await supabase.from("order_items").insert(lines);
-    if (liErr) { setSubmitting(false); return toast.error(liErr.message); }
+    if (error || !orderId) {
+      setSubmitting(false);
+      return toast.error(error?.message ?? "Erreur lors de la validation");
+    }
 
-    await clear();
+    await refresh();
     setOrderRef(reference);
     setSubmitting(false);
     setStep(3);
