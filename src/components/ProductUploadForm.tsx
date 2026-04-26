@@ -331,7 +331,7 @@ export default function ProductUploadForm({ mode }: Props) {
         <p className="text-sm text-muted-foreground mt-1">
           {mode === "admin"
             ? "Chaque lien d'image devient un produit. Vous pouvez personnaliser le prix, la couleur et les tailles pour chaque image."
-            : <>Ajoutez une première photo, puis utilisez le bouton <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-primary/10 text-primary mx-1"><Plus className="h-3 w-3" /></span> pour en ajouter d'autres.</>}
+            : <>Choisissez la <strong className="text-foreground">photo principale</strong> du produit. Pour proposer plusieurs photos, couleurs ou prix, ajoutez des <strong className="text-foreground">variantes</strong> plus bas.</>}
         </p>
 
         {mode === "admin" && (
