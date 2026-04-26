@@ -114,6 +114,7 @@ export default function ProductUploadForm({ mode }: Props) {
   const [selectedSizes, setSelectedSizes] = useState<Size[]>([]);
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [adminUrl, setAdminUrl] = useState("");
+  const [variants, setVariants] = useState<DraftVariant[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
