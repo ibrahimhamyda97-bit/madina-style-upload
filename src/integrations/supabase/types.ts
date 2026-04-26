@@ -275,28 +275,34 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          city: string | null
           created_at: string
           first_name: string | null
           id: string
           last_name: string | null
+          neighborhood: string | null
           phone: string | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
+          city?: string | null
           created_at?: string
           first_name?: string | null
           id: string
           last_name?: string | null
+          neighborhood?: string | null
           phone?: string | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
+          city?: string | null
           created_at?: string
           first_name?: string | null
           id?: string
           last_name?: string | null
+          neighborhood?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -304,51 +310,66 @@ export type Database = {
       }
       shops: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           banner_url: string | null
           city: string | null
           commission_rate: number
           created_at: string
           description: string | null
           id: string
+          id_document_url: string | null
           logo_url: string | null
           name: string
           owner_id: string
           payment_number: string | null
           payment_operator: string | null
           phone: string | null
+          rejection_reason: string | null
           slug: string
+          status: Database["public"]["Enums"]["shop_status"]
           updated_at: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           banner_url?: string | null
           city?: string | null
           commission_rate?: number
           created_at?: string
           description?: string | null
           id?: string
+          id_document_url?: string | null
           logo_url?: string | null
           name: string
           owner_id: string
           payment_number?: string | null
           payment_operator?: string | null
           phone?: string | null
+          rejection_reason?: string | null
           slug: string
+          status?: Database["public"]["Enums"]["shop_status"]
           updated_at?: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           banner_url?: string | null
           city?: string | null
           commission_rate?: number
           created_at?: string
           description?: string | null
           id?: string
+          id_document_url?: string | null
           logo_url?: string | null
           name?: string
           owner_id?: string
           payment_number?: string | null
           payment_operator?: string | null
           phone?: string | null
+          rejection_reason?: string | null
           slug?: string
+          status?: Database["public"]["Enums"]["shop_status"]
           updated_at?: string
         }
         Relationships: []
@@ -406,6 +427,7 @@ export type Database = {
         | "43"
         | "44"
         | "45"
+      shop_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -552,6 +574,7 @@ export const Constants = {
         "44",
         "45",
       ],
+      shop_status: ["pending", "approved", "rejected"],
     },
   },
 } as const
