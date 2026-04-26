@@ -1,16 +1,17 @@
 import { useRef, useState } from "react";
-import { Upload, Loader2, X, Image as ImageIcon } from "lucide-react";
+import { Upload, Loader2, X, Image as ImageIcon, Crop } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import ImageCropperDialog from "./ImageCropperDialog";
 
 interface ImageUploaderProps {
   value: string;
   onChange: (url: string) => void;
   userId: string;
-  folder: string; // e.g. "shop-logos" or "shop-banners"
+  folder: string;
   label?: string;
   aspect?: "square" | "banner";
   maxSizeMb?: number;
@@ -27,6 +28,18 @@ export default function ImageUploader({
 }: ImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+
+  const aspectRatio = aspect === "square" ? 1 : 3;
+
+  function readAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
 
   async function handleFile(file: File) {
     if (!file.type.startsWith("image/")) {
@@ -35,20 +48,40 @@ export default function ImageUploader({
     if (file.size > maxSizeMb * 1024 * 1024) {
       return toast.error(`Image trop lourde (max ${maxSizeMb} Mo)`);
     }
+    try {
+      const dataUrl = await readAsDataUrl(file);
+      setCropSrc(dataUrl);
+    } catch {
+      toast.error("Impossible de lire l'image");
+    }
+  }
+
+  async function uploadBlob(blob: Blob) {
     setUploading(true);
-    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `${folder}/${userId}/${Date.now()}.${ext}`;
+    const path = `${folder}/${userId}/${Date.now()}.jpg`;
     const { error } = await supabase.storage
       .from("product-images")
-      .upload(path, file, { upsert: false, contentType: file.type });
+      .upload(path, blob, { upsert: false, contentType: "image/jpeg" });
     if (error) {
       setUploading(false);
-      return toast.error(error.message);
+      toast.error(error.message);
+      return;
     }
     const { data: pub } = supabase.storage.from("product-images").getPublicUrl(path);
     onChange(pub.publicUrl);
     setUploading(false);
-    toast.success("Image téléversée");
+    setCropSrc(null);
+    toast.success("Image enregistrée");
+  }
+
+  function openAdjustExisting() {
+    if (!value) return;
+    // For remote/CORS-protected URLs, fetch and convert to data URL so the cropper can read pixels
+    fetch(value)
+      .then((r) => r.blob())
+      .then((b) => readAsDataUrl(new File([b], "img", { type: b.type || "image/jpeg" })))
+      .then((url) => setCropSrc(url))
+      .catch(() => toast.error("Impossible de charger cette image pour le recadrage"));
   }
 
   return (
@@ -63,6 +96,17 @@ export default function ImageUploader({
         {value ? (
           <>
             <img src={value} alt="" className="h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-smooth grid place-items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={openAdjustExisting}
+                className="rounded-xl shadow-soft"
+              >
+                <Crop className="h-4 w-4" /> Ajuster
+              </Button>
+            </div>
             <button
               type="button"
               onClick={() => onChange("")}
@@ -107,6 +151,18 @@ export default function ImageUploader({
         >
           <Upload className="h-4 w-4" /> {value ? "Remplacer" : "Téléverser"}
         </Button>
+        {value && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={openAdjustExisting}
+            disabled={uploading}
+            className="rounded-xl"
+          >
+            <Crop className="h-4 w-4" /> Recadrer
+          </Button>
+        )}
         <Input
           type="url"
           value={value}
@@ -126,6 +182,15 @@ export default function ImageUploader({
           if (f) handleFile(f);
           e.target.value = "";
         }}
+      />
+
+      <ImageCropperDialog
+        open={!!cropSrc}
+        imageSrc={cropSrc}
+        aspect={aspectRatio}
+        title={label ? `Ajuster — ${label}` : "Ajuster l'image"}
+        onCancel={() => setCropSrc(null)}
+        onConfirm={uploadBlob}
       />
     </div>
   );
