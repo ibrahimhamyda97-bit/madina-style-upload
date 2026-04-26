@@ -17,6 +17,7 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
 import VendorOverview from "./pages/dashboard/VendorOverview";
+import VendorSales from "./pages/dashboard/VendorSales";
 import AdminOverview from "./pages/dashboard/AdminOverview";
 import ProductsList from "./pages/dashboard/ProductsList";
 import NewProduct from "./pages/dashboard/NewProduct";
@@ -70,6 +71,7 @@ const App = () => (
               <Route index element={<VendorOverview />} />
               <Route path="products" element={<ProductsList scope="vendor" />} />
               <Route path="products/new" element={<NewProduct mode="vendor" />} />
+              <Route path="sales" element={<VendorSales />} />
               <Route path="shop" element={<MyShop />} />
             </Route>
 

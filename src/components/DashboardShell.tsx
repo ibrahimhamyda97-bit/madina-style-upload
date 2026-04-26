@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, Plus, Store, ArrowLeft, Users, Wallet, ShoppingBag, ShoppingCart, User } from "lucide-react";
+import { LayoutDashboard, Package, Plus, Store, ArrowLeft, Users, Wallet, ShoppingBag, ShoppingCart, User, TrendingUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -52,6 +52,7 @@ export const vendorNav: Item[] = [
   { to: "/vendor", label: "Vue d'ensemble", icon: LayoutDashboard, end: true },
   { to: "/vendor/products", label: "Produits", icon: Package },
   { to: "/vendor/products/new", label: "Ajouter", icon: Plus },
+  { to: "/vendor/sales", label: "Mes ventes", icon: TrendingUp },
   { to: "/vendor/shop", label: "Ma boutique", icon: Store },
 ];
 
