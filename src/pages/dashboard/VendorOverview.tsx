@@ -3,12 +3,16 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Package, Plus, Store, Clock, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+
+const fmt = (n: number) => new Intl.NumberFormat("fr-FR").format(n) + " GNF";
 
 export default function VendorOverview() {
   const { user } = useAuth();
   const [shop, setShop] = useState<any>(null);
   const [productCount, setProductCount] = useState(0);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,6 +27,12 @@ export default function VendorOverview() {
       if (data) {
         const { count } = await supabase.from("products").select("id", { count: "exact", head: true }).eq("shop_id", data.id);
         setProductCount(count ?? 0);
+        const { data: prods } = await supabase
+          .from("products")
+          .select("id,title,price_gnf,shipping_fee_gnf,status,rejection_reason,created_at,category,product_images(image_url,position)")
+          .eq("shop_id", data.id)
+          .order("created_at", { ascending: false });
+        setProducts(prods ?? []);
       }
       setLoading(false);
     })();
