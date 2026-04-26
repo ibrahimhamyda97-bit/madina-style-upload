@@ -778,3 +778,32 @@ function ValueChip({ icon, label, value, source }: { icon: React.ReactNode; labe
     </div>
   );
 }
+
+function ColorPalette({ value, onChange, size = "md" }: { value: string; onChange: (name: string) => void; size?: "sm" | "md" }) {
+  const dim = size === "sm" ? "h-6 w-6" : "h-8 w-8";
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {COLOR_PRESETS.map((c) => {
+        const active = value.trim().toLowerCase() === c.name.toLowerCase();
+        const isWhite = c.name === "Blanc";
+        return (
+          <button
+            key={c.name}
+            type="button"
+            onClick={() => onChange(active ? "" : c.name)}
+            title={c.name}
+            aria-label={c.name}
+            aria-pressed={active}
+            className={[
+              dim,
+              "rounded-full border-2 transition-smooth shrink-0",
+              active ? "border-primary ring-2 ring-primary/30 scale-110" : isWhite ? "border-border hover:border-primary/40" : "border-transparent hover:border-primary/40",
+            ].join(" ")}
+            style={{ background: c.swatch }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
