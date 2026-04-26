@@ -18,14 +18,28 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
     const fd = new FormData(e.currentTarget);
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: String(fd.get("email")),
       password: String(fd.get("password")),
     });
+    if (error) {
+      setLoading(false);
+      return toast.error(error.message);
+    }
+    // Récupérer les rôles pour rediriger vers le bon tableau de bord
+    let dest = "/";
+    if (data.user) {
+      const { data: rolesData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user.id);
+      const roles = (rolesData ?? []).map((r) => r.role);
+      if (roles.includes("admin")) dest = "/admin";
+      else if (roles.includes("vendor")) dest = "/vendor";
+    }
     setLoading(false);
-    if (error) return toast.error(error.message);
     toast.success("Bienvenue sur Madina !");
-    nav("/");
+    nav(dest);
   }
 
   async function handleSignUp(e: React.FormEvent<HTMLFormElement>) {
