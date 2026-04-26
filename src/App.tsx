@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/hooks/useCart";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
-import DashboardShell, { vendorNav, adminNav } from "./components/DashboardShell";
+import DashboardShell, { vendorNav, adminNav, clientNav } from "./components/DashboardShell";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Shops from "./pages/Shops";
@@ -25,6 +25,8 @@ import AdminShops from "./pages/dashboard/AdminShops";
 import AdminUsers from "./pages/dashboard/AdminUsers";
 import AdminFinance from "./pages/dashboard/AdminFinance";
 import AdminOrders from "./pages/dashboard/AdminOrders";
+import ClientOverview from "./pages/dashboard/ClientOverview";
+import ClientProfile from "./pages/dashboard/ClientProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +58,13 @@ const App = () => (
             <Route path="/orders" element={<PublicLayout><Orders /></PublicLayout>} />
             <Route path="/auth" element={<><SiteHeader /><Auth /></>} />
             <Route path="/onboarding/shop" element={<PublicLayout><ShopOnboarding /></PublicLayout>} />
+
+            <Route path="/account" element={<><SiteHeader /><DashboardShell items={clientNav} title="Mon compte" /></>}>
+              <Route index element={<ClientOverview />} />
+              <Route path="profile" element={<ClientProfile />} />
+              <Route path="cart" element={<Cart />} />
+              <Route path="orders" element={<Orders />} />
+            </Route>
 
             <Route path="/vendor" element={<><SiteHeader /><DashboardShell items={vendorNav} title="Vendeur" /></>}>
               <Route index element={<VendorOverview />} />

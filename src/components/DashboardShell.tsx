@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, Plus, Store, ArrowLeft, Users, Wallet, ShoppingBag } from "lucide-react";
+import { LayoutDashboard, Package, Plus, Store, ArrowLeft, Users, Wallet, ShoppingBag, ShoppingCart, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -63,4 +63,11 @@ export const adminNav: Item[] = [
   { to: "/admin/products/new", label: "Ajouter", icon: Plus },
   { to: "/admin/shops", label: "Boutiques", icon: Store },
   { to: "/admin/users", label: "Utilisateurs", icon: Users },
+];
+
+export const clientNav: Item[] = [
+  { to: "/account", label: "Vue d'ensemble", icon: LayoutDashboard, end: true },
+  { to: "/account/profile", label: "Mon profil", icon: User },
+  { to: "/account/cart", label: "Mon panier", icon: ShoppingCart },
+  { to: "/account/orders", label: "Mes commandes", icon: ShoppingBag },
 ];
