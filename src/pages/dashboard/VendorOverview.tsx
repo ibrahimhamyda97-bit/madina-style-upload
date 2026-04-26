@@ -18,19 +18,24 @@ export default function VendorOverview() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data } = await supabase
+      const { data: shopsList } = await supabase
         .from("shops")
-        .select("id,name,slug,status,rejection_reason,city,phone")
+        .select("id,name,slug,status,rejection_reason,city,phone,created_at")
         .eq("owner_id", user.id)
-        .maybeSingle();
+        .order("created_at", { ascending: true });
+      const data = (shopsList ?? [])[0] ?? null;
       setShop(data);
-      if (data) {
-        const { count } = await supabase.from("products").select("id", { count: "exact", head: true }).eq("shop_id", data.id);
+      const shopIds = (shopsList ?? []).map((s) => s.id);
+      if (shopIds.length > 0) {
+        const { count } = await supabase
+          .from("products")
+          .select("id", { count: "exact", head: true })
+          .in("shop_id", shopIds);
         setProductCount(count ?? 0);
         const { data: prods } = await supabase
           .from("products")
           .select("id,title,price_gnf,shipping_fee_gnf,status,rejection_reason,created_at,category,product_images(image_url,position)")
-          .eq("shop_id", data.id)
+          .in("shop_id", shopIds)
           .order("created_at", { ascending: false });
         setProducts(prods ?? []);
       }
