@@ -6,6 +6,7 @@ import { toast } from "sonner";
 export interface CartLine {
   id: string;
   product_id: string;
+  variant_id: string | null;
   size: string;
   quantity: number;
   product: {
@@ -17,6 +18,14 @@ export interface CartLine {
     shop?: { id: string; name: string; slug: string; commission_rate: number; payment_operator: string | null; payment_number: string | null };
     images: { image_url: string; size: string }[];
   };
+  variant?: {
+    id: string;
+    name: string | null;
+    color: string | null;
+    size: string | null;
+    price_gnf: number | null;
+    images: { image_url: string; position: number }[];
+  } | null;
 }
 
 interface CartCtx {
@@ -26,7 +35,7 @@ interface CartCtx {
   shipping: number;
   total: number;
   loading: boolean;
-  add: (productId: string, size: string, quantity?: number) => Promise<void>;
+  add: (productId: string, size: string, quantity?: number, variantId?: string | null) => Promise<void>;
   setQuantity: (id: string, qty: number) => Promise<void>;
   remove: (id: string) => Promise<void>;
   clear: () => Promise<void>;
