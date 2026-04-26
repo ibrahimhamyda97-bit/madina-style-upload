@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const SIZES = ["XS", "S", "M", "L", "XL"] as const;
+const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45"];
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -33,6 +33,10 @@ export default function ProductDetail() {
     return map;
   }, [product]);
 
+  const availableSizes = useMemo(
+    () => Object.keys(imagesBySize).sort((a, b) => SIZE_ORDER.indexOf(a) - SIZE_ORDER.indexOf(b)),
+    [imagesBySize]
+  );
   const activeImage = activeSize ? imagesBySize[activeSize] : null;
 
   if (!product) return <div className="container py-20 text-center text-muted-foreground">Chargement...</div>;
@@ -52,21 +56,20 @@ export default function ProductDetail() {
               <div className="h-full w-full bg-gradient-card" />
             )}
           </div>
-          <div className="grid grid-cols-5 gap-2 mt-4">
-            {SIZES.map((s) => {
+          <div className="flex flex-wrap gap-2 mt-4">
+            {availableSizes.map((s) => {
               const img = imagesBySize[s];
               return (
                 <button
                   key={s}
-                  disabled={!img}
                   onClick={() => setActiveSize(s)}
                   className={cn(
-                    "aspect-square rounded-xl overflow-hidden border-2 relative transition-smooth",
-                    activeSize === s ? "border-primary shadow-soft" : "border-transparent hover:border-border",
-                    !img && "opacity-30 cursor-not-allowed"
+                    "h-16 w-16 rounded-xl overflow-hidden border-2 relative transition-smooth shrink-0",
+                    activeSize === s ? "border-primary shadow-soft" : "border-transparent hover:border-border"
                   )}
                 >
-                  {img ? <img src={img.image_url} alt="" className="h-full w-full object-cover" /> : <div className="h-full w-full bg-muted grid place-items-center text-xs text-muted-foreground">{s}</div>}
+                  <img src={img.image_url} alt={`Taille ${s}`} className="h-full w-full object-cover" />
+                  <span className="absolute bottom-0 inset-x-0 bg-background/85 text-[10px] font-bold text-center py-0.5">{s}</span>
                 </button>
               );
             })}
@@ -93,17 +96,14 @@ export default function ProductDetail() {
           <div className="mt-8">
             <h3 className="font-medium text-sm uppercase tracking-wider text-muted-foreground mb-3">Choisir une taille</h3>
             <div className="flex flex-wrap gap-2">
-              {SIZES.map((s) => {
-                const available = !!imagesBySize[s];
+              {availableSizes.map((s) => {
                 return (
                   <button
                     key={s}
-                    disabled={!available}
                     onClick={() => setActiveSize(s)}
                     className={cn(
                       "h-12 min-w-12 px-4 rounded-xl border-2 font-display font-bold transition-smooth",
-                      activeSize === s ? "border-primary bg-primary text-primary-foreground shadow-soft" : "border-border hover:border-primary/50",
-                      !available && "opacity-40 cursor-not-allowed line-through"
+                      activeSize === s ? "border-primary bg-primary text-primary-foreground shadow-soft" : "border-border hover:border-primary/50"
                     )}
                   >{s}</button>
                 );
