@@ -63,7 +63,7 @@ export default function SiteHeader() {
           </nav>
 
           <div className="hidden md:flex items-center gap-2">
-            {user && (
+            {user && !isAdmin && (
               <Button asChild variant="ghost" size="icon" className="relative" aria-label="Panier">
                 <Link to="/cart">
                   <ShoppingCart className="h-4.5 w-4.5" />
