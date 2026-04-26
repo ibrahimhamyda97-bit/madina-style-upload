@@ -643,3 +643,38 @@ function SizeChip({ label, active, onClick, small = false }: { label: string; ac
     </button>
   );
 }
+
+type Source = "override" | "global" | "default" | "missing";
+
+function SourceBadge({ source }: { source: Source }) {
+  const config: Record<Source, { label: string; className: string }> = {
+    override: { label: "Spécifique", className: "bg-primary/15 text-primary border-primary/30" },
+    global:   { label: "Global",     className: "bg-secondary/20 text-secondary-foreground border-secondary/40" },
+    default:  { label: "Défaut",     className: "bg-muted text-muted-foreground border-border" },
+    missing:  { label: "Manquant",   className: "bg-destructive/10 text-destructive border-destructive/30" },
+  };
+  const c = config[source];
+  return (
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full border text-[9px] font-bold uppercase tracking-wider ${c.className}`}>
+      {c.label}
+    </span>
+  );
+}
+
+function ValueChip({ icon, label, value, source }: { icon: React.ReactNode; label: string; value: string; source: Source }) {
+  const tone =
+    source === "override" ? "border-primary/40 bg-primary/5"
+    : source === "missing" ? "border-destructive/30 bg-destructive/5"
+    : "border-border bg-muted/40";
+  return (
+    <div className={`rounded-xl border px-2.5 py-2 ${tone}`}>
+      <div className="flex items-center justify-between gap-1 mb-0.5">
+        <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+          {icon} {label}
+        </span>
+        <SourceBadge source={source} />
+      </div>
+      <p className="text-xs font-semibold truncate" title={value}>{value}</p>
+    </div>
+  );
+}
