@@ -1,13 +1,60 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { ArrowRight, Sparkles, Store, ShieldCheck } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, Sparkles, Store, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import ProductCard, { ProductCardData } from "@/components/ProductCard";
 import hero from "@/assets/hero-madina.jpg";
 
+// Groupes de catégories (alignés avec le formulaire d'ajout d'article).
+// Chaque entrée "items" liste les valeurs exactes stockées en base.
+const FILTER_GROUPS: { label: string; items: { label: string; value: string }[] }[] = [
+  {
+    label: "Vêtements",
+    items: [
+      { label: "Robes", value: "Vêtements - Robes" },
+      { label: "Vestes", value: "Vêtements - Vestes" },
+      { label: "Blazers", value: "Vêtements - Blazers" },
+      { label: "Pantalons", value: "Vêtements - Pantalons" },
+      { label: "Jeans", value: "Vêtements - Jeans" },
+      { label: "Chemises", value: "Vêtements - Chemises" },
+      { label: "T-shirts", value: "Vêtements - T-shirts" },
+      { label: "Pulls & Sweats", value: "Vêtements - Pulls & Sweats" },
+      { label: "Jupes", value: "Vêtements - Jupes" },
+      { label: "Shorts", value: "Vêtements - Shorts" },
+      { label: "Manteaux", value: "Vêtements - Manteaux" },
+      { label: "Sous-vêtements", value: "Vêtements - Sous-vêtements" },
+      { label: "Tenues traditionnelles", value: "Vêtements - Tenues traditionnelles" },
+      { label: "Autre", value: "Vêtements - Autre" },
+    ],
+  },
+  { label: "Chaussures", items: [{ label: "Toutes", value: "Chaussures" }] },
+  {
+    label: "Accessoires",
+    items: [
+      { label: "Accessoires", value: "Accessoires" },
+      { label: "Sacs", value: "Sacs" },
+      { label: "Bijoux", value: "Bijoux" },
+    ],
+  },
+  { label: "Beauté", items: [{ label: "Toutes", value: "Beauté" }] },
+  {
+    label: "Électronique",
+    items: [
+      { label: "Téléphones", value: "Téléphones" },
+      { label: "Ordinateurs", value: "Ordinateurs" },
+      { label: "Tablettes", value: "Tablettes" },
+      { label: "Accessoires Tech", value: "Accessoires Tech" },
+    ],
+  },
+  { label: "Maison", items: [{ label: "Toutes", value: "Maison" }] },
+  { label: "Enfants", items: [{ label: "Toutes", value: "Enfants" }] },
+];
+
 export default function Home() {
   const [products, setProducts] = useState<ProductCardData[]>([]);
+  const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -15,10 +62,31 @@ export default function Home() {
         .from("products")
         .select("id, title, price_gnf, category, detected_color, shop:shops(name, slug), images:product_images(image_url, size, position)")
         .order("created_at", { ascending: false })
-        .limit(8);
+        .limit(24);
       setProducts((data ?? []) as any);
     })();
   }, []);
+
+  const currentGroup = FILTER_GROUPS.find((g) => g.label === activeGroup) ?? null;
+
+  const filteredProducts = useMemo(() => {
+    if (activeCategory) return products.filter((p) => p.category === activeCategory);
+    if (currentGroup) {
+      const values = new Set(currentGroup.items.map((i) => i.value));
+      return products.filter((p) => values.has(p.category));
+    }
+    return products;
+  }, [products, currentGroup, activeCategory]);
+
+  function selectGroup(label: string) {
+    setActiveGroup((prev) => (prev === label ? null : label));
+    setActiveCategory(null);
+  }
+
+  function clearAll() {
+    setActiveGroup(null);
+    setActiveCategory(null);
+  }
 
   return (
     <div className="animate-fade-in">
@@ -69,7 +137,7 @@ export default function Home() {
 
       {/* PRODUCTS */}
       <section className="container py-10">
-        <div className="flex items-end justify-between mb-8">
+        <div className="flex items-end justify-between mb-6">
           <div>
             <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight">Nouveautés</h2>
             <p className="text-muted-foreground mt-1">Les derniers produits ajoutés par nos boutiques.</p>
@@ -78,15 +146,88 @@ export default function Home() {
             <Link to="/shops">Voir tout <ArrowRight className="h-4 w-4" /></Link>
           </Button>
         </div>
+
+        {/* Filtre mobile-first : groupes parents (scroll horizontal) */}
+        <div className="mb-3 -mx-4 px-4 md:mx-0 md:px-0">
+          <div className="flex items-center gap-2 mb-2 text-xs font-medium text-muted-foreground">
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            Filtrer par catégorie
+            {(activeGroup || activeCategory) && (
+              <button onClick={clearAll} className="ml-auto inline-flex items-center gap-1 text-primary hover:underline">
+                <X className="h-3 w-3" /> Réinitialiser
+              </button>
+            )}
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-2 snap-x scrollbar-thin">
+            <button
+              onClick={clearAll}
+              className={`shrink-0 snap-start px-4 py-2 rounded-full text-sm font-medium border transition-smooth ${
+                !activeGroup
+                  ? "bg-primary text-primary-foreground border-primary shadow-soft"
+                  : "bg-card border-border text-foreground hover:bg-muted"
+              }`}
+            >
+              Tout
+            </button>
+            {FILTER_GROUPS.map((g) => (
+              <button
+                key={g.label}
+                onClick={() => selectGroup(g.label)}
+                className={`shrink-0 snap-start px-4 py-2 rounded-full text-sm font-medium border transition-smooth ${
+                  activeGroup === g.label
+                    ? "bg-primary text-primary-foreground border-primary shadow-soft"
+                    : "bg-card border-border text-foreground hover:bg-muted"
+                }`}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Sous-catégories (apparaissent quand un groupe est sélectionné) */}
+          {currentGroup && currentGroup.items.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto pb-2 snap-x animate-fade-in">
+              <button
+                onClick={() => setActiveCategory(null)}
+                className={`shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium border transition-smooth ${
+                  !activeCategory
+                    ? "bg-secondary text-secondary-foreground border-secondary"
+                    : "bg-muted/50 border-border text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                Tous {currentGroup.label.toLowerCase()}
+              </button>
+              {currentGroup.items.map((it) => (
+                <button
+                  key={it.value}
+                  onClick={() => setActiveCategory((prev) => (prev === it.value ? null : it.value))}
+                  className={`shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium border transition-smooth ${
+                    activeCategory === it.value
+                      ? "bg-secondary text-secondary-foreground border-secondary"
+                      : "bg-muted/50 border-border text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {it.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {products.length === 0 ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="aspect-[3/4] rounded-2xl bg-muted animate-pulse" />
             ))}
           </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-16 bg-muted/30 rounded-3xl border border-border">
+            <p className="text-muted-foreground">Aucun produit dans cette catégorie pour le moment.</p>
+            <Button variant="link" onClick={clearAll} className="mt-2">Voir tous les produits</Button>
+          </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {products.map((p) => <ProductCard key={p.id} product={p} />)}
+            {filteredProducts.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
         )}
       </section>
