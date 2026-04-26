@@ -289,11 +289,28 @@ export default function ProductUploadForm({ mode }: Props) {
             <Label>Prix de vente (GNF) *</Label>
             <Input type="number" min={1} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="150000" />
           </div>
+          {mode === "admin" && (
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5"><Truck className="h-3.5 w-3.5" /> Frais de livraison (GNF)</Label>
+              <Input type="number" min={0} value={shippingFee} onChange={(e) => setShippingFee(e.target.value)} placeholder="0" />
+              <p className="text-[11px] text-muted-foreground">Visible par le client et ajouté au total à payer.</p>
+            </div>
+          )}
           <div className="space-y-1.5 md:col-span-2">
             <Label>Description *</Label>
             <Textarea rows={4} maxLength={2000} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Tissu, finition, conseils d'entretien..." />
           </div>
         </div>
+
+        {mode === "vendor" && (
+          <div className="mt-6 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 flex gap-3">
+            <ShieldCheck className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="text-xs">
+              <p className="font-semibold text-foreground">Validation par Madina</p>
+              <p className="text-muted-foreground mt-0.5">Votre produit sera publié dès qu'un administrateur l'aura validé. Les frais de livraison seront définis par Madina.</p>
+            </div>
+          </div>
+        )}
 
         {/* Aperçu prix net vendeur */}
         {mode === "vendor" && priceNum > 0 && (
