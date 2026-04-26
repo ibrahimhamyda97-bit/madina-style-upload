@@ -12,6 +12,7 @@ export interface CartLine {
     id: string;
     title: string;
     price_gnf: number;
+    shipping_fee_gnf: number;
     shop_id: string;
     shop?: { id: string; name: string; slug: string; commission_rate: number; payment_operator: string | null; payment_number: string | null };
     images: { image_url: string; size: string }[];
@@ -21,6 +22,8 @@ export interface CartLine {
 interface CartCtx {
   items: CartLine[];
   count: number;
+  subtotal: number;
+  shipping: number;
   total: number;
   loading: boolean;
   add: (productId: string, size: string, quantity?: number) => Promise<void>;
@@ -45,7 +48,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       .select(`
         id, product_id, size, quantity,
         product:products(
-          id, title, price_gnf, shop_id,
+          id, title, price_gnf, shipping_fee_gnf, shop_id,
           shop:shops(id, name, slug, commission_rate, payment_operator, payment_number),
           images:product_images(image_url, size)
         )
@@ -59,7 +62,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => { refresh(); }, [refresh]);
 
   const count = items.reduce((s, l) => s + l.quantity, 0);
-  const total = items.reduce((s, l) => s + (l.product?.price_gnf ?? 0) * l.quantity, 0);
+  const subtotal = items.reduce((s, l) => s + (l.product?.price_gnf ?? 0) * l.quantity, 0);
+  const shipping = items.reduce((s, l) => s + (l.product?.shipping_fee_gnf ?? 0) * l.quantity, 0);
+  const total = subtotal + shipping;
 
   async function add(productId: string, size: string, quantity = 1) {
     if (!user) { toast.error("Connectez-vous pour ajouter au panier"); return; }
@@ -97,7 +102,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <CartContext.Provider value={{ items, count, total, loading, add, setQuantity, remove, clear, refresh }}>
+    <CartContext.Provider value={{ items, count, subtotal, shipping, total, loading, add, setQuantity, remove, clear, refresh }}>
       {children}
     </CartContext.Provider>
   );
