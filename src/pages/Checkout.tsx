@@ -86,7 +86,7 @@ export default function Checkout() {
     }>();
     items.forEach((l) => {
       const sid = l.product.shop?.id ?? "—";
-      const itemSub = (l.product?.price_gnf ?? 0) * l.quantity;
+      const itemSub = ((l.variant?.price_gnf ?? l.product?.price_gnf) ?? 0) * l.quantity;
       const shipSub = (l.product?.shipping_fee_gnf ?? 0) * l.quantity;
       const existing = m.get(sid);
       if (existing) {
