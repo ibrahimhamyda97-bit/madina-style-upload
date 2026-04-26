@@ -264,13 +264,16 @@ function VariantCard({
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs flex items-center gap-1.5"><Wallet className="h-3 w-3" /> Prix (GNF, optionnel)</Label>
+            <Label className="text-xs flex items-center gap-1.5">
+              <Wallet className="h-3 w-3" /> Prix (GNF) <span className="text-destructive">*</span>
+            </Label>
             <Input
               type="number"
               min={1}
+              required
               value={variant.price}
               onChange={(e) => onUpdate({ price: e.target.value })}
-              placeholder="Hérite du prix du produit"
+              placeholder="Ex. 150000"
               className="h-9"
             />
           </div>
