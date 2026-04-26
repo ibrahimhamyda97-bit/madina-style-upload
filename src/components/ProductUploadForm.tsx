@@ -66,7 +66,7 @@ export default function ProductUploadForm({ mode }: Props) {
 
   // Vendor mode: 5 slot uploader (one per size)
   const [vendorSlots, setVendorSlots] = useState<Record<Size, VendorSlotState>>(() =>
-    Object.fromEntries(SIZES.map((s) => [s, emptyVendorSlot()])) as Record<Size, VendorSlotState>
+    Object.fromEntries(LETTER_SIZES.map((s) => [s, emptyVendorSlot()])) as Record<Size, VendorSlotState>
   );
 
   useEffect(() => {
@@ -161,7 +161,7 @@ export default function ProductUploadForm({ mode }: Props) {
       if (adminImages.length === 0) return toast.error("Ajoutez au moins une image");
       imageRows = adminImages.map((it, i) => ({ image_url: it.url, size: it.size, detected_color: it.detectedColor, position: i }));
     } else {
-      const filled = SIZES.filter((s) => vendorSlots[s].uploadedUrl);
+      const filled = LETTER_SIZES.filter((s) => vendorSlots[s]?.uploadedUrl);
       if (filled.length === 0) return toast.error("Ajoutez au moins une image");
       imageRows = filled.map((s, i) => ({ image_url: vendorSlots[s].uploadedUrl!, size: s, detected_color: vendorSlots[s].detectedColor, position: i }));
     }
@@ -219,7 +219,7 @@ export default function ProductUploadForm({ mode }: Props) {
           />
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-6">
-            {SIZES.map((s) => (
+            {LETTER_SIZES.map((s) => (
               <VendorSlotCard
                 key={s}
                 size={s}
