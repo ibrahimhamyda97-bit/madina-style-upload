@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, Plus, Store, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, Package, Plus, Store, ArrowLeft, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -60,4 +60,5 @@ export const adminNav: Item[] = [
   { to: "/admin/products", label: "Produits", icon: Package },
   { to: "/admin/products/new", label: "Ajouter", icon: Plus },
   { to: "/admin/shops", label: "Boutiques", icon: Store },
+  { to: "/admin/users", label: "Utilisateurs", icon: Users },
 ];

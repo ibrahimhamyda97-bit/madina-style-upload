@@ -11,7 +11,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const SIZES = ["XS", "S", "M", "L", "XL"] as const;
+const LETTER_SIZES = ["XS", "S", "M", "L", "XL"] as const;
+const NUMERIC_SIZES = ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45"] as const;
+const SIZES = [...LETTER_SIZES, ...NUMERIC_SIZES] as const;
 type Size = typeof SIZES[number];
 
 const CATEGORIES = ["Vêtements", "Chaussures", "Accessoires", "Sacs", "Bijoux", "Beauté", "Maison", "Enfants", "Autre"];
@@ -64,7 +66,7 @@ export default function ProductUploadForm({ mode }: Props) {
 
   // Vendor mode: 5 slot uploader (one per size)
   const [vendorSlots, setVendorSlots] = useState<Record<Size, VendorSlotState>>(() =>
-    Object.fromEntries(SIZES.map((s) => [s, emptyVendorSlot()])) as Record<Size, VendorSlotState>
+    Object.fromEntries(LETTER_SIZES.map((s) => [s, emptyVendorSlot()])) as Record<Size, VendorSlotState>
   );
 
   useEffect(() => {
@@ -159,7 +161,7 @@ export default function ProductUploadForm({ mode }: Props) {
       if (adminImages.length === 0) return toast.error("Ajoutez au moins une image");
       imageRows = adminImages.map((it, i) => ({ image_url: it.url, size: it.size, detected_color: it.detectedColor, position: i }));
     } else {
-      const filled = SIZES.filter((s) => vendorSlots[s].uploadedUrl);
+      const filled = LETTER_SIZES.filter((s) => vendorSlots[s]?.uploadedUrl);
       if (filled.length === 0) return toast.error("Ajoutez au moins une image");
       imageRows = filled.map((s, i) => ({ image_url: vendorSlots[s].uploadedUrl!, size: s, detected_color: vendorSlots[s].detectedColor, position: i }));
     }
@@ -217,7 +219,7 @@ export default function ProductUploadForm({ mode }: Props) {
           />
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-6">
-            {SIZES.map((s) => (
+            {LETTER_SIZES.map((s) => (
               <VendorSlotCard
                 key={s}
                 size={s}
@@ -309,8 +311,11 @@ function AdminImageManager({
           <Label className="text-xs">Taille</Label>
           <Select value={currentSize} onValueChange={(v) => onSizeChange(v as Size)}>
             <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {SIZES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            <SelectContent className="max-h-72">
+              <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">Vêtements</div>
+              {LETTER_SIZES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground border-t mt-1">Pointures</div>
+              {NUMERIC_SIZES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -351,8 +356,11 @@ function AdminImageManager({
               <div className="p-2 space-y-1.5">
                 <Select value={img.size} onValueChange={(v) => onUpdateSize(img.id, v as Size)}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {SIZES.map((s) => <SelectItem key={s} value={s}>Taille {s}</SelectItem>)}
+                  <SelectContent className="max-h-72">
+                    <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">Vêtements</div>
+                    {LETTER_SIZES.map((s) => <SelectItem key={s} value={s}>Taille {s}</SelectItem>)}
+                    <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground border-t mt-1">Pointures</div>
+                    {NUMERIC_SIZES.map((s) => <SelectItem key={s} value={s}>Pointure {s}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 {img.detectedColor && (

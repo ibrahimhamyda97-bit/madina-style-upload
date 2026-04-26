@@ -210,7 +210,22 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "vendor" | "buyer"
-      product_size: "XS" | "S" | "M" | "L" | "XL"
+      product_size:
+        | "XS"
+        | "S"
+        | "M"
+        | "L"
+        | "XL"
+        | "36"
+        | "37"
+        | "38"
+        | "39"
+        | "40"
+        | "41"
+        | "42"
+        | "43"
+        | "44"
+        | "45"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -339,7 +354,23 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "vendor", "buyer"],
-      product_size: ["XS", "S", "M", "L", "XL"],
+      product_size: [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+      ],
     },
   },
 } as const

@@ -1,0 +1,10 @@
+ALTER TYPE public.product_size ADD VALUE IF NOT EXISTS '36';
+ALTER TYPE public.product_size ADD VALUE IF NOT EXISTS '37';
+ALTER TYPE public.product_size ADD VALUE IF NOT EXISTS '38';
+ALTER TYPE public.product_size ADD VALUE IF NOT EXISTS '39';
+ALTER TYPE public.product_size ADD VALUE IF NOT EXISTS '40';
+ALTER TYPE public.product_size ADD VALUE IF NOT EXISTS '41';
+ALTER TYPE public.product_size ADD VALUE IF NOT EXISTS '42';
+ALTER TYPE public.product_size ADD VALUE IF NOT EXISTS '43';
+ALTER TYPE public.product_size ADD VALUE IF NOT EXISTS '44';
+ALTER TYPE public.product_size ADD VALUE IF NOT EXISTS '45';

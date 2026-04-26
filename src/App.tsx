@@ -18,6 +18,7 @@ import ProductsList from "./pages/dashboard/ProductsList";
 import NewProduct from "./pages/dashboard/NewProduct";
 import MyShop from "./pages/dashboard/MyShop";
 import AdminShops from "./pages/dashboard/AdminShops";
+import AdminUsers from "./pages/dashboard/AdminUsers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +59,7 @@ const App = () => (
             <Route path="products" element={<ProductsList scope="admin" />} />
             <Route path="products/new" element={<NewProduct mode="admin" />} />
             <Route path="shops" element={<AdminShops />} />
+            <Route path="users" element={<AdminUsers />} />
           </Route>
 
           <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />
