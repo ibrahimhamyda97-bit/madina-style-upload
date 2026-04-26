@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { Image as ImageIcon, X, Loader2, Plus, Sparkles, Upload, Wallet, ShieldCheck, Truck } from "lucide-react";
+import { Image as ImageIcon, X, Loader2, Plus, Sparkles, Upload, Wallet, ShieldCheck, Truck, Tag, Palette, Ruler, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -19,7 +18,17 @@ type Size = typeof SIZES[number];
 
 const CATEGORIES = ["Vêtements", "Chaussures", "Accessoires", "Sacs", "Bijoux", "Beauté", "Maison", "Enfants", "Autre"];
 
-interface PhotoItem { id: string; url: string; loading: boolean; }
+interface PhotoItem {
+  id: string;
+  url: string;
+  loading: boolean;
+  // Per-image overrides (admin)
+  price?: string;
+  color?: string;
+  sizes?: Size[];
+  title?: string;
+  expanded?: boolean;
+}
 
 const schema = z.object({
   shop_id: z.string().uuid("Sélectionnez une boutique"),
@@ -52,7 +61,7 @@ export default function ProductUploadForm({ mode }: Props) {
   useEffect(() => {
     if (!user) return;
     const q = mode === "admin"
-      ? supabase.from("shops").select("id,name,status,commission_rate").order("name")
+      ? supabase.from("shops").select("id,name,status,commission_rate").order("name", { ascending: true })
       : supabase
           .from("shops")
           .select("id,name,status,commission_rate,created_at")
@@ -60,7 +69,8 @@ export default function ProductUploadForm({ mode }: Props) {
           .eq("status", "approved")
           .order("created_at", { ascending: true })
           .limit(1);
-    q.then(({ data }) => {
+    q.then(({ data, error }) => {
+      if (error) { toast.error(error.message); return; }
       const list = (data ?? []) as any;
       setShops(list);
       if (list.length === 1) setShopId(list[0].id);
@@ -75,6 +85,18 @@ export default function ProductUploadForm({ mode }: Props) {
 
   function toggleSize(s: Size) {
     setSelectedSizes((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]);
+  }
+
+  function togglePhotoSize(photoId: string, s: Size) {
+    setPhotos((prev) => prev.map((p) => {
+      if (p.id !== photoId) return p;
+      const current = p.sizes ?? [];
+      return { ...p, sizes: current.includes(s) ? current.filter((x) => x !== s) : [...current, s] };
+    }));
+  }
+
+  function updatePhoto(id: string, patch: Partial<PhotoItem>) {
+    setPhotos((prev) => prev.map((p) => p.id === id ? { ...p, ...patch } : p));
   }
 
   // -------- Vendor: file upload to bucket --------
@@ -102,7 +124,7 @@ export default function ProductUploadForm({ mode }: Props) {
     const url = adminUrl.trim();
     if (!url) return toast.error("Saisissez une URL");
     try { new URL(url); } catch { return toast.error("URL invalide"); }
-    setPhotos((p) => [...p, { id: crypto.randomUUID(), url, loading: false }]);
+    setPhotos((p) => [...p, { id: crypto.randomUUID(), url, loading: false, expanded: true }]);
     setAdminUrl("");
   }
 
@@ -110,12 +132,57 @@ export default function ProductUploadForm({ mode }: Props) {
 
   async function submit() {
     if (!user) return;
-    const parsed = schema.safeParse({ shop_id: shopId, title, description, price_gnf: price, category });
-    if (!parsed.success) return toast.error(parsed.error.issues[0].message);
     if (photos.length === 0) return toast.error("Ajoutez au moins une photo");
     if (photos.some((p) => p.loading)) return toast.error("Attendez la fin du téléversement");
 
+    // Common validation (description, category, shop, base title, base price)
+    const parsed = schema.safeParse({ shop_id: shopId, title, description, price_gnf: price, category });
+    if (!parsed.success) return toast.error(parsed.error.issues[0].message);
+
     setSubmitting(true);
+
+    if (mode === "admin") {
+      // Each image with overrides becomes ITS OWN product (so each can have its own price/color/sizes/title)
+      let createdCount = 0;
+      for (const photo of photos) {
+        const photoPrice = Number(photo.price) > 0 ? Number(photo.price) : Number(price);
+        const photoColor = (photo.color ?? "").trim() || color || null;
+        const photoTitle = (photo.title ?? "").trim() || title;
+        const photoSizes: Size[] = (photo.sizes && photo.sizes.length > 0)
+          ? photo.sizes
+          : (selectedSizes.length > 0 ? selectedSizes : ["M" as Size]);
+
+        const insertPayload: any = {
+          shop_id: parsed.data.shop_id,
+          title: photoTitle,
+          description: parsed.data.description,
+          price_gnf: photoPrice,
+          category: parsed.data.category,
+          detected_color: photoColor,
+          created_by: user.id,
+          shipping_fee_gnf: Number(shippingFee) || 0,
+        };
+        const { data: prod, error } = await supabase.from("products").insert(insertPayload).select().single();
+        if (error || !prod) { setSubmitting(false); return toast.error(error?.message || "Erreur"); }
+
+        const rows = photoSizes.map((sz, idx) => ({
+          product_id: prod.id,
+          image_url: photo.url,
+          size: sz,
+          detected_color: photoColor,
+          position: idx,
+        }));
+        const { error: imgErr } = await supabase.from("product_images").insert(rows);
+        if (imgErr) { setSubmitting(false); return toast.error(imgErr.message); }
+        createdCount++;
+      }
+      setSubmitting(false);
+      toast.success(`${createdCount} produit(s) publié(s) sur Madina !`);
+      nav("/admin/products");
+      return;
+    }
+
+    // Vendor flow (unchanged behavior)
     const insertPayload: any = {
       shop_id: parsed.data.shop_id,
       title: parsed.data.title,
@@ -125,14 +192,9 @@ export default function ProductUploadForm({ mode }: Props) {
       detected_color: color || null,
       created_by: user.id,
     };
-    if (mode === "admin") {
-      insertPayload.shipping_fee_gnf = Number(shippingFee) || 0;
-    }
     const { data: prod, error } = await supabase.from("products").insert(insertPayload).select().single();
-
     if (error || !prod) { setSubmitting(false); return toast.error(error?.message || "Erreur"); }
 
-    // Tailles : si aucune sélectionnée, on utilise "M" par défaut (la colonne size est non-null)
     const sizesToUse: Size[] = selectedSizes.length > 0 ? selectedSizes : ["M" as Size];
     const rows: any[] = [];
     photos.forEach((p, photoIdx) => {
@@ -151,7 +213,7 @@ export default function ProductUploadForm({ mode }: Props) {
     setSubmitting(false);
     if (imgErr) return toast.error(imgErr.message);
     toast.success("Produit publié sur Madina !");
-    nav(mode === "admin" ? "/admin/products" : "/vendor/products");
+    nav("/vendor/products");
   }
 
   return (
@@ -164,9 +226,13 @@ export default function ProductUploadForm({ mode }: Props) {
             Photos du produit *
           </span>
         </div>
-        <h2 className="font-display text-2xl font-bold">Ajoutez vos photos</h2>
+        <h2 className="font-display text-2xl font-bold">
+          {mode === "admin" ? "Ajoutez vos liens d'images" : "Ajoutez vos photos"}
+        </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Ajoutez une première photo, puis utilisez le bouton <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-primary/10 text-primary mx-1"><Plus className="h-3 w-3" /></span> pour en ajouter d'autres.
+          {mode === "admin"
+            ? "Chaque lien d'image devient un produit. Vous pouvez personnaliser le prix, la couleur et les tailles pour chaque image."
+            : <>Ajoutez une première photo, puis utilisez le bouton <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-primary/10 text-primary mx-1"><Plus className="h-3 w-3" /></span> pour en ajouter d'autres.</>}
         </p>
 
         {mode === "admin" && (
@@ -182,27 +248,132 @@ export default function ProductUploadForm({ mode }: Props) {
           </div>
         )}
 
-        {/* Galerie de photos (vendor + admin) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mt-5">
-          {photos.map((p) => (
-            <div key={p.id} className="rounded-2xl border border-border bg-background overflow-hidden shadow-soft">
-              <div className="aspect-square bg-muted relative">
-                {p.loading ? (
-                  <div className="absolute inset-0 grid place-items-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
-                ) : (
-                  <img src={p.url} alt="" className="h-full w-full object-cover" />
-                )}
-                <button
-                  onClick={() => removePhoto(p.id)}
-                  className="absolute top-2 right-2 h-7 w-7 grid place-items-center rounded-full bg-background/90 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-smooth"
-                  aria-label="Supprimer"
-                ><X className="h-4 w-4" /></button>
-              </div>
-            </div>
-          ))}
+        {/* Mode admin : liste détaillée par image */}
+        {mode === "admin" && photos.length > 0 && (
+          <div className="mt-6 space-y-4">
+            {photos.map((p, idx) => (
+              <div key={p.id} className="rounded-2xl border border-border bg-background overflow-hidden shadow-soft">
+                <div className="flex flex-col md:flex-row gap-4 p-4">
+                  <div className="relative w-full md:w-40 shrink-0">
+                    <div className="aspect-square rounded-xl bg-muted overflow-hidden">
+                      <img src={p.url} alt="" className="h-full w-full object-cover" />
+                    </div>
+                    <button
+                      onClick={() => removePhoto(p.id)}
+                      className="absolute top-2 right-2 h-7 w-7 grid place-items-center rounded-full bg-background/90 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-smooth"
+                      aria-label="Supprimer"
+                    ><X className="h-4 w-4" /></button>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
+                        Produit #{idx + 1}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => updatePhoto(p.id, { expanded: !p.expanded })}
+                        className="h-7 text-xs"
+                      >
+                        {p.expanded ? <><ChevronUp className="h-3 w-3" /> Réduire</> : <><ChevronDown className="h-3 w-3" /> Personnaliser</>}
+                      </Button>
+                    </div>
 
-          {/* Tuile d'ajout (vendor uniquement) */}
-          {mode === "vendor" && (
+                    {p.expanded && (
+                      <div className="space-y-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs flex items-center gap-1.5"><Tag className="h-3 w-3" /> Titre spécifique (optionnel)</Label>
+                          <Input
+                            maxLength={120}
+                            value={p.title ?? ""}
+                            onChange={(e) => updatePhoto(p.id, { title: e.target.value })}
+                            placeholder={title || "Titre par défaut ci-dessous"}
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs flex items-center gap-1.5"><Wallet className="h-3 w-3" /> Prix (GNF)</Label>
+                            <Input
+                              type="number"
+                              min={1}
+                              value={p.price ?? ""}
+                              onChange={(e) => updatePhoto(p.id, { price: e.target.value })}
+                              placeholder={price || "Prix global ci-dessous"}
+                              className="h-9"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs flex items-center gap-1.5"><Palette className="h-3 w-3" /> Couleur</Label>
+                            <Input
+                              maxLength={40}
+                              value={p.color ?? ""}
+                              onChange={(e) => updatePhoto(p.id, { color: e.target.value })}
+                              placeholder={color || "Bleu, Rouge..."}
+                              className="h-9"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-xs flex items-center gap-1.5 mb-2"><Ruler className="h-3 w-3" /> Tailles disponibles</Label>
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap gap-1.5">
+                              {LETTER_SIZES.map((s) => (
+                                <SizeChip key={s} label={s} active={(p.sizes ?? []).includes(s)} onClick={() => togglePhotoSize(p.id, s)} small />
+                              ))}
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {NUMERIC_SIZES.map((s) => (
+                                <SizeChip key={s} label={s} active={(p.sizes ?? []).includes(s)} onClick={() => togglePhotoSize(p.id, s)} small />
+                              ))}
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">Si rien n'est coché, les tailles globales seront utilisées.</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {!p.expanded && (
+                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        <span className="px-2 py-1 rounded-full bg-muted">
+                          Prix : {p.price ? `${fmt(Number(p.price))} GNF` : (price ? `${fmt(Number(price))} GNF (global)` : "—")}
+                        </span>
+                        {(p.color || color) && (
+                          <span className="px-2 py-1 rounded-full bg-muted">Couleur : {p.color || color}</span>
+                        )}
+                        <span className="px-2 py-1 rounded-full bg-muted">
+                          Tailles : {(p.sizes && p.sizes.length > 0) ? p.sizes.join(", ") : (selectedSizes.length > 0 ? `${selectedSizes.join(", ")} (global)` : "M (défaut)")}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Mode vendor : galerie classique */}
+        {mode === "vendor" && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mt-5">
+            {photos.map((p) => (
+              <div key={p.id} className="rounded-2xl border border-border bg-background overflow-hidden shadow-soft">
+                <div className="aspect-square bg-muted relative">
+                  {p.loading ? (
+                    <div className="absolute inset-0 grid place-items-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
+                  ) : (
+                    <img src={p.url} alt="" className="h-full w-full object-cover" />
+                  )}
+                  <button
+                    onClick={() => removePhoto(p.id)}
+                    className="absolute top-2 right-2 h-7 w-7 grid place-items-center rounded-full bg-background/90 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-smooth"
+                    aria-label="Supprimer"
+                  ><X className="h-4 w-4" /></button>
+                </div>
+              </div>
+            ))}
+
             <label className="aspect-square rounded-2xl border-2 border-dashed border-border bg-muted/30 hover:bg-muted/50 hover:border-primary/40 transition-smooth grid place-items-center cursor-pointer text-center px-3">
               <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => { handleVendorFiles(e.target.files); e.currentTarget.value = ""; }} />
               {photos.length === 0 ? (
@@ -220,21 +391,27 @@ export default function ProductUploadForm({ mode }: Props) {
                 </div>
               )}
             </label>
-          )}
-        </div>
+          </div>
+        )}
 
         {photos.length === 0 && mode === "admin" && (
           <div className="mt-5 rounded-2xl border-2 border-dashed border-border bg-muted/30 py-10 grid place-items-center text-center">
             <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground">Aucune photo ajoutée.</p>
+            <p className="text-sm text-muted-foreground">Aucun lien d'image ajouté.</p>
           </div>
         )}
 
-        {/* Tailles & couleur (sous la zone unique d'upload) */}
+        {/* Tailles & couleur globales */}
         <div className="mt-8 pt-6 border-t border-border space-y-5">
           <div>
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Tailles disponibles (optionnel)</Label>
-            <p className="text-xs text-muted-foreground mt-1 mb-3">Cochez toutes les tailles où ce produit est disponible.</p>
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+              Tailles {mode === "admin" ? "globales" : "disponibles"} (optionnel)
+            </Label>
+            <p className="text-xs text-muted-foreground mt-1 mb-3">
+              {mode === "admin"
+                ? "Utilisées pour chaque produit qui n'a pas de tailles spécifiques."
+                : "Cochez toutes les tailles où ce produit est disponible."}
+            </p>
             <div className="space-y-3">
               <div>
                 <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">Vêtements</p>
@@ -256,7 +433,7 @@ export default function ProductUploadForm({ mode }: Props) {
           </div>
 
           <div className="space-y-1.5 max-w-sm">
-            <Label>Couleur (optionnel)</Label>
+            <Label>Couleur {mode === "admin" ? "globale" : ""} (optionnel)</Label>
             <Input maxLength={40} value={color} onChange={(e) => setColor(e.target.value)} placeholder="Bleu marine, Rouge..." />
           </div>
         </div>
@@ -274,6 +451,9 @@ export default function ProductUploadForm({ mode }: Props) {
                 {shops.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}{s.status && s.status !== "approved" ? ` (${s.status})` : ""}</SelectItem>)}
               </SelectContent>
             </Select>
+            {mode === "admin" && shops.length === 0 && (
+              <p className="text-xs text-amber-600">Aucune boutique trouvée.</p>
+            )}
             {mode === "vendor" && shops.length === 0 && (
               <p className="text-xs text-amber-600">Aucune boutique validée — l'admin doit valider votre boutique avant que vous ne puissiez publier.</p>
             )}
@@ -288,11 +468,11 @@ export default function ProductUploadForm({ mode }: Props) {
             </Select>
           </div>
           <div className="space-y-1.5 md:col-span-2">
-            <Label>Titre *</Label>
+            <Label>Titre {mode === "admin" ? "par défaut" : ""} *</Label>
             <Input maxLength={120} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex. Robe Wax Émeraude" />
           </div>
           <div className="space-y-1.5">
-            <Label>Prix de vente (GNF) *</Label>
+            <Label>Prix {mode === "admin" ? "par défaut" : "de vente"} (GNF) *</Label>
             <Input type="number" min={1} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="150000" />
           </div>
           {mode === "admin" && (
@@ -344,20 +524,21 @@ export default function ProductUploadForm({ mode }: Props) {
         )}
 
         <Button onClick={submit} disabled={submitting} size="lg" className="w-full md:w-auto md:px-10 mt-8 rounded-2xl bg-gradient-gold text-secondary-foreground shadow-gold hover:opacity-95">
-          {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Publication...</> : "Publier le produit"}
+          {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Publication...</> : (mode === "admin" && photos.length > 1 ? `Publier ${photos.length} produits` : "Publier le produit")}
         </Button>
       </div>
     </div>
   );
 }
 
-function SizeChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function SizeChip({ label, active, onClick, small = false }: { label: string; active: boolean; onClick: () => void; small?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={[
-        "h-9 min-w-[3rem] px-3 rounded-xl border text-sm font-medium transition-smooth",
+        small ? "h-7 min-w-[2.25rem] px-2 text-xs" : "h-9 min-w-[3rem] px-3 text-sm",
+        "rounded-xl border font-medium transition-smooth",
         active
           ? "bg-primary text-primary-foreground border-primary shadow-soft"
           : "bg-background border-border hover:border-primary/40 hover:bg-muted/50"
