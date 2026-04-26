@@ -57,6 +57,8 @@ export const vendorNav: Item[] = [
 
 export const adminNav: Item[] = [
   { to: "/admin", label: "Vue d'ensemble", icon: LayoutDashboard, end: true },
+  { to: "/admin/orders", label: "Commandes", icon: ShoppingBag },
+  { to: "/admin/finance", label: "Finance", icon: Wallet },
   { to: "/admin/products", label: "Produits", icon: Package },
   { to: "/admin/products/new", label: "Ajouter", icon: Plus },
   { to: "/admin/shops", label: "Boutiques", icon: Store },
