@@ -14,6 +14,176 @@ export type Database = {
   }
   public: {
     Tables: {
+      cart_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          quantity: number
+          size: Database["public"]["Enums"]["product_size"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          quantity?: number
+          size: Database["public"]["Enums"]["product_size"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          quantity?: number
+          size?: Database["public"]["Enums"]["product_size"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          commission_rate: number
+          created_at: string
+          id: string
+          image_url: string | null
+          order_id: string
+          product_id: string
+          quantity: number
+          shop_id: string
+          size: Database["public"]["Enums"]["product_size"]
+          title: string
+          unit_price_gnf: number
+        }
+        Insert: {
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          order_id: string
+          product_id: string
+          quantity: number
+          shop_id: string
+          size: Database["public"]["Enums"]["product_size"]
+          title: string
+          unit_price_gnf: number
+        }
+        Update: {
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          order_id?: string
+          product_id?: string
+          quantity?: number
+          shop_id?: string
+          size?: Database["public"]["Enums"]["product_size"]
+          title?: string
+          unit_price_gnf?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          customer_address: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          notes: string | null
+          paid_at: string | null
+          payment_method: string | null
+          payment_operator: string | null
+          payment_reference: string | null
+          reference: string
+          status: Database["public"]["Enums"]["order_status"]
+          total_gnf: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_address?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_operator?: string | null
+          payment_reference?: string | null
+          reference: string
+          status?: Database["public"]["Enums"]["order_status"]
+          total_gnf?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_address?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_operator?: string | null
+          payment_reference?: string | null
+          reference?: string
+          status?: Database["public"]["Enums"]["order_status"]
+          total_gnf?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payouts: {
+        Row: {
+          amount_gnf: number
+          created_at: string
+          created_by: string
+          id: string
+          method: string | null
+          note: string | null
+          paid_at: string
+          reference: string | null
+          shop_id: string
+        }
+        Insert: {
+          amount_gnf: number
+          created_at?: string
+          created_by: string
+          id?: string
+          method?: string | null
+          note?: string | null
+          paid_at?: string
+          reference?: string | null
+          shop_id: string
+        }
+        Update: {
+          amount_gnf?: number
+          created_at?: string
+          created_by?: string
+          id?: string
+          method?: string | null
+          note?: string | null
+          paid_at?: string
+          reference?: string | null
+          shop_id?: string
+        }
+        Relationships: []
+      }
       product_images: {
         Row: {
           created_at: string
@@ -136,12 +306,15 @@ export type Database = {
         Row: {
           banner_url: string | null
           city: string | null
+          commission_rate: number
           created_at: string
           description: string | null
           id: string
           logo_url: string | null
           name: string
           owner_id: string
+          payment_number: string | null
+          payment_operator: string | null
           phone: string | null
           slug: string
           updated_at: string
@@ -149,12 +322,15 @@ export type Database = {
         Insert: {
           banner_url?: string | null
           city?: string | null
+          commission_rate?: number
           created_at?: string
           description?: string | null
           id?: string
           logo_url?: string | null
           name: string
           owner_id: string
+          payment_number?: string | null
+          payment_operator?: string | null
           phone?: string | null
           slug: string
           updated_at?: string
@@ -162,12 +338,15 @@ export type Database = {
         Update: {
           banner_url?: string | null
           city?: string | null
+          commission_rate?: number
           created_at?: string
           description?: string | null
           id?: string
           logo_url?: string | null
           name?: string
           owner_id?: string
+          payment_number?: string | null
+          payment_operator?: string | null
           phone?: string | null
           slug?: string
           updated_at?: string
@@ -210,6 +389,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "vendor" | "buyer"
+      order_status: "pending" | "paid" | "cancelled" | "refunded"
       product_size:
         | "XS"
         | "S"
@@ -354,6 +534,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "vendor", "buyer"],
+      order_status: ["pending", "paid", "cancelled", "refunded"],
       product_size: [
         "XS",
         "S",
