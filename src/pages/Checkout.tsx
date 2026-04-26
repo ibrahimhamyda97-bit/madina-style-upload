@@ -305,11 +305,119 @@ export default function Checkout() {
             </Button>
             <Button
               size="lg"
-              disabled={submitting}
+              onClick={() => setStep(2)}
+              className="flex-1 rounded-2xl bg-gradient-gold text-secondary-foreground shadow-gold h-14 text-base"
+            >
+              <ShieldCheck className="h-4 w-4" /> Vérifier ma commande
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {step === 2 && (
+        <div className="space-y-5">
+          <div className="bg-primary/5 border border-primary/30 rounded-2xl p-4 flex gap-3">
+            <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-semibold text-foreground">Dernière vérification</p>
+              <p className="text-muted-foreground text-xs mt-0.5">
+                Confirmez les informations de paiement boutique par boutique avant de valider votre commande.
+              </p>
+            </div>
+          </div>
+
+          {/* Livraison */}
+          <div className="bg-card border border-border rounded-3xl p-5 md:p-6 shadow-soft">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <MapPin className="h-3.5 w-3.5" /> Livraison
+              </h3>
+              <Button variant="ghost" size="sm" onClick={() => setStep(0)} className="h-7 text-xs">Modifier</Button>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3 text-sm">
+              <SummaryRow label="Nom" value={data.customer_name} />
+              <SummaryRow label="Téléphone" value={data.customer_phone} />
+              <SummaryRow label="Adresse" value={data.customer_address} className="sm:col-span-2" />
+              {data.notes && <SummaryRow label="Note" value={data.notes} className="sm:col-span-2" />}
+            </div>
+          </div>
+
+          {/* Récap par boutique */}
+          {shopGroups.map((g, idx) => (
+            <div key={g.shopId} className="bg-card border border-border rounded-3xl p-5 md:p-6 shadow-soft">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={cn("h-9 w-9 rounded-xl grid place-items-center text-white shrink-0", g.meta.color)}>
+                    <Store className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-display font-bold text-sm truncate">{g.shopName}</p>
+                    <p className="text-[11px] text-muted-foreground">Boutique {idx + 1} sur {shopGroups.length}</p>
+                  </div>
+                </div>
+                <div className="text-right shrink-0 ml-3">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Montant</p>
+                  <p className="font-display font-bold text-primary text-base">
+                    {g.subtotal.toLocaleString("fr-FR")} <span className="text-[10px] text-muted-foreground">GNF</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2.5">
+                <SummaryLine icon={<Smartphone className="h-3.5 w-3.5" />} label="Opérateur" value={g.meta.name} />
+                <SummaryLine icon={<Phone className="h-3.5 w-3.5" />} label="Numéro" value={g.paymentNumber} mono />
+                <SummaryLine icon={<Hash className="h-3.5 w-3.5" />} label="Référence" value={paymentReference} mono highlight />
+              </div>
+
+              {/* Articles de la boutique */}
+              <div className="mt-4 pt-4 border-t border-border">
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2 flex items-center gap-1.5">
+                  <Package className="h-3 w-3" /> Articles
+                </p>
+                <ul className="space-y-1.5 text-xs">
+                  {items
+                    .filter((l) => (l.product.shop?.id ?? "—") === g.shopId)
+                    .map((l) => (
+                      <li key={`${l.product.id}-${l.size}`} className="flex justify-between gap-2">
+                        <span className="text-muted-foreground truncate">
+                          {l.product.title} <span className="text-foreground/60">×{l.quantity}</span>
+                          {l.size && <span className="text-foreground/60"> · {l.size}</span>}
+                        </span>
+                        <span className="font-medium font-mono shrink-0">
+                          {((l.product.price_gnf ?? 0) * l.quantity).toLocaleString("fr-FR")}
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            </div>
+          ))}
+
+          {/* Total */}
+          <div className="bg-gradient-gold text-secondary-foreground rounded-3xl p-5 shadow-gold flex items-center justify-between">
+            <span className="font-display font-bold text-base">Total à payer</span>
+            <span className="font-display font-bold text-2xl">{total.toLocaleString("fr-FR")} <span className="text-sm opacity-70">GNF</span></span>
+          </div>
+
+          {/* Confirmation case à cocher */}
+          <label className="flex items-start gap-3 bg-card border border-border rounded-2xl p-4 cursor-pointer hover:border-primary/50 transition-smooth">
+            <Checkbox checked={confirmed} onCheckedChange={(v) => setConfirmed(v === true)} className="mt-0.5" />
+            <span className="text-sm text-muted-foreground">
+              Je confirme avoir effectué le(s) paiement(s) Mobile Money en utilisant les numéros et la référence indiqués ci-dessus.
+            </span>
+          </label>
+
+          <div className="flex gap-3">
+            <Button variant="ghost" size="lg" onClick={() => setStep(1)} className="rounded-2xl">
+              <ArrowLeft className="h-4 w-4" /> Retour
+            </Button>
+            <Button
+              size="lg"
+              disabled={submitting || !confirmed}
               onClick={placeOrder}
               className="flex-1 rounded-2xl bg-gradient-gold text-secondary-foreground shadow-gold h-14 text-base"
             >
-              {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Validation...</> : "J'ai effectué le paiement"}
+              {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Validation...</> : <>Valider ma commande <Check className="h-4 w-4" /></>}
             </Button>
           </div>
         </div>
