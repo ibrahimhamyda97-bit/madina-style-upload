@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { ArrowLeft, Smartphone, Check, Copy, Loader2, Phone, MapPin, User as UserIcon, Hash, Store } from "lucide-react";
+import { ArrowLeft, Smartphone, Check, Copy, Loader2, Phone, MapPin, User as UserIcon, Hash, Store, ShieldCheck, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,7 +36,7 @@ export default function Checkout() {
   const { items, total, clear } = useCart();
   const { user } = useAuth();
   const nav = useNavigate();
-  const [step, setStep] = useState<0 | 1 | 2>(0);
+  const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [data, setData] = useState({ customer_name: "", customer_phone: "", customer_address: "", notes: "" });
   const [paymentReference, setPaymentReference] = useState(
     () => `MAD-${Date.now().toString(36).toUpperCase()}`
@@ -43,6 +44,7 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false);
   const [orderRef, setOrderRef] = useState<string | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => { if (!user) nav("/auth"); }, [user, nav]);
   useEffect(() => { if (items.length === 0 && !orderRef) nav("/cart"); }, [items, orderRef, nav]);
@@ -144,10 +146,10 @@ export default function Checkout() {
     await clear();
     setOrderRef(reference);
     setSubmitting(false);
-    setStep(2);
+    setStep(3);
   }
 
-  if (orderRef && step === 2) {
+  if (orderRef && step === 3) {
     return (
       <div className="container max-w-lg py-16 text-center animate-fade-in">
         <div className="inline-flex h-16 w-16 rounded-2xl bg-primary/10 grid place-items-center mb-5">
@@ -176,16 +178,16 @@ export default function Checkout() {
       <p className="text-muted-foreground mb-8">Total à payer : <strong className="text-primary font-bold">{total.toLocaleString("fr-FR")} GNF</strong></p>
 
       <ol className="flex items-center gap-2 mb-8">
-        {["Livraison", "Paiement", "Confirmation"].map((label, i) => (
+        {["Livraison", "Paiement", "Vérification", "Confirmation"].map((label, i) => (
           <li key={label} className="flex-1 flex items-center gap-2">
             <div className={cn(
-              "h-8 w-8 rounded-full grid place-items-center text-xs font-bold transition-smooth",
+              "h-8 w-8 rounded-full grid place-items-center text-xs font-bold transition-smooth shrink-0",
               i <= step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
             )}>
               {i < step ? <Check className="h-4 w-4" /> : i + 1}
             </div>
             <span className={cn("text-xs font-medium hidden sm:inline", i === step ? "text-foreground" : "text-muted-foreground")}>{label}</span>
-            {i < 2 && <div className={cn("h-0.5 flex-1 rounded-full transition-smooth", i < step ? "bg-primary" : "bg-muted")} />}
+            {i < 3 && <div className={cn("h-0.5 flex-1 rounded-full transition-smooth", i < step ? "bg-primary" : "bg-muted")} />}
           </li>
         ))}
       </ol>
@@ -303,11 +305,119 @@ export default function Checkout() {
             </Button>
             <Button
               size="lg"
-              disabled={submitting}
+              onClick={() => setStep(2)}
+              className="flex-1 rounded-2xl bg-gradient-gold text-secondary-foreground shadow-gold h-14 text-base"
+            >
+              <ShieldCheck className="h-4 w-4" /> Vérifier ma commande
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {step === 2 && (
+        <div className="space-y-5">
+          <div className="bg-primary/5 border border-primary/30 rounded-2xl p-4 flex gap-3">
+            <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-semibold text-foreground">Dernière vérification</p>
+              <p className="text-muted-foreground text-xs mt-0.5">
+                Confirmez les informations de paiement boutique par boutique avant de valider votre commande.
+              </p>
+            </div>
+          </div>
+
+          {/* Livraison */}
+          <div className="bg-card border border-border rounded-3xl p-5 md:p-6 shadow-soft">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <MapPin className="h-3.5 w-3.5" /> Livraison
+              </h3>
+              <Button variant="ghost" size="sm" onClick={() => setStep(0)} className="h-7 text-xs">Modifier</Button>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3 text-sm">
+              <SummaryRow label="Nom" value={data.customer_name} />
+              <SummaryRow label="Téléphone" value={data.customer_phone} />
+              <SummaryRow label="Adresse" value={data.customer_address} className="sm:col-span-2" />
+              {data.notes && <SummaryRow label="Note" value={data.notes} className="sm:col-span-2" />}
+            </div>
+          </div>
+
+          {/* Récap par boutique */}
+          {shopGroups.map((g, idx) => (
+            <div key={g.shopId} className="bg-card border border-border rounded-3xl p-5 md:p-6 shadow-soft">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={cn("h-9 w-9 rounded-xl grid place-items-center text-white shrink-0", g.meta.color)}>
+                    <Store className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-display font-bold text-sm truncate">{g.shopName}</p>
+                    <p className="text-[11px] text-muted-foreground">Boutique {idx + 1} sur {shopGroups.length}</p>
+                  </div>
+                </div>
+                <div className="text-right shrink-0 ml-3">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Montant</p>
+                  <p className="font-display font-bold text-primary text-base">
+                    {g.subtotal.toLocaleString("fr-FR")} <span className="text-[10px] text-muted-foreground">GNF</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2.5">
+                <SummaryLine icon={<Smartphone className="h-3.5 w-3.5" />} label="Opérateur" value={g.meta.name} />
+                <SummaryLine icon={<Phone className="h-3.5 w-3.5" />} label="Numéro" value={g.paymentNumber} mono />
+                <SummaryLine icon={<Hash className="h-3.5 w-3.5" />} label="Référence" value={paymentReference} mono highlight />
+              </div>
+
+              {/* Articles de la boutique */}
+              <div className="mt-4 pt-4 border-t border-border">
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2 flex items-center gap-1.5">
+                  <Package className="h-3 w-3" /> Articles
+                </p>
+                <ul className="space-y-1.5 text-xs">
+                  {items
+                    .filter((l) => (l.product.shop?.id ?? "—") === g.shopId)
+                    .map((l) => (
+                      <li key={`${l.product.id}-${l.size}`} className="flex justify-between gap-2">
+                        <span className="text-muted-foreground truncate">
+                          {l.product.title} <span className="text-foreground/60">×{l.quantity}</span>
+                          {l.size && <span className="text-foreground/60"> · {l.size}</span>}
+                        </span>
+                        <span className="font-medium font-mono shrink-0">
+                          {((l.product.price_gnf ?? 0) * l.quantity).toLocaleString("fr-FR")}
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            </div>
+          ))}
+
+          {/* Total */}
+          <div className="bg-gradient-gold text-secondary-foreground rounded-3xl p-5 shadow-gold flex items-center justify-between">
+            <span className="font-display font-bold text-base">Total à payer</span>
+            <span className="font-display font-bold text-2xl">{total.toLocaleString("fr-FR")} <span className="text-sm opacity-70">GNF</span></span>
+          </div>
+
+          {/* Confirmation case à cocher */}
+          <label className="flex items-start gap-3 bg-card border border-border rounded-2xl p-4 cursor-pointer hover:border-primary/50 transition-smooth">
+            <Checkbox checked={confirmed} onCheckedChange={(v) => setConfirmed(v === true)} className="mt-0.5" />
+            <span className="text-sm text-muted-foreground">
+              Je confirme avoir effectué le(s) paiement(s) Mobile Money en utilisant les numéros et la référence indiqués ci-dessus.
+            </span>
+          </label>
+
+          <div className="flex gap-3">
+            <Button variant="ghost" size="lg" onClick={() => setStep(1)} className="rounded-2xl">
+              <ArrowLeft className="h-4 w-4" /> Retour
+            </Button>
+            <Button
+              size="lg"
+              disabled={submitting || !confirmed}
               onClick={placeOrder}
               className="flex-1 rounded-2xl bg-gradient-gold text-secondary-foreground shadow-gold h-14 text-base"
             >
-              {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Validation...</> : "J'ai effectué le paiement"}
+              {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Validation...</> : <>Valider ma commande <Check className="h-4 w-4" /></>}
             </Button>
           </div>
         </div>
@@ -340,5 +450,37 @@ function CopyRow({ value, icon, highlight }: { value: string; icon?: React.React
       <code className={cn("font-mono text-sm font-bold flex-1 truncate", highlight && "text-primary")}>{value}</code>
       {copied ? <Check className="h-4 w-4 text-primary shrink-0" /> : <Copy className="h-4 w-4 text-muted-foreground shrink-0" />}
     </button>
+  );
+}
+
+function SummaryRow({ label, value, className }: { label: string; value: string; className?: string }) {
+  return (
+    <div className={className}>
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</p>
+      <p className="text-sm font-medium text-foreground break-words">{value || "—"}</p>
+    </div>
+  );
+}
+
+function SummaryLine({
+  icon, label, value, mono, highlight,
+}: { icon: React.ReactNode; label: string; value: string; mono?: boolean; highlight?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-muted-foreground shrink-0">{icon}</span>
+      <span className="text-xs text-muted-foreground w-20 shrink-0">{label}</span>
+      <span className={cn("text-sm flex-1 truncate", mono && "font-mono font-bold", highlight && "text-primary")}>
+        {value}
+      </span>
+      <button
+        type="button"
+        onClick={() => { navigator.clipboard.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500); toast.success("Copié !"); }}
+        className="h-7 w-7 rounded-lg grid place-items-center hover:bg-muted transition-smooth shrink-0"
+        aria-label={`Copier ${label}`}
+      >
+        {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5 text-muted-foreground" />}
+      </button>
+    </div>
   );
 }
