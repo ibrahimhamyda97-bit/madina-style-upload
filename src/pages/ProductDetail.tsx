@@ -44,7 +44,7 @@ export default function ProductDetail() {
           .maybeSingle(),
         supabase
           .from("product_variants")
-          .select("id, name, color, size, price_gnf, position, images:product_variant_images(image_url, position)")
+          .select("id, name, color, size, sizes, price_gnf, position, images:product_variant_images(image_url, position)")
           .eq("product_id", id)
           .order("position"),
       ]);
@@ -56,13 +56,10 @@ export default function ProductDetail() {
       // Garder uniquement variantes ayant au moins une photo
       const usable = vs.filter((v) => v.images.length > 0);
       setVariants(usable);
-      if (usable.length > 0) {
-        setActiveVariantId(usable[0].id);
-        setActiveSize(usable[0].size);
-      } else {
-        const firstSize = prod?.images?.[0]?.size;
-        if (firstSize) setActiveSize(firstSize);
-      }
+      // Par défaut : sélectionner la photo principale (= produit), pas une variante
+      setActiveVariantId(null);
+      const firstSize = prod?.images?.[0]?.size;
+      if (firstSize) setActiveSize(firstSize);
     })();
   }, [id]);
 
@@ -74,21 +71,44 @@ export default function ProductDetail() {
   // Reset photo index when variant changes
   useEffect(() => { setActivePhotoIdx(0); }, [activeVariantId]);
 
-  // Map size -> first product_image (legacy fallback)
+  // Map size -> first product_image (photo principale fallback)
   const imagesBySize = useMemo(() => {
     const map: Record<string, any> = {};
     (product?.images ?? []).forEach((img: any) => { if (!map[img.size]) map[img.size] = img; });
     return map;
   }, [product]);
 
-  const availableSizes = useMemo(
+  const productSizes = useMemo(
     () => Object.keys(imagesBySize).sort((a, b) => SIZE_ORDER.indexOf(a) - SIZE_ORDER.indexOf(b)),
     [imagesBySize]
   );
 
+  // Tailles disponibles selon la sélection actuelle
+  const availableSizes: string[] = useMemo(() => {
+    if (activeVariant) {
+      const list = (activeVariant.sizes && activeVariant.sizes.length > 0)
+        ? activeVariant.sizes
+        : (activeVariant.size ? [activeVariant.size] : []);
+      return [...list].sort((a, b) => SIZE_ORDER.indexOf(a) - SIZE_ORDER.indexOf(b));
+    }
+    return productSizes;
+  }, [activeVariant, productSizes]);
+
+  // Reset taille quand on change de variante
+  useEffect(() => {
+    if (availableSizes.length === 0) { setActiveSize(null); return; }
+    if (!activeSize || !availableSizes.includes(activeSize)) {
+      setActiveSize(availableSizes[0]);
+    }
+  }, [activeVariantId, availableSizes.join(",")]);
+
   const galleryImages: string[] = activeVariant
     ? activeVariant.images.map((i) => i.image_url)
-    : (activeSize && imagesBySize[activeSize] ? [imagesBySize[activeSize].image_url] : []);
+    : (product?.images ?? [])
+        .slice()
+        .sort((a: any, b: any) => a.position - b.position)
+        .map((img: any) => img.image_url)
+        .filter((url: string, i: number, arr: string[]) => arr.indexOf(url) === i);
 
   const heroImage = galleryImages[activePhotoIdx] ?? galleryImages[0] ?? null;
 
