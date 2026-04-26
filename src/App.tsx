@@ -3,10 +3,34 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Index from "./pages/Index.tsx";
-import NotFound from "./pages/NotFound.tsx";
+import SiteHeader from "./components/SiteHeader";
+import SiteFooter from "./components/SiteFooter";
+import DashboardShell, { vendorNav, adminNav } from "./components/DashboardShell";
+import Home from "./pages/Home";
+import Auth from "./pages/Auth";
+import Shops from "./pages/Shops";
+import ShopDetail from "./pages/ShopDetail";
+import ProductDetail from "./pages/ProductDetail";
+import ShopOnboarding from "./pages/ShopOnboarding";
+import VendorOverview from "./pages/dashboard/VendorOverview";
+import AdminOverview from "./pages/dashboard/AdminOverview";
+import ProductsList from "./pages/dashboard/ProductsList";
+import NewProduct from "./pages/dashboard/NewProduct";
+import MyShop from "./pages/dashboard/MyShop";
+import AdminShops from "./pages/dashboard/AdminShops";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+function PublicLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <SiteHeader />
+      <main className="min-h-[calc(100vh-4rem)]">{children}</main>
+      <SiteFooter />
+    </>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -15,9 +39,28 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
+          <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
+          <Route path="/shops" element={<PublicLayout><Shops /></PublicLayout>} />
+          <Route path="/shop/:slug" element={<PublicLayout><ShopDetail /></PublicLayout>} />
+          <Route path="/product/:id" element={<PublicLayout><ProductDetail /></PublicLayout>} />
+          <Route path="/auth" element={<><SiteHeader /><Auth /></>} />
+          <Route path="/onboarding/shop" element={<PublicLayout><ShopOnboarding /></PublicLayout>} />
+
+          <Route path="/vendor" element={<><SiteHeader /><DashboardShell items={vendorNav} title="Vendeur" /></>}>
+            <Route index element={<VendorOverview />} />
+            <Route path="products" element={<ProductsList scope="vendor" />} />
+            <Route path="products/new" element={<NewProduct mode="vendor" />} />
+            <Route path="shop" element={<MyShop />} />
+          </Route>
+
+          <Route path="/admin" element={<><SiteHeader /><DashboardShell items={adminNav} title="Admin" /></>}>
+            <Route index element={<AdminOverview />} />
+            <Route path="products" element={<ProductsList scope="admin" />} />
+            <Route path="products/new" element={<NewProduct mode="admin" />} />
+            <Route path="shops" element={<AdminShops />} />
+          </Route>
+
+          <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
