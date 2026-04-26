@@ -79,8 +79,7 @@ export default function VariantsEditor({ variants, onChange, mode, userId }: Pro
             Variantes (optionnel)
           </Label>
           <p className="text-xs text-muted-foreground mt-1 max-w-2xl">
-            Ajoutez des variantes pour proposer plusieurs photos et un prix différent selon la couleur ou la taille.
-            Chaque variante a <strong className="text-foreground">1 photo principale</strong> + jusqu'à <strong className="text-foreground">4 photos secondaires</strong>.
+            Chaque variante a son <strong className="text-foreground">propre prix</strong>, sa couleur, ses <strong className="text-foreground">tailles</strong> et jusqu'à <strong className="text-foreground">5 photos</strong> (1 principale + 4 secondaires).
           </p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={add} className="rounded-xl">
