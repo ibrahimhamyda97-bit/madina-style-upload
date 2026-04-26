@@ -15,6 +15,7 @@ interface Variant {
   name: string | null;
   color: string | null;
   size: string | null;
+  sizes: string[] | null;
   price_gnf: number | null;
   position: number;
   images: { image_url: string; position: number }[];
