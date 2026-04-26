@@ -33,7 +33,7 @@ function operatorMeta(name?: string | null) {
 }
 
 export default function Checkout() {
-  const { items, total, subtotal, shipping, clear, refresh } = useCart();
+  const { items, total, subtotal, shipping, refresh } = useCart();
   const { user } = useAuth();
   const nav = useNavigate();
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
