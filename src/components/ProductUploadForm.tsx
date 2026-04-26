@@ -615,9 +615,10 @@ export default function ProductUploadForm({ mode }: Props) {
             </div>
           </div>
 
-          <div className="space-y-1.5 max-w-sm">
+          <div className="space-y-2 max-w-xl">
             <Label>Couleur {mode === "admin" ? "globale" : ""} (optionnel)</Label>
-            <Input maxLength={40} value={color} onChange={(e) => setColor(e.target.value)} placeholder="Bleu marine, Rouge..." />
+            <ColorPalette value={color} onChange={setColor} />
+            <Input maxLength={40} value={color} onChange={(e) => setColor(e.target.value)} placeholder="Ou saisir une couleur personnalisée..." className="h-9" />
           </div>
         </div>
       </div>
