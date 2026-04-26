@@ -178,16 +178,16 @@ export default function Checkout() {
       <p className="text-muted-foreground mb-8">Total à payer : <strong className="text-primary font-bold">{total.toLocaleString("fr-FR")} GNF</strong></p>
 
       <ol className="flex items-center gap-2 mb-8">
-        {["Livraison", "Paiement", "Confirmation"].map((label, i) => (
+        {["Livraison", "Paiement", "Vérification", "Confirmation"].map((label, i) => (
           <li key={label} className="flex-1 flex items-center gap-2">
             <div className={cn(
-              "h-8 w-8 rounded-full grid place-items-center text-xs font-bold transition-smooth",
+              "h-8 w-8 rounded-full grid place-items-center text-xs font-bold transition-smooth shrink-0",
               i <= step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
             )}>
               {i < step ? <Check className="h-4 w-4" /> : i + 1}
             </div>
             <span className={cn("text-xs font-medium hidden sm:inline", i === step ? "text-foreground" : "text-muted-foreground")}>{label}</span>
-            {i < 2 && <div className={cn("h-0.5 flex-1 rounded-full transition-smooth", i < step ? "bg-primary" : "bg-muted")} />}
+            {i < 3 && <div className={cn("h-0.5 flex-1 rounded-full transition-smooth", i < step ? "bg-primary" : "bg-muted")} />}
           </li>
         ))}
       </ol>
