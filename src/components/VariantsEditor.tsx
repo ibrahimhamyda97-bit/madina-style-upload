@@ -9,7 +9,7 @@ import { toast } from "sonner";
 const LETTER_SIZES = ["XS", "S", "M", "L", "XL"] as const;
 const NUMERIC_SIZES = ["36","37","38","39","40","41","42","43","44","45"] as const;
 const ALL_SIZES = [...LETTER_SIZES, ...NUMERIC_SIZES] as const;
-type Size = typeof ALL_SIZES[number];
+export type Size = typeof ALL_SIZES[number];
 
 const COLOR_PRESETS: { name: string; swatch: string }[] = [
   { name: "Noir", swatch: "#111111" },
