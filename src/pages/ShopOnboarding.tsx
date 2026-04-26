@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { Store, Sparkles, Check, ArrowRight, ArrowLeft, Upload, FileCheck2, Loader2 } from "lucide-react";
+import { Store, Sparkles, Check, ArrowRight, ArrowLeft, Upload, FileCheck2, Loader2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,14 +11,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ImageUploader from "@/components/ImageUploader";
 
-const schema = z.object({
+const baseSchema = z.object({
   name: z.string().trim().min(2, "Nom trop court").max(80),
-  description: z.string().trim().max(500).optional().or(z.literal("")),
-  city: z.string().trim().min(2).max(60),
+  city: z.string().trim().min(2, "Ville requise").max(60),
   phone: z.string().trim().min(6, "Téléphone requis").max(40),
-  logo_url: z.string().trim().url().max(500).optional().or(z.literal("")),
-  banner_url: z.string().trim().url().max(500).optional().or(z.literal("")),
-  id_document_url: z.string().trim().min(5, "Pièce d'identité requise"),
 });
 
 const slugify = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50);
@@ -27,20 +23,41 @@ export default function ShopOnboarding() {
   const { user, refreshRoles } = useAuth();
   const nav = useNavigate();
   const [step, setStep] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [idUploading, setIdUploading] = useState(false);
   const [idFileName, setIdFileName] = useState<string | null>(null);
+  const [shopId, setShopId] = useState<string | null>(null);
   const [data, setData] = useState({
     name: "", description: "", city: "", phone: "",
     logo_url: "", banner_url: "", id_document_url: "",
   });
 
-  // Pré-remplir depuis le profil
+  // Charger boutique existante (reprise) ou pré-remplir depuis profil
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("phone, city").eq("id", user.id).maybeSingle().then(({ data: p }) => {
-      if (p) setData((d) => ({ ...d, phone: d.phone || p.phone || "", city: d.city || p.city || "" }));
-    });
+    (async () => {
+      const { data: existing } = await supabase
+        .from("shops")
+        .select("id, name, description, city, phone, logo_url, banner_url, id_document_url")
+        .eq("owner_id", user.id)
+        .maybeSingle();
+      if (existing) {
+        setShopId(existing.id);
+        setData({
+          name: existing.name || "",
+          description: existing.description || "",
+          city: existing.city || "",
+          phone: existing.phone || "",
+          logo_url: existing.logo_url || "",
+          banner_url: existing.banner_url || "",
+          id_document_url: existing.id_document_url || "",
+        });
+        if (existing.id_document_url) setIdFileName("Pièce téléversée");
+      } else {
+        const { data: p } = await supabase.from("profiles").select("phone, city").eq("id", user.id).maybeSingle();
+        if (p) setData((d) => ({ ...d, phone: d.phone || p.phone || "", city: d.city || p.city || "" }));
+      }
+    })();
   }, [user]);
 
   if (!user) {
@@ -59,6 +76,37 @@ export default function ShopOnboarding() {
     { title: "Vérification", desc: "Téléversez votre pièce d'identité pour validation par l'admin." },
   ];
 
+  // Crée la boutique dès l'étape 1 (status = pending). L'admin la voit immédiatement.
+  async function ensureShopCreated() {
+    if (shopId) return shopId;
+    const parsed = baseSchema.safeParse(data);
+    if (!parsed.success) { toast.error(parsed.error.issues[0].message); return null; }
+    setSaving(true);
+    const slug = `${slugify(parsed.data.name)}-${Math.random().toString(36).slice(2, 6)}`;
+    const { data: inserted, error } = await supabase.from("shops").insert({
+      owner_id: user!.id,
+      name: parsed.data.name,
+      slug,
+      city: parsed.data.city,
+      phone: parsed.data.phone,
+      status: "pending",
+    }).select("id").single();
+    if (error) { setSaving(false); toast.error(error.message); return null; }
+    // Donner le rôle vendor dès maintenant
+    await supabase.from("user_roles").insert({ user_id: user!.id, role: "vendor" });
+    await refreshRoles();
+    setShopId(inserted.id);
+    setSaving(false);
+    toast.success("Boutique enregistrée — finalisez votre dossier");
+    return inserted.id;
+  }
+
+  async function patchShop(patch: Partial<{ description: string | null; logo_url: string | null; banner_url: string | null; id_document_url: string }>) {
+    if (!shopId) return;
+    const { error } = await supabase.from("shops").update(patch).eq("id", shopId);
+    if (error) toast.error(error.message);
+  }
+
   async function handleIdUpload(file: File) {
     if (!user) return;
     if (file.size > 5 * 1024 * 1024) return toast.error("Fichier trop lourd (max 5 Mo)");
@@ -72,39 +120,34 @@ export default function ShopOnboarding() {
     if (error) return toast.error(error.message);
     setData((d) => ({ ...d, id_document_url: path }));
     setIdFileName(file.name);
+    if (shopId) await patchShop({ id_document_url: path });
     toast.success("Pièce d'identité téléversée");
   }
 
-  async function submit() {
-    const parsed = schema.safeParse(data);
-    if (!parsed.success) return toast.error(parsed.error.issues[0].message);
-    setLoading(true);
-    const slugBase = slugify(parsed.data.name);
-    const slug = `${slugBase}-${Math.random().toString(36).slice(2, 6)}`;
-    const { error } = await supabase.from("shops").insert({
-      owner_id: user!.id,
-      name: parsed.data.name,
-      slug,
-      description: parsed.data.description || null,
-      city: parsed.data.city,
-      phone: parsed.data.phone,
-      logo_url: parsed.data.logo_url || null,
-      banner_url: parsed.data.banner_url || null,
-      id_document_url: parsed.data.id_document_url,
-      status: "pending",
-    });
-    if (error) { setLoading(false); return toast.error(error.message); }
+  async function next() {
+    if (step === 0) {
+      const id = await ensureShopCreated();
+      if (!id) return;
+      setStep(1);
+    } else if (step === 1) {
+      await patchShop({ description: data.description || null });
+      setStep(2);
+    } else if (step === 2) {
+      await patchShop({ logo_url: data.logo_url || null, banner_url: data.banner_url || null });
+      setStep(3);
+    }
+  }
 
-    // Grant vendor role
-    await supabase.from("user_roles").insert({ user_id: user!.id, role: "vendor" });
-    await refreshRoles();
-    setLoading(false);
+  async function finish() {
+    if (!data.id_document_url) return toast.error("Pièce d'identité requise");
+    if (!shopId) return;
+    await patchShop({ id_document_url: data.id_document_url });
     toast.success("Demande envoyée ! L'admin va vérifier votre dossier.");
     nav("/vendor");
   }
 
   const canContinue = () => {
-    if (step === 0) return data.name && data.city && data.phone;
+    if (step === 0) return data.name.trim().length >= 2 && data.city.trim().length >= 2 && data.phone.trim().length >= 6;
     if (step === 3) return !!data.id_document_url;
     return true;
   };
@@ -117,6 +160,11 @@ export default function ShopOnboarding() {
         </div>
         <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">Ouvrez votre boutique</h1>
         <p className="text-muted-foreground mt-2">Quatre étapes pour rejoindre Madina.</p>
+        {shopId && (
+          <div className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-full bg-secondary/15 text-xs font-medium text-secondary-foreground">
+            <Clock className="h-3 w-3" /> Demande enregistrée — en attente de validation
+          </div>
+        )}
       </div>
 
       <ol className="flex items-center gap-2 mb-10">
@@ -196,10 +244,12 @@ export default function ShopOnboarding() {
         <div className="flex justify-between pt-8">
           <Button variant="ghost" disabled={step === 0} onClick={() => setStep(step - 1)}><ArrowLeft className="h-4 w-4" /> Retour</Button>
           {step < steps.length - 1 ? (
-            <Button onClick={() => setStep(step + 1)} disabled={!canContinue()}>Continuer <ArrowRight className="h-4 w-4" /></Button>
+            <Button onClick={next} disabled={!canContinue() || saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Continuer <ArrowRight className="h-4 w-4" /></>}
+            </Button>
           ) : (
-            <Button onClick={submit} disabled={loading || !canContinue()} className="bg-gradient-gold text-secondary-foreground shadow-gold">
-              {loading ? "Envoi..." : "Envoyer ma demande"}
+            <Button onClick={finish} disabled={!canContinue()} className="bg-gradient-gold text-secondary-foreground shadow-gold">
+              Finaliser ma demande
             </Button>
           )}
         </div>
