@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { Image as ImageIcon, X, Loader2, Plus, Sparkles, Upload, Wallet } from "lucide-react";
+import { Image as ImageIcon, X, Loader2, Plus, Sparkles, Upload, Wallet, ShieldCheck, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +43,7 @@ export default function ProductUploadForm({ mode }: Props) {
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
   const [color, setColor] = useState("");
+  const [shippingFee, setShippingFee] = useState(""); // admin only
   const [selectedSizes, setSelectedSizes] = useState<Size[]>([]);
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [adminUrl, setAdminUrl] = useState("");
@@ -109,7 +110,7 @@ export default function ProductUploadForm({ mode }: Props) {
     if (photos.some((p) => p.loading)) return toast.error("Attendez la fin du téléversement");
 
     setSubmitting(true);
-    const { data: prod, error } = await supabase.from("products").insert({
+    const insertPayload: any = {
       shop_id: parsed.data.shop_id,
       title: parsed.data.title,
       description: parsed.data.description,
@@ -117,7 +118,11 @@ export default function ProductUploadForm({ mode }: Props) {
       category: parsed.data.category,
       detected_color: color || null,
       created_by: user.id,
-    }).select().single();
+    };
+    if (mode === "admin") {
+      insertPayload.shipping_fee_gnf = Number(shippingFee) || 0;
+    }
+    const { data: prod, error } = await supabase.from("products").insert(insertPayload).select().single();
 
     if (error || !prod) { setSubmitting(false); return toast.error(error?.message || "Erreur"); }
 
