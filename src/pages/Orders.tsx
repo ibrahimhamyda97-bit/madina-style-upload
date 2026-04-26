@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, Clock, Check, X, ChevronRight } from "lucide-react";
+import { Package, Clock, Check, X, ChevronRight, KeyRound, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,6 +12,15 @@ const statusMeta: Record<string, { label: string; icon: any; className: string }
   paid: { label: "Payée", icon: Check, className: "bg-primary/15 text-primary border-primary/30" },
   cancelled: { label: "Annulée", icon: X, className: "bg-destructive/10 text-destructive border-destructive/30" },
   refunded: { label: "Remboursée", icon: X, className: "bg-muted text-muted-foreground border-border" },
+};
+
+const deliveryLabels: Record<string, string> = {
+  unassigned: "En attente d'un livreur",
+  assigned: "Livreur en route vers la boutique",
+  picked_up: "Colis récupéré",
+  in_transit: "En cours de livraison",
+  delivered: "Livrée ✓",
+  failed: "Livraison échouée",
 };
 
 export default function Orders() {
