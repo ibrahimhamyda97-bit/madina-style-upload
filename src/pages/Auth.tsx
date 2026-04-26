@@ -139,10 +139,28 @@ export default function Auth() {
 
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-1.5"><Label htmlFor="email">Email</Label><Input id="email" name="email" type="email" required autoComplete="email" /></div>
+                <div className="space-y-1.5"><Label htmlFor="email">Email</Label><Input id="email" name="email" type="email" required autoComplete="email" value={signinEmail} onChange={(e) => setSigninEmail(e.target.value)} /></div>
                 <div className="space-y-1.5"><Label htmlFor="password">Mot de passe</Label><Input id="password" name="password" type="password" required autoComplete="current-password" /></div>
                 <Button disabled={loading} className="w-full" size="lg">{loading ? "Connexion..." : "Se connecter"}</Button>
               </form>
+
+              {unconfirmedEmail && (
+                <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
+                  <p className="text-sm">
+                    Votre adresse <span className="font-semibold">{unconfirmedEmail}</span> n'a pas encore été confirmée.
+                    Vérifiez votre boîte de réception (et vos spams) ou renvoyez l'email de confirmation.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={resending}
+                    onClick={handleResendConfirmation}
+                  >
+                    {resending ? "Envoi en cours..." : "Renvoyer l'email de confirmation"}
+                  </Button>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="signup">
