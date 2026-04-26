@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { Image as ImageIcon, Upload, Sparkles, X, Loader2, Link as LinkIcon } from "lucide-react";
+import { Image as ImageIcon, Upload, Sparkles, X, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,23 +10,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 
 const SIZES = ["XS", "S", "M", "L", "XL"] as const;
 type Size = typeof SIZES[number];
 
 const CATEGORIES = ["Vêtements", "Chaussures", "Accessoires", "Sacs", "Bijoux", "Beauté", "Maison", "Enfants", "Autre"];
 
-interface SlotState {
-  preview: string | null;     // local preview or fetched URL
-  uploadedUrl: string | null; // final remote URL
-  file: File | null;
-  url: string;                // raw URL for admin mode
+interface AdminImage {
+  id: string;
+  url: string;
+  size: Size;
   detectedColor: string | null;
   loading: boolean;
 }
 
-const emptySlot = (): SlotState => ({ preview: null, uploadedUrl: null, file: null, url: "", detectedColor: null, loading: false });
+interface VendorSlotState {
+  preview: string | null;
+  uploadedUrl: string | null;
+  file: File | null;
+  detectedColor: string | null;
+  loading: boolean;
+}
+
+const emptyVendorSlot = (): VendorSlotState => ({ preview: null, uploadedUrl: null, file: null, detectedColor: null, loading: false });
 
 const schema = z.object({
   shop_id: z.string().uuid("Sélectionnez une boutique"),
@@ -51,8 +57,14 @@ export default function ProductUploadForm({ mode }: Props) {
   const [detectedType, setDetectedType] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const [slots, setSlots] = useState<Record<Size, SlotState>>(() =>
-    Object.fromEntries(SIZES.map((s) => [s, emptySlot()])) as Record<Size, SlotState>
+  // Admin mode: dynamic list of {url, size}
+  const [adminImages, setAdminImages] = useState<AdminImage[]>([]);
+  const [currentUrl, setCurrentUrl] = useState("");
+  const [currentSize, setCurrentSize] = useState<Size>("M");
+
+  // Vendor mode: 5 slot uploader (one per size)
+  const [vendorSlots, setVendorSlots] = useState<Record<Size, VendorSlotState>>(() =>
+    Object.fromEntries(SIZES.map((s) => [s, emptyVendorSlot()])) as Record<Size, VendorSlotState>
   );
 
   useEffect(() => {
@@ -67,15 +79,13 @@ export default function ProductUploadForm({ mode }: Props) {
     });
   }, [user, mode]);
 
-  async function analyze(size: Size, imageUrl: string) {
-    setSlots((prev) => ({ ...prev, [size]: { ...prev[size], loading: true } }));
+  async function analyzeAndApply(imageUrl: string, onColor: (c: string | null) => void) {
     try {
       const { data, error } = await supabase.functions.invoke("analyze-image", { body: { imageUrl } });
       if (error) throw error;
       const color = data?.color || null;
       const objType = data?.object_type || null;
-      setSlots((prev) => ({ ...prev, [size]: { ...prev[size], detectedColor: color, loading: false } }));
-      // Pre-fill global if still empty
+      onColor(color);
       if (color && !detectedColor) setDetectedColor(color);
       if (objType && !detectedType) {
         setDetectedType(objType);
@@ -84,52 +94,75 @@ export default function ProductUploadForm({ mode }: Props) {
     } catch (e: any) {
       console.error(e);
       toast.error(e?.message || "Échec de la détection IA");
-      setSlots((prev) => ({ ...prev, [size]: { ...prev[size], loading: false } }));
+      onColor(null);
     }
   }
 
-  async function handleFile(size: Size, file: File) {
+  // -------- Admin handlers --------
+  function addAdminImage() {
+    const url = currentUrl.trim();
+    if (!url) return toast.error("Saisissez une URL d'image");
+    try { new URL(url); } catch { return toast.error("URL invalide"); }
+
+    const id = crypto.randomUUID();
+    const item: AdminImage = { id, url, size: currentSize, detectedColor: null, loading: true };
+    setAdminImages((prev) => [...prev, item]);
+    setCurrentUrl("");
+    analyzeAndApply(url, (color) => {
+      setAdminImages((prev) => prev.map((it) => it.id === id ? { ...it, detectedColor: color, loading: false } : it));
+    });
+  }
+
+  function removeAdminImage(id: string) {
+    setAdminImages((prev) => prev.filter((it) => it.id !== id));
+  }
+
+  function updateAdminSize(id: string, size: Size) {
+    setAdminImages((prev) => prev.map((it) => it.id === id ? { ...it, size } : it));
+  }
+
+  // -------- Vendor handlers --------
+  async function handleVendorFile(size: Size, file: File) {
     if (!user) return;
     if (file.size > 5 * 1024 * 1024) return toast.error("Image trop lourde (max 5 Mo)");
     const localPreview = URL.createObjectURL(file);
-    setSlots((prev) => ({ ...prev, [size]: { ...emptySlot(), preview: localPreview, file, loading: true } }));
+    setVendorSlots((prev) => ({ ...prev, [size]: { ...emptyVendorSlot(), preview: localPreview, file, loading: true } }));
 
     const ext = file.name.split(".").pop() || "jpg";
     const path = `${user.id}/${Date.now()}-${size}.${ext}`;
     const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: false, contentType: file.type });
     if (error) {
       toast.error(error.message);
-      setSlots((prev) => ({ ...prev, [size]: emptySlot() }));
+      setVendorSlots((prev) => ({ ...prev, [size]: emptyVendorSlot() }));
       return;
     }
     const { data: pub } = supabase.storage.from("product-images").getPublicUrl(path);
     const publicUrl = pub.publicUrl;
-    setSlots((prev) => ({ ...prev, [size]: { ...prev[size], uploadedUrl: publicUrl, preview: publicUrl, loading: false } }));
-    analyze(size, publicUrl);
+    setVendorSlots((prev) => ({ ...prev, [size]: { ...prev[size], uploadedUrl: publicUrl, preview: publicUrl, loading: false } }));
+    analyzeAndApply(publicUrl, (color) => {
+      setVendorSlots((prev) => ({ ...prev, [size]: { ...prev[size], detectedColor: color } }));
+    });
   }
 
-  function handleUrl(size: Size, url: string) {
-    setSlots((prev) => ({ ...prev, [size]: { ...prev[size], url } }));
+  function clearVendorSlot(size: Size) {
+    setVendorSlots((prev) => ({ ...prev, [size]: emptyVendorSlot() }));
   }
 
-  function commitUrl(size: Size) {
-    const url = slots[size].url.trim();
-    if (!url) return;
-    try { new URL(url); } catch { return toast.error("URL invalide"); }
-    setSlots((prev) => ({ ...prev, [size]: { ...prev[size], preview: url, uploadedUrl: url } }));
-    analyze(size, url);
-  }
-
-  function clearSlot(size: Size) {
-    setSlots((prev) => ({ ...prev, [size]: emptySlot() }));
-  }
-
+  // -------- Submit --------
   async function submit() {
     if (!user) return;
     const parsed = schema.safeParse({ shop_id: shopId, title, description, price_gnf: price, category });
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
-    const filledImages = SIZES.filter((s) => slots[s].uploadedUrl);
-    if (filledImages.length === 0) return toast.error("Ajoutez au moins une image");
+
+    let imageRows: { image_url: string; size: Size; detected_color: string | null; position: number }[] = [];
+    if (mode === "admin") {
+      if (adminImages.length === 0) return toast.error("Ajoutez au moins une image");
+      imageRows = adminImages.map((it, i) => ({ image_url: it.url, size: it.size, detected_color: it.detectedColor, position: i }));
+    } else {
+      const filled = SIZES.filter((s) => vendorSlots[s].uploadedUrl);
+      if (filled.length === 0) return toast.error("Ajoutez au moins une image");
+      imageRows = filled.map((s, i) => ({ image_url: vendorSlots[s].uploadedUrl!, size: s, detected_color: vendorSlots[s].detectedColor, position: i }));
+    }
 
     setSubmitting(true);
     const { data: prod, error } = await supabase.from("products").insert({
@@ -145,13 +178,7 @@ export default function ProductUploadForm({ mode }: Props) {
 
     if (error || !prod) { setSubmitting(false); return toast.error(error?.message || "Erreur création produit"); }
 
-    const rows = filledImages.map((s, i) => ({
-      product_id: prod.id,
-      image_url: slots[s].uploadedUrl!,
-      size: s,
-      position: SIZES.indexOf(s),
-      detected_color: slots[s].detectedColor,
-    }));
+    const rows = imageRows.map((r) => ({ ...r, product_id: prod.id }));
     const { error: imgErr } = await supabase.from("product_images").insert(rows);
     setSubmitting(false);
     if (imgErr) return toast.error(imgErr.message);
@@ -165,26 +192,42 @@ export default function ProductUploadForm({ mode }: Props) {
         <div className="flex items-center gap-2 mb-1">
           <Sparkles className="h-4 w-4 text-secondary" />
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {mode === "admin" ? "Mode Admin — Images via URL" : "Mode Vendeur — Upload depuis l'appareil"}
+            {mode === "admin" ? "Mode Admin — Ajout d'images via URL" : "Mode Vendeur — Upload depuis l'appareil"}
           </span>
         </div>
-        <h2 className="font-display text-2xl font-bold">5 images, une par taille</h2>
-        <p className="text-sm text-muted-foreground mt-1">Chaque image correspond à une taille. La couleur et le type d'objet sont détectés automatiquement.</p>
+        <h2 className="font-display text-2xl font-bold">
+          {mode === "admin" ? "Ajoutez vos images, une par une" : "5 images, une par taille"}
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          {mode === "admin"
+            ? "Collez l'URL d'une image, choisissez la taille correspondante puis cliquez sur + pour l'ajouter. Répétez pour ajouter d'autres images au même article."
+            : "Chaque image correspond à une taille. La couleur et le type d'objet sont détectés automatiquement."}
+        </p>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-6">
-          {SIZES.map((s) => (
-            <SlotCard
-              key={s}
-              size={s}
-              mode={mode}
-              state={slots[s]}
-              onFile={(f) => handleFile(s, f)}
-              onUrlChange={(v) => handleUrl(s, v)}
-              onCommitUrl={() => commitUrl(s)}
-              onClear={() => clearSlot(s)}
-            />
-          ))}
-        </div>
+        {mode === "admin" ? (
+          <AdminImageManager
+            images={adminImages}
+            currentUrl={currentUrl}
+            currentSize={currentSize}
+            onUrlChange={setCurrentUrl}
+            onSizeChange={setCurrentSize}
+            onAdd={addAdminImage}
+            onRemove={removeAdminImage}
+            onUpdateSize={updateAdminSize}
+          />
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-6">
+            {SIZES.map((s) => (
+              <VendorSlotCard
+                key={s}
+                size={s}
+                state={vendorSlots[s]}
+                onFile={(f) => handleVendorFile(s, f)}
+                onClear={() => clearVendorSlot(s)}
+              />
+            ))}
+          </div>
+        )}
 
         {(detectedColor || detectedType) && (
           <div className="mt-5 flex flex-wrap gap-2 text-xs">
@@ -237,9 +280,98 @@ export default function ProductUploadForm({ mode }: Props) {
   );
 }
 
-function SlotCard({ size, mode, state, onFile, onUrlChange, onCommitUrl, onClear }: {
-  size: Size; mode: "admin" | "vendor"; state: SlotState;
-  onFile: (f: File) => void; onUrlChange: (v: string) => void; onCommitUrl: () => void; onClear: () => void;
+function AdminImageManager({
+  images, currentUrl, currentSize, onUrlChange, onSizeChange, onAdd, onRemove, onUpdateSize,
+}: {
+  images: AdminImage[];
+  currentUrl: string;
+  currentSize: Size;
+  onUrlChange: (v: string) => void;
+  onSizeChange: (s: Size) => void;
+  onAdd: () => void;
+  onRemove: (id: string) => void;
+  onUpdateSize: (id: string, s: Size) => void;
+}) {
+  return (
+    <div className="mt-6 space-y-4">
+      <div className="flex flex-col md:flex-row gap-2 items-stretch md:items-end">
+        <div className="flex-1 space-y-1.5">
+          <Label className="text-xs">URL de l'image</Label>
+          <Input
+            value={currentUrl}
+            onChange={(e) => onUrlChange(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onAdd(); } }}
+            placeholder="https://exemple.com/image.jpg"
+            className="h-11"
+          />
+        </div>
+        <div className="space-y-1.5 md:w-32">
+          <Label className="text-xs">Taille</Label>
+          <Select value={currentSize} onValueChange={(v) => onSizeChange(v as Size)}>
+            <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {SIZES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button
+          type="button"
+          onClick={onAdd}
+          size="lg"
+          className="h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-soft"
+        >
+          <Plus className="h-5 w-5" /> Ajouter
+        </Button>
+      </div>
+
+      {images.length === 0 ? (
+        <div className="rounded-2xl border-2 border-dashed border-border bg-muted/30 py-10 grid place-items-center text-center">
+          <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">Aucune image ajoutée. Collez une URL et cliquez sur + Ajouter.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          {images.map((img) => (
+            <div key={img.id} className="rounded-2xl border border-border bg-background overflow-hidden flex flex-col shadow-soft">
+              <div className="aspect-square bg-muted relative">
+                <img src={img.url} alt={`Taille ${img.size}`} className="h-full w-full object-cover" />
+                <button
+                  onClick={() => onRemove(img.id)}
+                  aria-label="Supprimer"
+                  className="absolute top-2 right-2 h-7 w-7 grid place-items-center rounded-full bg-background/90 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-smooth"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                {img.loading && (
+                  <div className="absolute inset-0 bg-background/70 backdrop-blur-sm grid place-items-center">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  </div>
+                )}
+              </div>
+              <div className="p-2 space-y-1.5">
+                <Select value={img.size} onValueChange={(v) => onUpdateSize(img.id, v as Size)}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {SIZES.map((s) => <SelectItem key={s} value={s}>Taille {s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {img.detectedColor && (
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground px-1">
+                    Couleur : <strong className="text-foreground">{img.detectedColor}</strong>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VendorSlotCard({ size, state, onFile, onClear }: {
+  size: Size; state: VendorSlotState;
+  onFile: (f: File) => void; onClear: () => void;
 }) {
   return (
     <div className="rounded-2xl border-2 border-dashed border-border bg-background overflow-hidden flex flex-col transition-smooth hover:border-primary/40">
@@ -254,15 +386,9 @@ function SlotCard({ size, mode, state, onFile, onUrlChange, onCommitUrl, onClear
           <img src={state.preview} alt={`Taille ${size}`} className="h-full w-full object-cover" />
         ) : (
           <label className="absolute inset-0 grid place-items-center cursor-pointer hover:bg-muted/70 transition-smooth">
-            {mode === "vendor" ? (
-              <>
-                <Upload className="h-5 w-5 text-muted-foreground" />
-                <input type="file" accept="image/*" capture="environment" className="sr-only"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
-              </>
-            ) : (
-              <ImageIcon className="h-5 w-5 text-muted-foreground" />
-            )}
+            <Upload className="h-5 w-5 text-muted-foreground" />
+            <input type="file" accept="image/*" capture="environment" className="sr-only"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
           </label>
         )}
         {state.loading && (
@@ -271,20 +397,6 @@ function SlotCard({ size, mode, state, onFile, onUrlChange, onCommitUrl, onClear
           </div>
         )}
       </div>
-      {mode === "admin" && !state.preview && (
-        <div className="p-2 flex gap-1">
-          <Input
-            value={state.url}
-            onChange={(e) => onUrlChange(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onCommitUrl(); } }}
-            placeholder="https://..."
-            className="h-8 text-xs"
-          />
-          <Button size="icon" variant="secondary" className="h-8 w-8 shrink-0" onClick={onCommitUrl}>
-            <LinkIcon className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      )}
       {state.detectedColor && (
         <div className="px-3 pb-2">
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Couleur : <strong className="text-foreground">{state.detectedColor}</strong></span>
