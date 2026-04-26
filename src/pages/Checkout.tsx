@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { ArrowLeft, Smartphone, Check, Copy, Loader2, Phone, MapPin, User as UserIcon } from "lucide-react";
+import { ArrowLeft, Smartphone, Check, Copy, Loader2, Phone, MapPin, User as UserIcon, Hash, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,26 +19,90 @@ const schema = z.object({
   notes: z.string().max(500).optional(),
 });
 
-const OPERATORS = [
+const FALLBACK_OPERATORS = [
   { id: "orange", name: "Orange Money", color: "bg-[#ff7900]", number: "+224 622 00 00 00" },
   { id: "mtn", name: "MTN Mobile Money", color: "bg-[#ffcc00] text-foreground", number: "+224 660 00 00 00" },
 ] as const;
+
+function operatorMeta(name?: string | null) {
+  const n = (name ?? "").toLowerCase();
+  if (n.includes("orange")) return { id: "orange", name: "Orange Money", color: "bg-[#ff7900]" };
+  if (n.includes("mtn")) return { id: "mtn", name: "MTN Mobile Money", color: "bg-[#ffcc00] text-foreground" };
+  return { id: "other", name: name || "Mobile Money", color: "bg-primary" };
+}
 
 export default function Checkout() {
   const { items, total, clear } = useCart();
   const { user } = useAuth();
   const nav = useNavigate();
   const [step, setStep] = useState<0 | 1 | 2>(0);
-  const [operator, setOperator] = useState<typeof OPERATORS[number]["id"]>("orange");
   const [data, setData] = useState({ customer_name: "", customer_phone: "", customer_address: "", notes: "" });
-  const [paymentReference, setPaymentReference] = useState("");
+  const [paymentReference, setPaymentReference] = useState(
+    () => `MAD-${Date.now().toString(36).toUpperCase()}`
+  );
   const [submitting, setSubmitting] = useState(false);
   const [orderRef, setOrderRef] = useState<string | null>(null);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   useEffect(() => { if (!user) nav("/auth"); }, [user, nav]);
   useEffect(() => { if (items.length === 0 && !orderRef) nav("/cart"); }, [items, orderRef, nav]);
 
-  const op = useMemo(() => OPERATORS.find((o) => o.id === operator)!, [operator]);
+  // Pre-fill customer info from profile
+  useEffect(() => {
+    if (!user || profileLoaded) return;
+    (async () => {
+      const { data: p } = await supabase
+        .from("profiles")
+        .select("first_name, last_name, phone, city, neighborhood")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (p) {
+        const fullName = [p.first_name, p.last_name].filter(Boolean).join(" ").trim();
+        const address = [p.neighborhood, p.city].filter(Boolean).join(", ");
+        setData((d) => ({
+          customer_name: d.customer_name || fullName,
+          customer_phone: d.customer_phone || (p.phone ?? ""),
+          customer_address: d.customer_address || address,
+          notes: d.notes,
+        }));
+      }
+      setProfileLoaded(true);
+    })();
+  }, [user, profileLoaded]);
+
+  // Group cart by shop with each shop's payment info
+  const shopGroups = useMemo(() => {
+    const m = new Map<string, {
+      shopId: string;
+      shopName: string;
+      operatorName: string;
+      paymentNumber: string;
+      subtotal: number;
+      meta: ReturnType<typeof operatorMeta>;
+    }>();
+    items.forEach((l) => {
+      const sid = l.product.shop?.id ?? "—";
+      const existing = m.get(sid);
+      const sub = (l.product?.price_gnf ?? 0) * l.quantity;
+      if (existing) {
+        existing.subtotal += sub;
+      } else {
+        const operatorName = l.product.shop?.payment_operator || FALLBACK_OPERATORS[0].name;
+        const paymentNumber = l.product.shop?.payment_number || FALLBACK_OPERATORS[0].number;
+        m.set(sid, {
+          shopId: sid,
+          shopName: l.product.shop?.name ?? "Boutique",
+          operatorName,
+          paymentNumber,
+          subtotal: sub,
+          meta: operatorMeta(operatorName),
+        });
+      }
+    });
+    return Array.from(m.values());
+  }, [items]);
+
+  const primary = shopGroups[0];
 
   async function placeOrder() {
     if (!user) return;
@@ -46,14 +110,14 @@ export default function Checkout() {
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
 
     setSubmitting(true);
-    const reference = `MAD-${Date.now().toString(36).toUpperCase()}`;
+    const reference = paymentReference || `MAD-${Date.now().toString(36).toUpperCase()}`;
     const { data: order, error } = await supabase.from("orders").insert({
       user_id: user.id,
       reference,
       total_gnf: total,
       payment_method: "mobile_money",
-      payment_operator: op.name,
-      payment_reference: paymentReference || null,
+      payment_operator: primary?.operatorName ?? "Mobile Money",
+      payment_reference: reference,
       customer_name: parsed.data.customer_name,
       customer_phone: parsed.data.customer_phone,
       customer_address: parsed.data.customer_address,
@@ -92,7 +156,7 @@ export default function Checkout() {
         <h1 className="font-display text-3xl font-bold tracking-tight">Commande envoyée !</h1>
         <p className="text-muted-foreground mt-2 max-w-md mx-auto">
           Votre commande <strong className="text-foreground font-mono">{orderRef}</strong> est en attente de validation.
-          Madina confirmera la réception de votre paiement {op.name} et vous contactera.
+          Madina confirmera la réception de votre paiement et vous contactera.
         </p>
         <div className="flex flex-col sm:flex-row gap-2 justify-center mt-8">
           <Button asChild size="lg" variant="outline" className="rounded-2xl"><Link to="/orders">Voir mes commandes</Link></Button>
@@ -128,7 +192,14 @@ export default function Checkout() {
 
       {step === 0 && (
         <div className="bg-card border border-border rounded-3xl p-6 md:p-8 shadow-soft space-y-4">
-          <h2 className="font-display text-lg font-bold mb-2">Vos coordonnées de livraison</h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-display text-lg font-bold">Vos coordonnées de livraison</h2>
+            {profileLoaded && (data.customer_name || data.customer_phone) && (
+              <span className="text-[10px] uppercase tracking-wider font-bold text-primary bg-primary/10 px-2 py-1 rounded-full">
+                Pré-rempli
+              </span>
+            )}
+          </div>
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1.5 text-xs"><UserIcon className="h-3 w-3" /> Nom complet *</Label>
             <Input value={data.customer_name} onChange={(e) => setData({ ...data, customer_name: e.target.value })} placeholder="Aïssata Diallo" />
@@ -161,60 +232,69 @@ export default function Checkout() {
 
       {step === 1 && (
         <div className="space-y-5">
-          <div className="bg-card border border-border rounded-3xl p-6 md:p-8 shadow-soft">
-            <h2 className="font-display text-lg font-bold mb-1">Choisir un opérateur</h2>
-            <p className="text-sm text-muted-foreground mb-5">Effectuez le paiement depuis votre application Mobile Money.</p>
-            <div className="grid sm:grid-cols-2 gap-3">
-              {OPERATORS.map((o) => (
-                <button
-                  key={o.id}
-                  onClick={() => setOperator(o.id)}
-                  className={cn(
-                    "rounded-2xl border-2 p-4 text-left transition-smooth flex items-center gap-3",
-                    operator === o.id ? "border-primary shadow-soft bg-primary/5" : "border-border hover:border-primary/50"
-                  )}
-                >
-                  <div className={cn("h-10 w-10 rounded-xl grid place-items-center text-white", o.color)}>
-                    <Smartphone className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-display font-bold text-sm">{o.name}</p>
-                    <p className="text-[11px] text-muted-foreground">Paiement instantané</p>
-                  </div>
-                  {operator === o.id && <Check className="h-5 w-5 text-primary ml-auto" />}
-                </button>
-              ))}
+          {shopGroups.length > 1 && (
+            <div className="bg-secondary/10 border border-secondary/30 rounded-2xl p-4 text-sm">
+              <p className="font-semibold mb-1">⚠️ Plusieurs boutiques dans votre panier</p>
+              <p className="text-muted-foreground text-xs">Effectuez un paiement séparé vers le numéro de chaque boutique ci-dessous.</p>
             </div>
-          </div>
+          )}
 
-          <div className="bg-gradient-card border border-primary/30 rounded-3xl p-6 md:p-8 shadow-elegant">
-            <h3 className="font-display text-base font-bold mb-3">Étapes de paiement</h3>
-            <ol className="space-y-3 text-sm">
-              <PayStep n={1} text={<>Ouvrez votre application <strong>{op.name}</strong>.</>} />
-              <PayStep
-                n={2}
-                text={
-                  <div className="space-y-2">
-                    <span>Envoyez <strong className="text-primary">{total.toLocaleString("fr-FR")} GNF</strong> au numéro Madina :</span>
-                    <CopyRow value={op.number} />
-                  </div>
-                }
-              />
-              <PayStep
-                n={3}
-                text={
-                  <div className="space-y-2">
-                    <span>Saisissez la référence reçue après le transfert :</span>
-                    <Input
-                      value={paymentReference}
-                      onChange={(e) => setPaymentReference(e.target.value)}
-                      placeholder="Ex. OM-1234567"
-                      className="rounded-xl"
-                    />
-                  </div>
-                }
-              />
-            </ol>
+          {shopGroups.map((g) => (
+            <div key={g.shopId} className="bg-gradient-card border border-primary/30 rounded-3xl p-6 md:p-8 shadow-elegant">
+              <div className="flex items-center gap-3 mb-5 pb-4 border-b border-border">
+                <div className={cn("h-11 w-11 rounded-xl grid place-items-center text-white", g.meta.color)}>
+                  <Smartphone className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-display font-bold text-base flex items-center gap-1.5">
+                    <Store className="h-3.5 w-3.5 text-muted-foreground" />
+                    {g.shopName}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Paiement via <strong>{g.meta.name}</strong></p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Montant</p>
+                  <p className="font-display font-bold text-primary">{g.subtotal.toLocaleString("fr-FR")} <span className="text-[11px] text-muted-foreground">GNF</span></p>
+                </div>
+              </div>
+
+              <ol className="space-y-4 text-sm">
+                <PayStep n={1} text={<>Ouvrez votre application <strong>{g.meta.name}</strong> sur votre téléphone.</>} />
+                <PayStep
+                  n={2}
+                  text={
+                    <div className="space-y-2">
+                      <span>Envoyez <strong className="text-primary">{g.subtotal.toLocaleString("fr-FR")} GNF</strong> au numéro :</span>
+                      <CopyRow value={g.paymentNumber} icon={<Phone className="h-3.5 w-3.5" />} />
+                    </div>
+                  }
+                />
+                <PayStep
+                  n={3}
+                  text={
+                    <div className="space-y-2">
+                      <span>Indiquez la référence ci-dessous comme motif du transfert :</span>
+                      <CopyRow value={paymentReference} icon={<Hash className="h-3.5 w-3.5" />} highlight />
+                    </div>
+                  }
+                />
+              </ol>
+            </div>
+          ))}
+
+          <div className="bg-card border border-border rounded-3xl p-5">
+            <Label className="text-xs font-semibold flex items-center gap-1.5 mb-2">
+              <Hash className="h-3 w-3" /> Référence du transfert (optionnel)
+            </Label>
+            <Input
+              value={paymentReference}
+              onChange={(e) => setPaymentReference(e.target.value)}
+              placeholder="MAD-XXXXXX"
+              className="rounded-xl font-mono"
+            />
+            <p className="text-[11px] text-muted-foreground mt-2">
+              La référence est pré-générée. Vous pouvez la modifier avec celle reçue de l'opérateur après le transfert.
+            </p>
           </div>
 
           <div className="flex gap-3">
@@ -245,16 +325,20 @@ function PayStep({ n, text }: { n: number; text: React.ReactNode }) {
   );
 }
 
-function CopyRow({ value }: { value: string }) {
+function CopyRow({ value, icon, highlight }: { value: string; icon?: React.ReactNode; highlight?: boolean }) {
   const [copied, setCopied] = useState(false);
   return (
     <button
       type="button"
-      onClick={() => { navigator.clipboard.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-background border border-border w-full text-left hover:border-primary transition-smooth"
+      onClick={() => { navigator.clipboard.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500); toast.success("Copié !"); }}
+      className={cn(
+        "flex items-center gap-2 px-4 py-3 rounded-xl border w-full text-left transition-smooth",
+        highlight ? "bg-primary/5 border-primary/40 hover:border-primary" : "bg-background border-border hover:border-primary"
+      )}
     >
-      <code className="font-mono text-sm font-bold flex-1">{value}</code>
-      {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
+      {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
+      <code className={cn("font-mono text-sm font-bold flex-1 truncate", highlight && "text-primary")}>{value}</code>
+      {copied ? <Check className="h-4 w-4 text-primary shrink-0" /> : <Copy className="h-4 w-4 text-muted-foreground shrink-0" />}
     </button>
   );
 }
