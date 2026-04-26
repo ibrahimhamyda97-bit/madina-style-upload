@@ -101,7 +101,7 @@ export default function ShopOnboarding() {
     return inserted.id;
   }
 
-  async function patchShop(patch: Record<string, any>) {
+  async function patchShop(patch: Partial<{ description: string | null; logo_url: string | null; banner_url: string | null; id_document_url: string }>) {
     if (!shopId) return;
     const { error } = await supabase.from("shops").update(patch).eq("id", shopId);
     if (error) toast.error(error.message);
