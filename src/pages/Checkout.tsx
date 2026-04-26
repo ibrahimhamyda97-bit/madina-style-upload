@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { ArrowLeft, Smartphone, Check, Copy, Loader2, Phone, MapPin, User as UserIcon, Hash, Store } from "lucide-react";
+import { ArrowLeft, Smartphone, Check, Copy, Loader2, Phone, MapPin, User as UserIcon, Hash, Store, ShieldCheck, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
