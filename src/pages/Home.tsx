@@ -90,17 +90,20 @@ export default function Home() {
 
   return (
     <div className="animate-fade-in">
-      {/* HERO */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-hero" />
-        <div className="absolute inset-0 opacity-30 mix-blend-overlay" style={{ backgroundImage: `url(${hero})`, backgroundSize: "cover", backgroundPosition: "center" }} />
-        <div className="absolute -bottom-px left-0 right-0 h-1 bg-gradient-flag" />
-        <div className="container relative py-20 md:py-32">
-          <div className="max-w-3xl text-primary-foreground">
+      {/* HERO — split layout, image visible et nette */}
+      <section className="relative overflow-hidden bg-gradient-hero">
+        {/* Halos colorés pour un fond moderne et vibrant */}
+        <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-secondary/30 blur-3xl" />
+        <div className="absolute -bottom-32 right-1/3 h-96 w-96 rounded-full bg-accent/25 blur-3xl" />
+        <div className="absolute -bottom-px left-0 right-0 h-1.5 bg-gradient-flag" />
+
+        <div className="container relative py-16 md:py-24 grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          {/* Colonne texte */}
+          <div className="text-primary-foreground">
             <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur border border-white/20 text-xs font-medium mb-6 animate-fade-up">
               <Sparkles className="h-3.5 w-3.5 text-secondary" /> La marketplace premium de Guinée
             </span>
-            <h1 className="font-display text-5xl md:text-7xl font-bold tracking-tight text-balance animate-fade-up">
+            <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-balance animate-fade-up">
               Le marché de <span className="text-secondary">Madina</span><br/>dans votre poche.
             </h1>
             <p className="mt-6 text-lg md:text-xl text-primary-foreground/85 max-w-xl animate-fade-up" style={{ animationDelay: "120ms" }}>
@@ -110,9 +113,33 @@ export default function Home() {
               <Button asChild size="lg" className="rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-gold">
                 <Link to="/shops">Explorer les boutiques <ArrowRight className="h-4 w-4" /></Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full bg-white/5 backdrop-blur border-white/30 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground">
+              <Button asChild size="lg" variant="outline" className="rounded-full bg-white/10 backdrop-blur border-white/30 text-primary-foreground hover:bg-white/20 hover:text-primary-foreground">
                 <Link to="/onboarding/shop"><Store className="h-4 w-4" /> Ouvrir ma boutique</Link>
               </Button>
+            </div>
+          </div>
+
+          {/* Colonne image — nette, vibrante, encadrée */}
+          <div className="relative animate-fade-up" style={{ animationDelay: "180ms" }}>
+            <div className="absolute -inset-4 bg-gradient-flag rounded-[2rem] blur-2xl opacity-40" />
+            <div className="relative rounded-[2rem] overflow-hidden border border-white/20 shadow-elegant ring-1 ring-white/10">
+              <img
+                src={hero}
+                alt="Mode et artisanat de Guinée — marketplace Madina"
+                width={1600}
+                height={1024}
+                className="w-full h-[420px] md:h-[520px] object-cover"
+              />
+              {/* Badge flottant */}
+              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-3 bg-background/85 backdrop-blur-md rounded-2xl px-4 py-3 shadow-soft border border-border">
+                <div>
+                  <p className="text-xs text-muted-foreground">Tendance cette semaine</p>
+                  <p className="text-sm font-semibold text-foreground">Bazin & tenues traditionnelles</p>
+                </div>
+                <span className="inline-flex h-9 px-3 items-center rounded-full bg-gradient-gold text-secondary-foreground text-xs font-bold shadow-gold">
+                  Nouveau
+                </span>
+              </div>
             </div>
           </div>
         </div>
