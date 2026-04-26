@@ -388,7 +388,7 @@ export default function Checkout() {
                           {l.size && <span className="text-foreground/60"> · {l.size}</span>}
                         </span>
                         <span className="font-medium font-mono shrink-0">
-                          {((l.product.price_gnf ?? 0) * l.quantity).toLocaleString("fr-FR")}
+                          {(((l.variant?.price_gnf ?? l.product.price_gnf) ?? 0) * l.quantity).toLocaleString("fr-FR")}
                         </span>
                       </li>
                     ))}
