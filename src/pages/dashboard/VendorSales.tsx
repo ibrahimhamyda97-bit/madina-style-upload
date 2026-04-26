@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Wallet, TrendingUp, Banknote, Package, Loader2, Calendar, ShoppingBag } from "lucide-react";
+import { Wallet, TrendingUp, Banknote, Package, Loader2, Calendar, ShoppingBag, KeyRound, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -17,7 +17,7 @@ interface SoldLine {
   commission_rate: number;
   size: string;
   product_id: string;
-  order: { id: string; reference: string; created_at: string; status: string };
+  order: { id: string; reference: string; created_at: string; status: string; pickup_code: string | null; delivery_status: string };
 }
 
 interface PayoutRow { id: string; amount_gnf: number; paid_at: string; method: string | null; reference: string | null; note: string | null }
@@ -44,7 +44,7 @@ export default function VendorSales() {
         const [{ data: items }, { data: payoutData }] = await Promise.all([
           supabase
             .from("order_items")
-            .select("id, title, image_url, quantity, unit_price_gnf, commission_rate, size, product_id, order:orders!inner(id, reference, created_at, status)")
+            .select("id, title, image_url, quantity, unit_price_gnf, commission_rate, size, product_id, order:orders!inner(id, reference, created_at, status, pickup_code, delivery_status)")
             .eq("shop_id", (shopData as any).id)
             .eq("order.status", "paid")
             .order("created_at", { ascending: false }),
