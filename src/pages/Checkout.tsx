@@ -146,7 +146,7 @@ export default function Checkout() {
     await clear();
     setOrderRef(reference);
     setSubmitting(false);
-    setStep(2);
+    setStep(3);
   }
 
   if (orderRef && step === 2) {
