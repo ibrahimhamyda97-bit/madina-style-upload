@@ -58,9 +58,12 @@ interface Props {
   mode: "vendor" | "admin";
   /** User id used for vendor uploads */
   userId?: string;
+  /** Maximum number of variant cards allowed. */
+  maxVariants?: number;
 }
 
-export default function VariantsEditor({ variants, onChange, mode, userId }: Props) {
+export default function VariantsEditor({ variants, onChange, mode, userId, maxVariants }: Props) {
+  const canAddVariant = maxVariants == null || variants.length < maxVariants;
   function update(id: string, patch: Partial<DraftVariant>) {
     onChange(variants.map((v) => (v.id === id ? { ...v, ...patch } : v)));
   }
@@ -68,6 +71,7 @@ export default function VariantsEditor({ variants, onChange, mode, userId }: Pro
     onChange(variants.filter((v) => v.id !== id));
   }
   function add() {
+    if (!canAddVariant) return toast.error(`Maximum ${maxVariants} variantes photo`);
     onChange([...variants, makeEmptyVariant()]);
   }
 
@@ -79,10 +83,12 @@ export default function VariantsEditor({ variants, onChange, mode, userId }: Pro
             Variantes (optionnel)
           </Label>
           <p className="text-xs text-muted-foreground mt-1 max-w-2xl">
-            Chaque variante a son <strong className="text-foreground">propre prix</strong>, sa couleur, ses <strong className="text-foreground">tailles</strong> et jusqu'à <strong className="text-foreground">5 photos</strong> (1 principale + 4 secondaires).
+             {mode === "admin"
+               ? <>Ajoutez jusqu'à <strong className="text-foreground">{maxVariants ?? 5} variantes photo</strong>. Chaque variante a son prix, sa couleur et ses tailles.</>
+               : <>Chaque variante a son <strong className="text-foreground">propre prix</strong>, sa couleur, ses <strong className="text-foreground">tailles</strong> et jusqu'à <strong className="text-foreground">5 photos</strong> (1 principale + 4 secondaires).</>}
           </p>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={add} className="rounded-xl">
+        <Button type="button" variant="outline" size="sm" onClick={add} disabled={!canAddVariant} className="rounded-xl">
           <Plus className="h-4 w-4" /> Ajouter une variante
         </Button>
       </div>
