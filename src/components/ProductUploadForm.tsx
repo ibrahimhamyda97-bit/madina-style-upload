@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { Image as ImageIcon, X, Loader2, Plus, Sparkles, Upload, Wallet, ShieldCheck, Truck, Tag, Palette, Ruler, ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
+import { Image as ImageIcon, X, Loader2, Plus, Sparkles, Upload, Wallet, ShieldCheck, Truck, Palette, Ruler } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,7 +50,6 @@ const CATEGORY_GROUPS: { label: string; items: string[] }[] = [
   { label: "Enfants", items: ["Enfants"] },
   { label: "Autre", items: ["Autre"] },
 ];
-const CATEGORIES = CATEGORY_GROUPS.flatMap((g) => g.items);
 const MAX_ADMIN_VARIANTS = 5;
 
 // Palette de couleurs par défaut sélectionnables (nom FR + swatch HEX).
@@ -176,18 +175,6 @@ export default function ProductUploadForm({ mode }: Props) {
 
   function toggleSize(s: Size) {
     setSelectedSizes((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]);
-  }
-
-  function togglePhotoSize(photoId: string, s: Size) {
-    setPhotos((prev) => prev.map((p) => {
-      if (p.id !== photoId) return p;
-      const current = p.sizes ?? [];
-      return { ...p, sizes: current.includes(s) ? current.filter((x) => x !== s) : [...current, s] };
-    }));
-  }
-
-  function updatePhoto(id: string, patch: Partial<PhotoItem>) {
-    setPhotos((prev) => prev.map((p) => p.id === id ? { ...p, ...patch } : p));
   }
 
   // -------- Vendor: file upload to bucket --------
@@ -518,14 +505,16 @@ export default function ProductUploadForm({ mode }: Props) {
         </div>
         <h2 className="font-display text-xl font-bold mb-2">Plusieurs photos & prix par variante</h2>
         <p className="text-sm text-muted-foreground mb-6">
-          Le client pourra choisir une variante (couleur/taille) et voir <strong className="text-foreground">jusqu'à 5 photos</strong> ainsi qu'un <strong className="text-foreground">prix spécifique</strong>.
-          {mode === "admin" && photos.length > 1 && " Les variantes seront attachées au dernier produit créé."}
+          {mode === "admin"
+            ? <>Ajoutez jusqu'à <strong className="text-foreground">5 variantes photo</strong>. Chaque variante peut avoir son prix, sa couleur et ses tailles.</>
+            : <>Le client pourra choisir une variante (couleur/taille) et voir <strong className="text-foreground">jusqu'à 5 photos</strong> ainsi qu'un <strong className="text-foreground">prix spécifique</strong>.</>}
         </p>
         <VariantsEditor
           variants={variants}
           onChange={setVariants}
           mode={mode}
           userId={user?.id}
+          maxVariants={mode === "admin" ? MAX_ADMIN_VARIANTS : undefined}
         />
       </div>
 
@@ -570,11 +559,11 @@ export default function ProductUploadForm({ mode }: Props) {
             </Select>
           </div>
           <div className="space-y-1.5 md:col-span-2">
-            <Label>Titre {mode === "admin" ? "par défaut" : ""} *</Label>
+            <Label>Titre {mode === "admin" ? "principal" : ""} *</Label>
             <Input maxLength={120} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex. Robe Wax Émeraude" />
           </div>
           <div className="space-y-1.5">
-            <Label>Prix {mode === "admin" ? "par défaut" : "de vente"} (GNF) *</Label>
+            <Label>Prix {mode === "admin" ? "principal" : "de vente"} (GNF) *</Label>
             <Input type="number" min={1} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="150000" />
           </div>
           {mode === "admin" && (
@@ -626,7 +615,7 @@ export default function ProductUploadForm({ mode }: Props) {
         )}
 
         <Button onClick={submit} disabled={submitting} size="lg" className="w-full md:w-auto md:px-10 mt-8 rounded-2xl bg-gradient-gold text-secondary-foreground shadow-gold hover:opacity-95">
-          {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Publication...</> : (mode === "admin" && photos.length > 1 ? `Publier ${photos.length} produits` : "Publier le produit")}
+          {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Publication...</> : "Publier le produit"}
         </Button>
       </div>
     </div>
