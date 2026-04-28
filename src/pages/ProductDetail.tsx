@@ -32,6 +32,7 @@ export default function ProductDetail() {
   const [activeSize, setActiveSize] = useState<string | null>(null);
   const [activePhotoIdx, setActivePhotoIdx] = useState(0);
   const [adding, setAdding] = useState(false);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!id) return;
