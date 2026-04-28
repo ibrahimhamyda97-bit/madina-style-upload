@@ -6,7 +6,9 @@ export default function NewProduct({ mode }: { mode: "admin" | "vendor" }) {
       <div className="mb-8">
         <h1 className="font-display text-3xl font-bold tracking-tight">Nouveau produit</h1>
         <p className="text-muted-foreground mt-1">
-          1 photo principale + prix + tailles. Ajoutez ensuite des variantes (couleur · taille · prix · photos) si besoin.
+          {mode === "admin"
+            ? "1 photo principale avec prix principal, puis jusqu'à 5 variantes photo visibles par les clients."
+            : "1 photo principale + prix + tailles. Ajoutez ensuite des variantes (couleur · taille · prix · photos) si besoin."}
         </p>
       </div>
       <ProductUploadForm mode={mode} />
