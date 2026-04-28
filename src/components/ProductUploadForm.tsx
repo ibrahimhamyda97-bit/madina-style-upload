@@ -328,7 +328,7 @@ export default function ProductUploadForm({ mode }: Props) {
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
           {mode === "admin"
-            ? "Chaque lien d'image devient un produit. Vous pouvez personnaliser le prix, la couleur et les tailles pour chaque image."
+            ? <>Ajoutez la <strong className="text-foreground">photo principale</strong>. Son prix est celui du produit. Les autres choix se créent plus bas comme variantes photo.</>
             : <>Choisissez la <strong className="text-foreground">photo principale</strong> du produit. Pour proposer plusieurs photos, couleurs ou prix, ajoutez des <strong className="text-foreground">variantes</strong> plus bas.</>}
         </p>
 
@@ -341,26 +341,20 @@ export default function ProductUploadForm({ mode }: Props) {
               placeholder="https://exemple.com/image.jpg"
               className="h-11"
             />
-            <Button onClick={addAdminUrl} className="h-11"><Plus className="h-5 w-5" /> Ajouter</Button>
+            <Button onClick={addAdminUrl} className="h-11"><Plus className="h-5 w-5" /> {photos.length ? "Remplacer" : "Ajouter"}</Button>
           </div>
         )}
 
-        {/* Mode admin : liste détaillée par image */}
+        {/* Mode admin : photo principale uniquement */}
         {mode === "admin" && photos.length > 0 && (
           <div className="mt-6 space-y-4">
             {photos.map((p, idx) => {
-              const hasPriceOverride = !!(p.price && Number(p.price) > 0);
-              const hasColorOverride = !!(p.color && p.color.trim());
-              const hasSizesOverride = !!(p.sizes && p.sizes.length > 0);
-              const hasTitleOverride = !!(p.title && p.title.trim());
-              const overrideCount = [hasPriceOverride, hasColorOverride, hasSizesOverride, hasTitleOverride].filter(Boolean).length;
-
-              const effectivePrice = hasPriceOverride ? Number(p.price) : (Number(price) || 0);
-              const effectiveColor = hasColorOverride ? p.color!.trim() : (color || "");
-              const effectiveSizes = hasSizesOverride ? p.sizes! : selectedSizes;
+              const effectivePrice = Number(price) || 0;
+              const effectiveColor = color || "";
+              const effectiveSizes = selectedSizes;
 
               return (
-              <div key={p.id} className={`rounded-2xl border bg-background overflow-hidden shadow-soft transition-smooth ${overrideCount > 0 ? "border-primary/50 ring-1 ring-primary/20" : "border-border"}`}>
+              <div key={p.id} className="rounded-2xl border border-primary/30 bg-background overflow-hidden shadow-soft transition-smooth">
                 <div className="flex flex-col md:flex-row gap-4 p-4">
                   <div className="relative w-full md:w-40 shrink-0">
                     <div className="aspect-square rounded-xl bg-muted overflow-hidden">
@@ -371,178 +365,48 @@ export default function ProductUploadForm({ mode }: Props) {
                       className="absolute top-2 right-2 h-7 w-7 grid place-items-center rounded-full bg-background/90 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-smooth"
                       aria-label="Supprimer"
                     ><X className="h-4 w-4" /></button>
-                    {overrideCount > 0 && (
-                      <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold shadow-soft">
-                        {overrideCount} spécifique{overrideCount > 1 ? "s" : ""}
-                      </span>
-                    )}
+                    <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold shadow-soft">
+                      Photo principale
+                    </span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 mb-3">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                          Produit #{idx + 1}
+                          Produit principal
                         </p>
-                        {overrideCount === 0 && (
-                          <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/80 px-1.5 py-0.5 rounded bg-muted">
-                            100% global
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {overrideCount > 0 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => updatePhoto(p.id, { price: "", color: "", sizes: [], title: "" })}
-                            className="h-7 text-xs text-muted-foreground hover:text-destructive"
-                            title="Tout réinitialiser sur les valeurs globales"
-                          >
-                            <RotateCcw className="h-3 w-3" /> Réinitialiser
-                          </Button>
-                        )}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => updatePhoto(p.id, { expanded: !p.expanded })}
-                          className="h-7 text-xs"
-                        >
-                          {p.expanded ? <><ChevronUp className="h-3 w-3" /> Réduire</> : <><ChevronDown className="h-3 w-3" /> Personnaliser</>}
-                        </Button>
                       </div>
                     </div>
 
-                    {/* Récap toujours visible — clair sur la source de chaque valeur */}
+                    {/* Récap toujours visible */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
                       <ValueChip
                         icon={<Wallet className="h-3 w-3" />}
                         label="Prix"
                         value={effectivePrice > 0 ? `${fmt(effectivePrice)} GNF` : "—"}
-                        source={hasPriceOverride ? "override" : (Number(price) > 0 ? "global" : "missing")}
+                        source={Number(price) > 0 ? "global" : "missing"}
                       />
                       <ValueChip
                         icon={<Palette className="h-3 w-3" />}
                         label="Couleur"
                         value={effectiveColor || "—"}
-                        source={hasColorOverride ? "override" : (color ? "global" : "missing")}
+                        source={color ? "global" : "missing"}
                       />
                       <ValueChip
                         icon={<Ruler className="h-3 w-3" />}
                         label="Tailles"
                         value={effectiveSizes.length > 0 ? effectiveSizes.join(", ") : "M"}
-                        source={hasSizesOverride ? "override" : (selectedSizes.length > 0 ? "global" : "default")}
+                        source={selectedSizes.length > 0 ? "global" : "default"}
                       />
                     </div>
-
-                    {p.expanded && (
-                      <div className="space-y-4 mt-2 pt-3 border-t border-dashed border-border">
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <Label className="text-xs flex items-center gap-1.5">
-                              <Tag className="h-3 w-3" /> Titre spécifique
-                              <SourceBadge source={hasTitleOverride ? "override" : "global"} />
-                            </Label>
-                            {hasTitleOverride && (
-                              <button type="button" onClick={() => updatePhoto(p.id, { title: "" })} className="text-[10px] text-muted-foreground hover:text-destructive">Effacer</button>
-                            )}
-                          </div>
-                          <Input
-                            maxLength={120}
-                            value={p.title ?? ""}
-                            onChange={(e) => updatePhoto(p.id, { title: e.target.value })}
-                            placeholder={title ? `Hérite : « ${title} »` : "Définissez d'abord le titre par défaut ci-dessous"}
-                            className="h-9"
-                          />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="space-y-1.5">
-                            <div className="flex items-center justify-between">
-                              <Label className="text-xs flex items-center gap-1.5">
-                                <Wallet className="h-3 w-3" /> Prix (GNF)
-                                <SourceBadge source={hasPriceOverride ? "override" : (Number(price) > 0 ? "global" : "missing")} />
-                              </Label>
-                              {hasPriceOverride && (
-                                <button type="button" onClick={() => updatePhoto(p.id, { price: "" })} className="text-[10px] text-muted-foreground hover:text-destructive">Effacer</button>
-                              )}
-                            </div>
-                            <Input
-                              type="number"
-                              min={1}
-                              value={p.price ?? ""}
-                              onChange={(e) => updatePhoto(p.id, { price: e.target.value })}
-                              placeholder={Number(price) > 0 ? `Hérite : ${fmt(Number(price))} GNF` : "Prix obligatoire"}
-                              className="h-9"
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <div className="flex items-center justify-between">
-                              <Label className="text-xs flex items-center gap-1.5">
-                                <Palette className="h-3 w-3" /> Couleur
-                                <SourceBadge source={hasColorOverride ? "override" : (color ? "global" : "missing")} />
-                              </Label>
-                              {hasColorOverride && (
-                                <button type="button" onClick={() => updatePhoto(p.id, { color: "" })} className="text-[10px] text-muted-foreground hover:text-destructive">Effacer</button>
-                              )}
-                            </div>
-                            <ColorPalette value={p.color ?? ""} onChange={(name) => updatePhoto(p.id, { color: name })} size="sm" />
-                            <Input
-                              maxLength={40}
-                              value={p.color ?? ""}
-                              onChange={(e) => updatePhoto(p.id, { color: e.target.value })}
-                              placeholder={color ? `Hérite : ${color}` : "Ou saisir une couleur..."}
-                              className="h-9"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <Label className="text-xs flex items-center gap-1.5">
-                              <Ruler className="h-3 w-3" /> Tailles disponibles
-                              <SourceBadge source={hasSizesOverride ? "override" : (selectedSizes.length > 0 ? "global" : "default")} />
-                            </Label>
-                            {hasSizesOverride && (
-                              <button type="button" onClick={() => updatePhoto(p.id, { sizes: [] })} className="text-[10px] text-muted-foreground hover:text-destructive">Effacer</button>
-                            )}
-                          </div>
-                          <div className="space-y-2">
-                            <div className="flex flex-wrap gap-1.5">
-                              {LETTER_SIZES.map((s) => (
-                                <SizeChip key={s} label={s} active={(p.sizes ?? []).includes(s)} onClick={() => togglePhotoSize(p.id, s)} small />
-                              ))}
-                            </div>
-                            <div className="flex flex-wrap gap-1.5">
-                              {NUMERIC_SIZES.map((s) => (
-                                <SizeChip key={s} label={s} active={(p.sizes ?? []).includes(s)} onClick={() => togglePhotoSize(p.id, s)} small />
-                              ))}
-                            </div>
-                            <p className="text-[11px] text-muted-foreground">
-                              {hasSizesOverride
-                                ? "✓ Tailles spécifiques à ce produit."
-                                : selectedSizes.length > 0
-                                  ? `Hérite des tailles globales : ${selectedSizes.join(", ")}`
-                                  : "Aucune taille définie — « M » sera utilisée par défaut."}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
               );
             })}
 
-            {/* Légende */}
             <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground pt-1">
-              <span className="font-semibold uppercase tracking-wider">Légende :</span>
-              <SourceBadge source="override" />
-              <span>= valeur spécifique à cette image</span>
-              <SourceBadge source="global" />
-              <span>= héritée des champs globaux ci-dessous</span>
-              <SourceBadge source="default" />
-              <span>= valeur par défaut</span>
+              <span>La photo principale utilise le prix principal du produit.</span>
             </div>
           </div>
         )}
