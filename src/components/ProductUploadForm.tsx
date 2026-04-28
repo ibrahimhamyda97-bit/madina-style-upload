@@ -51,6 +51,7 @@ const CATEGORY_GROUPS: { label: string; items: string[] }[] = [
   { label: "Autre", items: ["Autre"] },
 ];
 const CATEGORIES = CATEGORY_GROUPS.flatMap((g) => g.items);
+const MAX_ADMIN_VARIANTS = 5;
 
 // Palette de couleurs par défaut sélectionnables (nom FR + swatch HEX).
 // `swatch` est uniquement visuel — la valeur enregistrée reste le nom (ex: "Bleu marine").
@@ -214,7 +215,7 @@ export default function ProductUploadForm({ mode }: Props) {
     const url = adminUrl.trim();
     if (!url) return toast.error("Saisissez une URL");
     try { new URL(url); } catch { return toast.error("URL invalide"); }
-    setPhotos((p) => [...p, { id: crypto.randomUUID(), url, loading: false, expanded: true }]);
+    setPhotos([{ id: crypto.randomUUID(), url, loading: false, expanded: true }]);
     setAdminUrl("");
   }
 
@@ -232,48 +233,45 @@ export default function ProductUploadForm({ mode }: Props) {
     setSubmitting(true);
 
     if (mode === "admin") {
-      // Each image with overrides becomes ITS OWN product (so each can have its own price/color/sizes/title)
-      let createdCount = 0;
-      let lastProductId: string | null = null;
-      for (const photo of photos) {
-        const photoPrice = Number(photo.price) > 0 ? Number(photo.price) : Number(price);
-        const photoColor = (photo.color ?? "").trim() || color || null;
-        const photoTitle = (photo.title ?? "").trim() || title;
-        const photoSizes: Size[] = (photo.sizes && photo.sizes.length > 0)
-          ? photo.sizes
-          : (selectedSizes.length > 0 ? selectedSizes : ["M" as Size]);
-
-        const insertPayload: any = {
-          shop_id: parsed.data.shop_id,
-          title: photoTitle,
-          description: parsed.data.description,
-          price_gnf: photoPrice,
-          category: parsed.data.category,
-          detected_color: photoColor,
-          created_by: user.id,
-          shipping_fee_gnf: Number(shippingFee) || 0,
-        };
-        const { data: prod, error } = await supabase.from("products").insert(insertPayload).select().single();
-        if (error || !prod) { setSubmitting(false); return toast.error(error?.message || "Erreur"); }
-
-        const rows = photoSizes.map((sz, idx) => ({
-          product_id: prod.id,
-          image_url: photo.url,
-          size: sz,
-          detected_color: photoColor,
-          position: idx,
-        }));
-        const { error: imgErr } = await supabase.from("product_images").insert(rows);
-        if (imgErr) { setSubmitting(false); return toast.error(imgErr.message); }
-        lastProductId = prod.id;
-        createdCount++;
+      if (variants.length > MAX_ADMIN_VARIANTS) {
+        setSubmitting(false);
+        return toast.error(`Maximum ${MAX_ADMIN_VARIANTS} variantes photo par produit`);
       }
-      // Variantes : appliquées au dernier produit créé (mode admin)
-      if (variants.length > 0 && lastProductId) {
-        await persistVariants(lastProductId, variants);
+      const invalidVariantIndex = variants.findIndex((v) => v.images.some((i) => i.loading) || (v.images.some((i) => i.url) && !(Number(v.price) > 0)));
+      if (invalidVariantIndex !== -1) {
+        setSubmitting(false);
+        return toast.error(`Variante ${invalidVariantIndex + 1}: ajoutez une photo et un prix valide`);
+      }
+
+      const insertPayload: any = {
+        shop_id: parsed.data.shop_id,
+        title: parsed.data.title,
+        description: parsed.data.description,
+        price_gnf: parsed.data.price_gnf,
+        category: parsed.data.category,
+        detected_color: color || null,
+        created_by: user.id,
+        shipping_fee_gnf: Number(shippingFee) || 0,
+      };
+      const { data: prod, error } = await supabase.from("products").insert(insertPayload).select().single();
+      if (error || !prod) { setSubmitting(false); return toast.error(error?.message || "Erreur"); }
+
+      const sizesToUse: Size[] = selectedSizes.length > 0 ? selectedSizes : ["M" as Size];
+      const rows = sizesToUse.map((sz, idx) => ({
+        product_id: prod.id,
+        image_url: photos[0].url,
+        size: sz,
+        detected_color: color || null,
+        position: idx,
+      }));
+      const { error: imgErr } = await supabase.from("product_images").insert(rows);
+      if (imgErr) { setSubmitting(false); return toast.error(imgErr.message); }
+
+      if (variants.length > 0) {
+        await persistVariants(prod.id, variants.slice(0, MAX_ADMIN_VARIANTS));
       }
       setSubmitting(false);
-      toast.success(`${createdCount} produit(s) publié(s) sur Madina !`);
+      toast.success("Produit publié avec ses variantes photo !");
       nav("/admin/products");
       return;
     }
