@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Palette, Tag, ShoppingCart, Star } from "lucide-react";
+import { ArrowLeft, Palette, Tag, ShoppingCart, Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ export default function ProductDetail() {
   const [activeSize, setActiveSize] = useState<string | null>(null);
   const [activePhotoIdx, setActivePhotoIdx] = useState(0);
   const [adding, setAdding] = useState(false);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -125,37 +126,121 @@ export default function ProductDetail() {
 
       <div className="grid lg:grid-cols-2 gap-10">
         <div>
-          <div className="aspect-square rounded-3xl overflow-hidden bg-muted shadow-elegant relative">
-            {heroImage ? (
-              <img key={heroImage} src={heroImage} alt={product.title} className="h-full w-full object-cover animate-fade-in" />
-            ) : (
-              <div className="h-full w-full bg-gradient-card" />
-            )}
-          </div>
+          {/* Carrousel horizontal swipeable : photo principale + variantes */}
+          {(() => {
+            const slides = [
+              {
+                id: null as string | null,
+                image: product.images?.[0]?.image_url ?? null,
+                color: product.detected_color ?? null,
+                label: "Modèle principal",
+                isMain: true,
+              },
+              ...variants.slice(0, 5).map((v) => ({
+                id: v.id,
+                image: v.images[0]?.image_url ?? null,
+                color: v.color,
+                label: v.name || v.color || "Variante",
+                isMain: false,
+              })),
+            ];
+            const activeIdx = Math.max(0, slides.findIndex((s) => s.id === activeVariantId));
+            const goTo = (idx: number) => {
+              const clamped = Math.max(0, Math.min(slides.length - 1, idx));
+              setActiveVariantId(slides[clamped].id);
+              const el = scrollerRef.current;
+              if (el) el.scrollTo({ left: clamped * el.clientWidth, behavior: "smooth" });
+            };
+            return (
+              <div>
+                <div className="relative">
+                  <div
+                    ref={scrollerRef}
+                    onScroll={(e) => {
+                      const el = e.currentTarget;
+                      const idx = Math.round(el.scrollLeft / el.clientWidth);
+                      if (slides[idx] && slides[idx].id !== activeVariantId) {
+                        setActiveVariantId(slides[idx].id);
+                      }
+                    }}
+                    className="flex overflow-x-auto snap-x snap-mandatory rounded-3xl shadow-elegant bg-muted"
+                    style={{ scrollbarWidth: "none" }}
+                  >
+                    {slides.map((s, i) => (
+                      <div key={(s.id ?? "main") + i} className="snap-start shrink-0 w-full aspect-square relative">
+                        {s.image ? (
+                          <img src={s.image} alt={s.label} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="h-full w-full bg-gradient-card" />
+                        )}
+                        {s.isMain && (
+                          <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1 shadow-soft">
+                            <Star className="h-3 w-3" /> Principal
+                          </span>
+                        )}
+                        <span className="absolute bottom-3 right-3 rounded-full bg-background/80 backdrop-blur text-xs font-medium px-2.5 py-1">
+                          {i + 1} / {slides.length}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
 
-          {/* Galerie photos de la variante (ou fallback tailles) */}
-          {galleryImages.length > 1 ? (
-            <div className="flex flex-wrap gap-2 mt-4">
-              {galleryImages.map((url, i) => (
-                <button
-                  key={url + i}
-                  onClick={() => setActivePhotoIdx(i)}
-                  className={cn(
-                    "h-16 w-16 rounded-xl overflow-hidden border-2 relative transition-smooth shrink-0",
-                    activePhotoIdx === i ? "border-primary shadow-soft" : "border-transparent hover:border-border"
+                  {slides.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        aria-label="Précédent"
+                        onClick={() => goTo(activeIdx - 1)}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 grid place-items-center rounded-full bg-background/80 backdrop-blur shadow-soft hover:bg-background transition-smooth disabled:opacity-30"
+                        disabled={activeIdx === 0}
+                      >
+                        <ChevronLeft className="h-5 w-5" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Suivant"
+                        onClick={() => goTo(activeIdx + 1)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 grid place-items-center rounded-full bg-background/80 backdrop-blur shadow-soft hover:bg-background transition-smooth disabled:opacity-30"
+                        disabled={activeIdx === slides.length - 1}
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </button>
+                    </>
                   )}
-                >
-                  <img src={url} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
-                  {i === 0 && (
-                    <span className="absolute top-1 left-1 h-4 w-4 grid place-items-center rounded-full bg-primary text-primary-foreground">
-                      <Star className="h-2.5 w-2.5" />
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          ) : null}
+                </div>
+
+                {/* Pastilles couleur cliquables sous le carrousel */}
+                {slides.length > 1 && (
+                  <div className="mt-5 flex items-center justify-center gap-3 flex-wrap">
+                    {slides.map((s, i) => {
+                      const active = i === activeIdx;
+                      const bg = s.color || "#e5e7eb";
+                      return (
+                        <button
+                          key={"dot-" + i}
+                          type="button"
+                          onClick={() => goTo(i)}
+                          aria-label={s.label}
+                          title={s.label}
+                          className={cn(
+                            "relative h-7 w-7 rounded-full border-2 transition-smooth",
+                            active ? "border-primary scale-110 shadow-soft" : "border-border hover:border-primary/60"
+                          )}
+                          style={{ backgroundColor: bg }}
+                        >
+                          {s.isMain && (
+                            <Star className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 text-primary fill-primary" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
+
 
         <div>
           {product.shop && (
@@ -179,78 +264,6 @@ export default function ProductDetail() {
             {product.detected_object_type && <Badge variant="outline" className="rounded-full">{product.detected_object_type}</Badge>}
           </div>
 
-          {/* Sélecteur : Photo principale + variantes */}
-          {variants.length > 0 && (
-            <div className="mt-8">
-              <div className="flex items-end justify-between gap-3 mb-3">
-                <h3 className="font-medium text-sm uppercase tracking-wider text-muted-foreground">
-                  Choisir votre modèle
-                </h3>
-                <span className="text-xs text-muted-foreground">Glissez droite / gauche</span>
-              </div>
-              <div className="-mx-1 flex gap-3 overflow-x-auto overscroll-x-contain snap-x snap-mandatory px-1 pb-3">
-                {/* Carte "Photo principale" (= produit de base) */}
-                <button
-                  onClick={() => setActiveVariantId(null)}
-                  className={cn(
-                    "snap-start shrink-0 w-32 rounded-2xl border-2 bg-card p-2 transition-smooth text-left",
-                    activeVariantId === null ? "border-primary bg-primary/5 shadow-soft" : "border-border hover:border-primary/50 hover:bg-muted/30"
-                  )}
-                >
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-muted">
-                    <img
-                      src={(product.images?.[0]?.image_url) ?? ""}
-                      alt="Modèle principal"
-                      className="h-full w-full object-cover"
-                    />
-                    <span className="absolute top-2 left-2 h-6 w-6 grid place-items-center rounded-full bg-primary text-primary-foreground shadow-soft">
-                      <Star className="h-3 w-3" />
-                    </span>
-                  </div>
-                  <div className="mt-2 min-w-0">
-                    <p className="text-xs font-semibold leading-tight truncate">Principal</p>
-                    <p className="text-[11px] text-primary font-bold mt-0.5">
-                      {Number(product.price_gnf).toLocaleString("fr-FR")} GNF
-                    </p>
-                  </div>
-                </button>
-
-                {variants.map((v) => {
-                  const active = v.id === activeVariantId;
-                  const sizeLabel = (v.sizes && v.sizes.length > 0)
-                    ? v.sizes.join("/")
-                    : (v.size ?? "");
-                  const label = [v.name, v.color, sizeLabel].filter(Boolean).join(" · ") || "Variante";
-                  return (
-                    <button
-                      key={v.id}
-                      onClick={() => setActiveVariantId(v.id)}
-                      className={cn(
-                        "snap-start shrink-0 w-32 rounded-2xl border-2 bg-card p-2 transition-smooth text-left",
-                        active ? "border-primary bg-primary/5 shadow-soft" : "border-border hover:border-primary/50 hover:bg-muted/30"
-                      )}
-                    >
-                      <div className="aspect-[4/5] overflow-hidden rounded-xl bg-muted">
-                        <img
-                          src={v.images[0]?.image_url}
-                          alt={label}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      <div className="mt-2 min-w-0">
-                        <p className="text-xs font-semibold leading-tight truncate">{label}</p>
-                        {v.price_gnf != null && (
-                          <p className="text-[11px] text-primary font-bold mt-0.5">
-                            {Number(v.price_gnf).toLocaleString("fr-FR")} GNF
-                          </p>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
 
           {/* Tailles : disponibles selon la variante choisie (ou produit principal) */}
           {availableSizes.length > 0 && (
