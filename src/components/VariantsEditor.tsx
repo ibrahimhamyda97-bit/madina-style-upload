@@ -128,7 +128,7 @@ function VariantCard({
   userId?: string;
 }) {
   const [adminUrl, setAdminUrl] = useState("");
-  const max = 5;
+  const max = mode === "admin" ? 1 : 5;
   const principal = variant.images[0];
   const secondaries = variant.images.slice(1, 5);
   const slotsLeft = max - variant.images.length;
@@ -201,7 +201,7 @@ function VariantCard({
         {/* Photos */}
         <div>
           <Label className="text-xs flex items-center gap-1.5 mb-2">
-            <ImageIcon className="h-3 w-3" /> Photos ({variant.images.length}/{max})
+            <ImageIcon className="h-3 w-3" /> {mode === "admin" ? "Photo variante" : "Photos"} ({variant.images.length}/{max})
           </Label>
 
           {mode === "admin" && (
@@ -210,7 +210,7 @@ function VariantCard({
                 value={adminUrl}
                 onChange={(e) => setAdminUrl(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addUrl(); } }}
-                placeholder="https://exemple.com/image.jpg"
+                placeholder="https://exemple.com/image-variante.jpg"
                 className="h-9"
                 disabled={slotsLeft <= 0}
               />
@@ -220,7 +220,7 @@ function VariantCard({
             </div>
           )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <div className={mode === "admin" ? "grid grid-cols-1 sm:grid-cols-[9rem,1fr] gap-2" : "grid grid-cols-2 sm:grid-cols-5 gap-2"}>
             {/* Principal slot */}
             <ImageSlot
               image={principal}
@@ -228,7 +228,7 @@ function VariantCard({
               onRemove={principal ? () => removeImage(principal.id) : undefined}
             />
             {/* Secondary slots */}
-            {Array.from({ length: 4 }).map((_, i) => {
+            {mode !== "admin" && Array.from({ length: 4 }).map((_, i) => {
               const img = secondaries[i];
               return (
                 <ImageSlot
@@ -239,6 +239,11 @@ function VariantCard({
                 />
               );
             })}
+            {mode === "admin" && (
+              <div className="rounded-xl border border-border bg-muted/30 p-3 text-xs text-muted-foreground flex items-center">
+                Une variante = une photo visible dans le sélecteur client.
+              </div>
+            )}
           </div>
 
           {mode === "vendor" && slotsLeft > 0 && (
