@@ -123,18 +123,123 @@ export default function ProductDetail() {
         <Link to={product.shop ? `/shop/${product.shop.slug}` : "/shops"}><ArrowLeft className="h-4 w-4" /> Retour</Link>
       </Button>
 
-      {/* Slides : photo principale + variantes (max 5) */}
-      {(() => null)()}
-      <ProductCarouselWrapper
-        product={product}
-        variants={variants}
-        activeVariantId={activeVariantId}
-        setActiveVariantId={setActiveVariantId}
-      />
       <div className="grid lg:grid-cols-2 gap-10">
-        <div className="hidden">
-          {/* placeholder to keep grid layout */}
+        <div>
+          {/* Carrousel horizontal swipeable : photo principale + variantes */}
+          {(() => {
+            const slides = [
+              {
+                id: null as string | null,
+                image: product.images?.[0]?.image_url ?? null,
+                color: product.detected_color ?? null,
+                label: "Modèle principal",
+                isMain: true,
+              },
+              ...variants.slice(0, 5).map((v) => ({
+                id: v.id,
+                image: v.images[0]?.image_url ?? null,
+                color: v.color,
+                label: v.name || v.color || "Variante",
+                isMain: false,
+              })),
+            ];
+            const activeIdx = Math.max(0, slides.findIndex((s) => s.id === activeVariantId));
+            const goTo = (idx: number) => {
+              const clamped = Math.max(0, Math.min(slides.length - 1, idx));
+              setActiveVariantId(slides[clamped].id);
+              const el = scrollerRef.current;
+              if (el) el.scrollTo({ left: clamped * el.clientWidth, behavior: "smooth" });
+            };
+            return (
+              <div>
+                <div className="relative">
+                  <div
+                    ref={scrollerRef}
+                    onScroll={(e) => {
+                      const el = e.currentTarget;
+                      const idx = Math.round(el.scrollLeft / el.clientWidth);
+                      if (slides[idx] && slides[idx].id !== activeVariantId) {
+                        setActiveVariantId(slides[idx].id);
+                      }
+                    }}
+                    className="flex overflow-x-auto snap-x snap-mandatory rounded-3xl shadow-elegant bg-muted"
+                    style={{ scrollbarWidth: "none" }}
+                  >
+                    {slides.map((s, i) => (
+                      <div key={(s.id ?? "main") + i} className="snap-start shrink-0 w-full aspect-square relative">
+                        {s.image ? (
+                          <img src={s.image} alt={s.label} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="h-full w-full bg-gradient-card" />
+                        )}
+                        {s.isMain && (
+                          <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1 shadow-soft">
+                            <Star className="h-3 w-3" /> Principal
+                          </span>
+                        )}
+                        <span className="absolute bottom-3 right-3 rounded-full bg-background/80 backdrop-blur text-xs font-medium px-2.5 py-1">
+                          {i + 1} / {slides.length}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {slides.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        aria-label="Précédent"
+                        onClick={() => goTo(activeIdx - 1)}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 grid place-items-center rounded-full bg-background/80 backdrop-blur shadow-soft hover:bg-background transition-smooth disabled:opacity-30"
+                        disabled={activeIdx === 0}
+                      >
+                        <ChevronLeft className="h-5 w-5" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Suivant"
+                        onClick={() => goTo(activeIdx + 1)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 grid place-items-center rounded-full bg-background/80 backdrop-blur shadow-soft hover:bg-background transition-smooth disabled:opacity-30"
+                        disabled={activeIdx === slides.length - 1}
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Pastilles couleur cliquables sous le carrousel */}
+                {slides.length > 1 && (
+                  <div className="mt-5 flex items-center justify-center gap-3 flex-wrap">
+                    {slides.map((s, i) => {
+                      const active = i === activeIdx;
+                      const bg = s.color || "#e5e7eb";
+                      return (
+                        <button
+                          key={"dot-" + i}
+                          type="button"
+                          onClick={() => goTo(i)}
+                          aria-label={s.label}
+                          title={s.label}
+                          className={cn(
+                            "relative h-7 w-7 rounded-full border-2 transition-smooth",
+                            active ? "border-primary scale-110 shadow-soft" : "border-border hover:border-primary/60"
+                          )}
+                          style={{ backgroundColor: bg }}
+                        >
+                          {s.isMain && (
+                            <Star className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 text-primary fill-primary" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
+
 
         <div>
           {product.shop && (
