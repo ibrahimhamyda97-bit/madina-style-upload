@@ -123,38 +123,17 @@ export default function ProductDetail() {
         <Link to={product.shop ? `/shop/${product.shop.slug}` : "/shops"}><ArrowLeft className="h-4 w-4" /> Retour</Link>
       </Button>
 
+      {/* Slides : photo principale + variantes (max 5) */}
+      {(() => null)()}
+      <ProductCarouselWrapper
+        product={product}
+        variants={variants}
+        activeVariantId={activeVariantId}
+        setActiveVariantId={setActiveVariantId}
+      />
       <div className="grid lg:grid-cols-2 gap-10">
-        <div>
-          <div className="aspect-square rounded-3xl overflow-hidden bg-muted shadow-elegant relative">
-            {heroImage ? (
-              <img key={heroImage} src={heroImage} alt={product.title} className="h-full w-full object-cover animate-fade-in" />
-            ) : (
-              <div className="h-full w-full bg-gradient-card" />
-            )}
-          </div>
-
-          {/* Galerie photos de la variante (ou fallback tailles) */}
-          {galleryImages.length > 1 ? (
-            <div className="flex flex-wrap gap-2 mt-4">
-              {galleryImages.map((url, i) => (
-                <button
-                  key={url + i}
-                  onClick={() => setActivePhotoIdx(i)}
-                  className={cn(
-                    "h-16 w-16 rounded-xl overflow-hidden border-2 relative transition-smooth shrink-0",
-                    activePhotoIdx === i ? "border-primary shadow-soft" : "border-transparent hover:border-border"
-                  )}
-                >
-                  <img src={url} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
-                  {i === 0 && (
-                    <span className="absolute top-1 left-1 h-4 w-4 grid place-items-center rounded-full bg-primary text-primary-foreground">
-                      <Star className="h-2.5 w-2.5" />
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          ) : null}
+        <div className="hidden">
+          {/* placeholder to keep grid layout */}
         </div>
 
         <div>
