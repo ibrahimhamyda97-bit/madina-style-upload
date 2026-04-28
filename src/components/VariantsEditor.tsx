@@ -58,9 +58,12 @@ interface Props {
   mode: "vendor" | "admin";
   /** User id used for vendor uploads */
   userId?: string;
+  /** Maximum number of variant cards allowed. */
+  maxVariants?: number;
 }
 
-export default function VariantsEditor({ variants, onChange, mode, userId }: Props) {
+export default function VariantsEditor({ variants, onChange, mode, userId, maxVariants }: Props) {
+  const canAddVariant = maxVariants == null || variants.length < maxVariants;
   function update(id: string, patch: Partial<DraftVariant>) {
     onChange(variants.map((v) => (v.id === id ? { ...v, ...patch } : v)));
   }
@@ -68,6 +71,7 @@ export default function VariantsEditor({ variants, onChange, mode, userId }: Pro
     onChange(variants.filter((v) => v.id !== id));
   }
   function add() {
+    if (!canAddVariant) return toast.error(`Maximum ${maxVariants} variantes photo`);
     onChange([...variants, makeEmptyVariant()]);
   }
 
@@ -79,10 +83,12 @@ export default function VariantsEditor({ variants, onChange, mode, userId }: Pro
             Variantes (optionnel)
           </Label>
           <p className="text-xs text-muted-foreground mt-1 max-w-2xl">
-            Chaque variante a son <strong className="text-foreground">propre prix</strong>, sa couleur, ses <strong className="text-foreground">tailles</strong> et jusqu'à <strong className="text-foreground">5 photos</strong> (1 principale + 4 secondaires).
+             {mode === "admin"
+               ? <>Ajoutez jusqu'à <strong className="text-foreground">{maxVariants ?? 5} variantes photo</strong>. Chaque variante a son prix, sa couleur et ses tailles.</>
+               : <>Chaque variante a son <strong className="text-foreground">propre prix</strong>, sa couleur, ses <strong className="text-foreground">tailles</strong> et jusqu'à <strong className="text-foreground">5 photos</strong> (1 principale + 4 secondaires).</>}
           </p>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={add} className="rounded-xl">
+        <Button type="button" variant="outline" size="sm" onClick={add} disabled={!canAddVariant} className="rounded-xl">
           <Plus className="h-4 w-4" /> Ajouter une variante
         </Button>
       </div>
@@ -122,7 +128,7 @@ function VariantCard({
   userId?: string;
 }) {
   const [adminUrl, setAdminUrl] = useState("");
-  const max = 5;
+  const max = mode === "admin" ? 1 : 5;
   const principal = variant.images[0];
   const secondaries = variant.images.slice(1, 5);
   const slotsLeft = max - variant.images.length;
@@ -195,7 +201,7 @@ function VariantCard({
         {/* Photos */}
         <div>
           <Label className="text-xs flex items-center gap-1.5 mb-2">
-            <ImageIcon className="h-3 w-3" /> Photos ({variant.images.length}/{max})
+            <ImageIcon className="h-3 w-3" /> {mode === "admin" ? "Photo variante" : "Photos"} ({variant.images.length}/{max})
           </Label>
 
           {mode === "admin" && (
@@ -204,7 +210,7 @@ function VariantCard({
                 value={adminUrl}
                 onChange={(e) => setAdminUrl(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addUrl(); } }}
-                placeholder="https://exemple.com/image.jpg"
+                placeholder="https://exemple.com/image-variante.jpg"
                 className="h-9"
                 disabled={slotsLeft <= 0}
               />
@@ -214,7 +220,7 @@ function VariantCard({
             </div>
           )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <div className={mode === "admin" ? "grid grid-cols-1 sm:grid-cols-[9rem,1fr] gap-2" : "grid grid-cols-2 sm:grid-cols-5 gap-2"}>
             {/* Principal slot */}
             <ImageSlot
               image={principal}
@@ -222,7 +228,7 @@ function VariantCard({
               onRemove={principal ? () => removeImage(principal.id) : undefined}
             />
             {/* Secondary slots */}
-            {Array.from({ length: 4 }).map((_, i) => {
+            {mode !== "admin" && Array.from({ length: 4 }).map((_, i) => {
               const img = secondaries[i];
               return (
                 <ImageSlot
@@ -233,6 +239,11 @@ function VariantCard({
                 />
               );
             })}
+            {mode === "admin" && (
+              <div className="rounded-xl border border-border bg-muted/30 p-3 text-xs text-muted-foreground flex items-center">
+                Une variante = une photo visible dans le sélecteur client.
+              </div>
+            )}
           </div>
 
           {mode === "vendor" && slotsLeft > 0 && (
