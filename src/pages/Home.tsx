@@ -104,14 +104,14 @@ export default function Home() {
               <Sparkles className="h-3.5 w-3.5 text-secondary" /> La marketplace premium de Guinée
             </span>
             <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-balance animate-fade-up">
-              Le marché de <span className="text-secondary">Madina</span><br/>dans votre poche.
+              <span className="text-secondary">Madina</span> — Votre centre commercial dans votre poche
             </h1>
             <p className="mt-6 text-lg md:text-xl text-primary-foreground/85 max-w-xl animate-fade-up" style={{ animationDelay: "120ms" }}>
-              Découvrez des boutiques locales authentiques. Choisissez votre taille, votre couleur — et recevez exactement ce que vous voyez.
+              Des milliers d'articles à portée de main. Parcourez, choisissez et recevez vos achats où que vous soyez en Guinée.
             </p>
             <div className="mt-10 flex flex-wrap gap-3 animate-fade-up" style={{ animationDelay: "240ms" }}>
               <Button asChild size="lg" className="rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-gold">
-                <Link to="/shops">Explorer les boutiques <ArrowRight className="h-4 w-4" /></Link>
+                <a href="#produits">Découvrir les articles <ArrowRight className="h-4 w-4" /></a>
               </Button>
               <Button asChild size="lg" variant="outline" className="rounded-full bg-white/10 backdrop-blur border-white/30 text-primary-foreground hover:bg-white/20 hover:text-primary-foreground">
                 <Link to="/onboarding/shop"><Store className="h-4 w-4" /> Ouvrir ma boutique</Link>
