@@ -33,6 +33,29 @@ export default function ProductDetail() {
   const [activePhotoIdx, setActivePhotoIdx] = useState(0);
   const [adding, setAdding] = useState(false);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const [extractedColors, setExtractedColors] = useState<Record<string, string>>({});
+
+  const extractDominantColor = useCallback((src: string, key: string) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const size = 16;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0, size, size);
+      const data = ctx.getImageData(0, 0, size, size).data;
+      let r = 0, g = 0, b = 0, count = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        r += data[i]; g += data[i + 1]; b += data[i + 2]; count++;
+      }
+      r = Math.round(r / count); g = Math.round(g / count); b = Math.round(b / count);
+      setExtractedColors((prev) => ({ ...prev, [key]: `rgb(${r},${g},${b})` }));
+    };
+    img.src = src;
+  }, []);
 
   useEffect(() => {
     if (!id) return;
