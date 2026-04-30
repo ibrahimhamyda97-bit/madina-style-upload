@@ -163,7 +163,7 @@ export default function Home() {
       </section>
 
       {/* PRODUCTS */}
-      <section className="container py-10">
+      <section id="produits" className="container py-10">
         <div className="flex items-end justify-between mb-6">
           <div>
             <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight">Nouveautés</h2>
