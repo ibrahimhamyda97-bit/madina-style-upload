@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Palette, Tag, ShoppingCart, Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +33,29 @@ export default function ProductDetail() {
   const [activePhotoIdx, setActivePhotoIdx] = useState(0);
   const [adding, setAdding] = useState(false);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const [extractedColors, setExtractedColors] = useState<Record<string, string>>({});
+
+  const extractDominantColor = useCallback((src: string, key: string) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const size = 16;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0, size, size);
+      const data = ctx.getImageData(0, 0, size, size).data;
+      let r = 0, g = 0, b = 0, count = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        r += data[i]; g += data[i + 1]; b += data[i + 2]; count++;
+      }
+      r = Math.round(r / count); g = Math.round(g / count); b = Math.round(b / count);
+      setExtractedColors((prev) => ({ ...prev, [key]: `rgb(${r},${g},${b})` }));
+    };
+    img.src = src;
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -69,7 +92,17 @@ export default function ProductDetail() {
     [variants, activeVariantId]
   );
 
-  // Reset photo index when variant changes
+  // Extract dominant colors from images
+  useEffect(() => {
+    const mainImg = product?.images?.[0]?.image_url;
+    if (mainImg && !extractedColors["main"]) extractDominantColor(mainImg, "main");
+    variants.forEach((v) => {
+      const img = v.images[0]?.image_url;
+      if (img && !extractedColors[v.id]) extractDominantColor(img, v.id);
+    });
+  }, [product, variants, extractDominantColor]);
+
+
   useEffect(() => { setActivePhotoIdx(0); }, [activeVariantId]);
 
   // Map size -> first product_image (photo principale fallback)
@@ -214,7 +247,8 @@ export default function ProductDetail() {
                   <div className="mt-5 flex items-center justify-center gap-3 flex-wrap">
                     {slides.map((s, i) => {
                       const active = i === activeIdx;
-                      const bg = s.color || "#e5e7eb";
+                      const colorKey = s.id ?? "main";
+                      const bg = extractedColors[colorKey] || s.color || "#e5e7eb";
                       return (
                         <button
                           key={"dot-" + i}
