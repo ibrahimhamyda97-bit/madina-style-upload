@@ -247,7 +247,8 @@ export default function ProductDetail() {
                   <div className="mt-5 flex items-center justify-center gap-3 flex-wrap">
                     {slides.map((s, i) => {
                       const active = i === activeIdx;
-                      const bg = s.color || "#e5e7eb";
+                      const colorKey = s.id ?? "main";
+                      const bg = extractedColors[colorKey] || s.color || "#e5e7eb";
                       return (
                         <button
                           key={"dot-" + i}
