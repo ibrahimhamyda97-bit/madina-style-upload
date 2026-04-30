@@ -92,7 +92,17 @@ export default function ProductDetail() {
     [variants, activeVariantId]
   );
 
-  // Reset photo index when variant changes
+  // Extract dominant colors from images
+  useEffect(() => {
+    const mainImg = product?.images?.[0]?.image_url;
+    if (mainImg && !extractedColors["main"]) extractDominantColor(mainImg, "main");
+    variants.forEach((v) => {
+      const img = v.images[0]?.image_url;
+      if (img && !extractedColors[v.id]) extractDominantColor(img, v.id);
+    });
+  }, [product, variants, extractDominantColor]);
+
+
   useEffect(() => { setActivePhotoIdx(0); }, [activeVariantId]);
 
   // Map size -> first product_image (photo principale fallback)
