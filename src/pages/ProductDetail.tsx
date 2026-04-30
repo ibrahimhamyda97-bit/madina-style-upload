@@ -10,6 +10,44 @@ import { cn } from "@/lib/utils";
 
 const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45"];
 
+const COLOR_NAME_MAP: Record<string, string> = {
+  blanc: "#FFFFFF", white: "#FFFFFF",
+  noir: "#1a1a1a", black: "#1a1a1a",
+  rouge: "#D32F2F", red: "#D32F2F",
+  bleu: "#1976D2", blue: "#1976D2",
+  vert: "#388E3C", green: "#388E3C",
+  jaune: "#FBC02D", yellow: "#FBC02D",
+  orange: "#F57C00",
+  rose: "#E91E63", pink: "#E91E63",
+  violet: "#7B1FA2", purple: "#7B1FA2",
+  gris: "#9E9E9E", grey: "#9E9E9E", gray: "#9E9E9E",
+  marron: "#795548", brown: "#795548",
+  beige: "#D4B896",
+  bordeaux: "#800020",
+  turquoise: "#00BCD4",
+  corail: "#FF7043", coral: "#FF7043",
+  kaki: "#827717", khaki: "#827717",
+  crème: "#FFFDD0", cream: "#FFFDD0",
+  doré: "#FFD700", gold: "#FFD700",
+  argenté: "#C0C0C0", silver: "#C0C0C0",
+  marine: "#001F3F", navy: "#001F3F",
+  saumon: "#FA8072", salmon: "#FA8072",
+  lavande: "#B39DDB", lavender: "#B39DDB",
+  ivoire: "#FFFFF0", ivory: "#FFFFF0",
+  camel: "#C19A6B",
+  taupe: "#483C32",
+  menthe: "#98FF98", mint: "#98FF98",
+  fuchsia: "#FF00FF",
+  cyan: "#00BCD4",
+  magenta: "#E91E63",
+};
+
+function colorNameToHex(name: string | null | undefined): string | null {
+  if (!name) return null;
+  const key = name.trim().toLowerCase();
+  return COLOR_NAME_MAP[key] ?? null;
+}
+
 interface Variant {
   id: string;
   name: string | null;
@@ -257,7 +295,7 @@ export default function ProductDetail() {
                     {slides.map((s, i) => {
                       const active = i === activeIdx;
                       const colorKey = s.id ?? "main";
-                      const bg = extractedColors[colorKey] || s.color || "#e5e7eb";
+                      const bg = colorNameToHex(s.color) || extractedColors[colorKey] || s.color || "#e5e7eb";
                       return (
                         <button
                           key={"dot-" + i}
