@@ -39,21 +39,30 @@ export default function ProductDetail() {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
-      const canvas = document.createElement("canvas");
-      const size = 16;
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.drawImage(img, 0, 0, size, size);
-      const data = ctx.getImageData(0, 0, size, size).data;
-      let r = 0, g = 0, b = 0, count = 0;
-      for (let i = 0; i < data.length; i += 4) {
-        r += data[i]; g += data[i + 1]; b += data[i + 2]; count++;
+      try {
+        const canvas = document.createElement("canvas");
+        const size = 16;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, size, size);
+        const data = ctx.getImageData(0, 0, size, size).data;
+        // Sample center region (avoid edges/backgrounds)
+        let r = 0, g = 0, b = 0, count = 0;
+        for (let y = 4; y < 12; y++) {
+          for (let x = 4; x < 12; x++) {
+            const i = (y * size + x) * 4;
+            r += data[i]; g += data[i + 1]; b += data[i + 2]; count++;
+          }
+        }
+        r = Math.round(r / count); g = Math.round(g / count); b = Math.round(b / count);
+        setExtractedColors((prev) => ({ ...prev, [key]: `rgb(${r},${g},${b})` }));
+      } catch {
+        // CORS tainted canvas - fallback: use color name from variant data
       }
-      r = Math.round(r / count); g = Math.round(g / count); b = Math.round(b / count);
-      setExtractedColors((prev) => ({ ...prev, [key]: `rgb(${r},${g},${b})` }));
     };
+    img.onerror = () => {};
     img.src = src;
   }, []);
 
