@@ -295,7 +295,7 @@ export default function ProductDetail() {
                     {slides.map((s, i) => {
                       const active = i === activeIdx;
                       const colorKey = s.id ?? "main";
-                      const bg = extractedColors[colorKey] || s.color || "#e5e7eb";
+                      const bg = colorNameToHex(s.color) || extractedColors[colorKey] || s.color || "#e5e7eb";
                       return (
                         <button
                           key={"dot-" + i}
