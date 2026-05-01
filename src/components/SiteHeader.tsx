@@ -21,8 +21,8 @@ export default function SiteHeader() {
   }, [open]);
 
   const links = [
-    { to: "/", label: "Marketplace" },
-    { to: "/shops", label: "Boutiques" },
+    { to: "/", label: "Accueil" },
+    { to: "/shops", label: "Articles" },
   ];
 
   const handleSignOut = async () => {
