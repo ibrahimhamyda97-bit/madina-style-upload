@@ -258,6 +258,90 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      {/* VENTE & À PROPOS */}
+      <section id="vente-apropos" className="relative overflow-hidden mt-16">
+        <div className="absolute inset-0 bg-gradient-hero opacity-95" />
+        <div className="absolute -top-20 right-0 h-80 w-80 rounded-full bg-secondary/20 blur-3xl" />
+        <div className="absolute -bottom-20 left-0 h-80 w-80 rounded-full bg-accent/20 blur-3xl" />
+
+        <div className="relative container py-16 md:py-20 text-primary-foreground">
+          {/* En-tête slogan */}
+          <div className="text-center max-w-3xl mx-auto mb-14">
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur border border-white/20 text-xs font-medium mb-5">
+              <Heart className="h-3.5 w-3.5 text-secondary" /> Vente & À propos
+            </span>
+            <h2 className="font-display text-3xl md:text-5xl font-bold tracking-tight text-balance">
+              <span className="text-secondary">Madina</span> — Votre Centre Commercial Dans Votre Poche
+            </h2>
+            <p className="mt-4 text-primary-foreground/85 md:text-lg">
+              Une marketplace 100% guinéenne pour acheter, vendre et se faire livrer en toute confiance.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* À propos */}
+            <div className="bg-background/10 backdrop-blur-md border border-white/15 rounded-3xl p-7 shadow-elegant">
+              <div className="h-11 w-11 rounded-2xl bg-secondary/20 grid place-items-center text-secondary mb-4">
+                <Store className="h-5 w-5" />
+              </div>
+              <h3 className="font-display text-xl font-bold mb-2">À propos de nous</h3>
+              <p className="text-sm text-primary-foreground/80 leading-relaxed">
+                Madina connecte les boutiques locales de Conakry, Kindia, Kankan et au-delà à des
+                milliers de clients. Notre mission : rendre le commerce guinéen accessible,
+                moderne et digne de confiance — directement depuis votre téléphone.
+              </p>
+              <Link to="/about" className="inline-flex items-center gap-1.5 mt-4 text-sm font-semibold text-secondary hover:underline">
+                En savoir plus <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+
+            {/* Nos services */}
+            <div className="bg-background/10 backdrop-blur-md border border-white/15 rounded-3xl p-7 shadow-elegant">
+              <div className="h-11 w-11 rounded-2xl bg-secondary/20 grid place-items-center text-secondary mb-4">
+                <Headphones className="h-5 w-5" />
+              </div>
+              <h3 className="font-display text-xl font-bold mb-3">Nos services</h3>
+              <ul className="space-y-2.5 text-sm text-primary-foreground/85">
+                <li className="flex items-start gap-2"><Sparkles className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Détection IA des couleurs et catégories</li>
+                <li className="flex items-start gap-2"><Truck className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Livraison à domicile partout en Guinée</li>
+                <li className="flex items-start gap-2"><CreditCard className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Paiement sécurisé Mobile Money</li>
+                <li className="flex items-start gap-2"><Store className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Boutique en ligne en quelques minutes</li>
+              </ul>
+              <Link to="/services" className="inline-flex items-center gap-1.5 mt-4 text-sm font-semibold text-secondary hover:underline">
+                Voir tous nos services <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+
+            {/* Conditions de vente */}
+            <div className="bg-background/10 backdrop-blur-md border border-white/15 rounded-3xl p-7 shadow-elegant">
+              <div className="h-11 w-11 rounded-2xl bg-secondary/20 grid place-items-center text-secondary mb-4">
+                <FileText className="h-5 w-5" />
+              </div>
+              <h3 className="font-display text-xl font-bold mb-3">Conditions de vente</h3>
+              <ul className="space-y-2.5 text-sm text-primary-foreground/85">
+                <li className="flex items-start gap-2"><ShieldCheck className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Produits authentiques et vendeurs vérifiés</li>
+                <li className="flex items-start gap-2"><ShieldCheck className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Paiement à la commande, prix en GNF TTC</li>
+                <li className="flex items-start gap-2"><ShieldCheck className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Retour possible sous 7 jours après réception</li>
+                <li className="flex items-start gap-2"><ShieldCheck className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Données personnelles protégées</li>
+              </ul>
+              <Link to="/conditions" className="inline-flex items-center gap-1.5 mt-4 text-sm font-semibold text-secondary hover:underline">
+                Lire toutes les conditions <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+
+          {/* CTA final */}
+          <div className="mt-12 flex flex-wrap justify-center gap-3">
+            <Button asChild size="lg" className="rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-gold">
+              <a href="#produits">Commencer mes achats <ArrowRight className="h-4 w-4" /></a>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="rounded-full bg-white/10 backdrop-blur border-white/30 text-primary-foreground hover:bg-white/20 hover:text-primary-foreground">
+              <Link to="/onboarding/shop"><Store className="h-4 w-4" /> Devenir vendeur</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
