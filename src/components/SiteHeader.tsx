@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Store, LogOut, User, Menu, X, ShoppingCart, Sparkles, ChevronRight } from "lucide-react";
+import { ShoppingBag, LayoutDashboard, Store, LogOut, User, Menu, X, ShoppingCart, Sparkles, ChevronRight } from "lucide-react";
 import madinaLogo from "@/assets/madina-logo.png";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
