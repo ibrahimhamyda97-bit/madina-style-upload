@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Sparkles, Store, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
+import { ArrowRight, Sparkles, Store, ShieldCheck, SlidersHorizontal, X, Truck, CreditCard, Headphones, FileText, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import ProductCard, { ProductCardData } from "@/components/ProductCard";
