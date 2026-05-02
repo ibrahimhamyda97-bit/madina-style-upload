@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ShoppingBag, LayoutDashboard, Store, LogOut, User, Menu, X, ShoppingCart, Sparkles, ChevronRight } from "lucide-react";
+import madinaLogo from "@/assets/madina-logo.png";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,9 +39,7 @@ export default function SiteHeader() {
       <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/85 backdrop-blur-xl">
         <div className="container flex h-16 items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="relative h-9 w-9 rounded-xl bg-gradient-flag shadow-elegant grid place-items-center overflow-hidden">
-              <ShoppingBag className="h-4.5 w-4.5 text-primary-foreground relative z-10" strokeWidth={2.5} />
-            </div>
+            <img src={madinaLogo} alt="Madina E-Commerce" className="h-11 w-11 object-contain drop-shadow-sm" />
             <div className="flex flex-col leading-none">
               <span className="font-display text-lg font-bold tracking-tight">Madina</span>
               <span className="text-[10px] text-muted-foreground tracking-widest uppercase">Guinée</span>
