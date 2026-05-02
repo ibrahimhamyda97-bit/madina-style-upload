@@ -148,9 +148,9 @@ export default function Home() {
       {/* TRUST */}
       <section className="container py-14 grid md:grid-cols-3 gap-6">
         {[
-          { icon: Sparkles, title: "Détection IA", desc: "Couleur et type d'objet détectés automatiquement à partir de vos photos." },
           { icon: ShieldCheck, title: "Boutiques vérifiées", desc: "Des vendeurs guinéens locaux, sélectionnés et fiables." },
-          { icon: Store, title: "5 photos par taille", desc: "Une image dédiée à chaque taille XS, S, M, L, XL — zéro surprise." },
+          { icon: Truck, title: "Livraison rapide", desc: "Recevez vos commandes partout en Guinée avec suivi en temps réel." },
+          { icon: CreditCard, title: "Paiement sécurisé", desc: "Mobile Money (Orange Money, MTN MoMo) protégé à chaque transaction." },
         ].map((f, i) => (
           <div key={i} className="bg-gradient-card border border-border rounded-3xl p-6 shadow-soft hover:shadow-elegant transition-smooth animate-fade-up" style={{ animationDelay: `${i * 80}ms` }}>
             <div className="h-11 w-11 rounded-2xl bg-primary/10 grid place-items-center text-primary mb-4">
