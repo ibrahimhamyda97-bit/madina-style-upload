@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import madinaLogo from "@/assets/madina-logo.png";
 
 export default function SiteFooter() {
   return (
@@ -6,8 +7,11 @@ export default function SiteFooter() {
       <div className="h-1 bg-gradient-flag" />
       <div className="container py-10 grid md:grid-cols-4 gap-8">
         <div>
-          <p className="font-display font-bold text-lg">Madina</p>
-          <p className="text-xs text-muted-foreground mt-1">Votre centre commercial dans votre poche — Conakry, Kindia, Kankan & au-delà.</p>
+          <div className="flex items-center gap-2.5">
+            <img src={madinaLogo} alt="Madina E-Commerce" className="h-10 w-10 object-contain" />
+            <p className="font-display font-bold text-lg">Madina</p>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">Votre centre commercial dans votre poche — Conakry, Kindia, Kankan & au-delà.</p>
         </div>
 
         <div>
