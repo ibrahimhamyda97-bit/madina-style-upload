@@ -115,9 +115,7 @@ export default function Auth() {
       <div className="hidden lg:flex flex-col justify-between p-10 bg-gradient-hero text-primary-foreground relative overflow-hidden">
         <div className="absolute -bottom-px left-0 right-0 h-1 bg-gradient-flag" />
         <Link to="/" className="flex items-center gap-2.5 relative z-10">
-          <div className="h-9 w-9 rounded-xl bg-white/15 backdrop-blur grid place-items-center">
-            <ShoppingBag className="h-4.5 w-4.5" strokeWidth={2.5} />
-          </div>
+          <img src={madinaLogo} alt="Madina E-Commerce" className="h-11 w-11 object-contain" />
           <span className="font-display text-lg font-bold">Madina</span>
         </Link>
         <div className="relative z-10 max-w-md">
