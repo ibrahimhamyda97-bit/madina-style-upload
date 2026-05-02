@@ -148,9 +148,9 @@ export default function Home() {
       {/* TRUST */}
       <section className="container py-14 grid md:grid-cols-3 gap-6">
         {[
-          { icon: Sparkles, title: "Détection IA", desc: "Couleur et type d'objet détectés automatiquement à partir de vos photos." },
           { icon: ShieldCheck, title: "Boutiques vérifiées", desc: "Des vendeurs guinéens locaux, sélectionnés et fiables." },
-          { icon: Store, title: "5 photos par taille", desc: "Une image dédiée à chaque taille XS, S, M, L, XL — zéro surprise." },
+          { icon: Truck, title: "Livraison rapide", desc: "Recevez vos commandes partout en Guinée avec suivi en temps réel." },
+          { icon: CreditCard, title: "Paiement sécurisé", desc: "Mobile Money (Orange Money, MTN MoMo) protégé à chaque transaction." },
         ].map((f, i) => (
           <div key={i} className="bg-gradient-card border border-border rounded-3xl p-6 shadow-soft hover:shadow-elegant transition-smooth animate-fade-up" style={{ animationDelay: `${i * 80}ms` }}>
             <div className="h-11 w-11 rounded-2xl bg-primary/10 grid place-items-center text-primary mb-4">
@@ -303,10 +303,10 @@ export default function Home() {
               </div>
               <h3 className="font-display text-xl font-bold mb-3">Nos services</h3>
               <ul className="space-y-2.5 text-sm text-primary-foreground/85">
-                <li className="flex items-start gap-2"><Sparkles className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Détection IA des couleurs et catégories</li>
                 <li className="flex items-start gap-2"><Truck className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Livraison à domicile partout en Guinée</li>
                 <li className="flex items-start gap-2"><CreditCard className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Paiement sécurisé Mobile Money</li>
                 <li className="flex items-start gap-2"><Store className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Boutique en ligne en quelques minutes</li>
+                <li className="flex items-start gap-2"><Headphones className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Support client à votre écoute</li>
               </ul>
               <Link to="/services" className="inline-flex items-center gap-1.5 mt-4 text-sm font-semibold text-secondary hover:underline">
                 Voir tous nos services <ArrowRight className="h-4 w-4" />
