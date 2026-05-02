@@ -303,10 +303,10 @@ export default function Home() {
               </div>
               <h3 className="font-display text-xl font-bold mb-3">Nos services</h3>
               <ul className="space-y-2.5 text-sm text-primary-foreground/85">
-                <li className="flex items-start gap-2"><Sparkles className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Détection IA des couleurs et catégories</li>
                 <li className="flex items-start gap-2"><Truck className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Livraison à domicile partout en Guinée</li>
                 <li className="flex items-start gap-2"><CreditCard className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Paiement sécurisé Mobile Money</li>
                 <li className="flex items-start gap-2"><Store className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Boutique en ligne en quelques minutes</li>
+                <li className="flex items-start gap-2"><Headphones className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Support client à votre écoute</li>
               </ul>
               <Link to="/services" className="inline-flex items-center gap-1.5 mt-4 text-sm font-semibold text-secondary hover:underline">
                 Voir tous nos services <ArrowRight className="h-4 w-4" />
