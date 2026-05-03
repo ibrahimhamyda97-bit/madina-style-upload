@@ -94,6 +94,14 @@ const App = () => (
               <Route path="shops" element={<AdminShops />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="finance" element={<AdminFinance />} />
+              <Route path="couriers" element={<CourierApplications />} />
+              <Route path="users" element={<AdminUsers />} />
+            </Route>
+
+            <Route path="/moderator" element={<><SiteHeader /><DashboardShell items={moderatorNav} title="Modérateur" /></>}>
+              <Route index element={<AdminOrders />} />
+              <Route path="shops" element={<AdminShops />} />
+              <Route path="couriers" element={<CourierApplications />} />
               <Route path="users" element={<AdminUsers />} />
             </Route>
 
