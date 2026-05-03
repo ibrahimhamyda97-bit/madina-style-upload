@@ -156,7 +156,8 @@ export default function AdminUsers() {
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-muted-foreground">{u.phone || "—"}</td>
+                      <td className="py-3 px-4 text-muted-foreground whitespace-nowrap">{u.phone || "—"}</td>
+                      <td className="py-3 px-4 text-muted-foreground">{[u.neighborhood, u.city].filter(Boolean).join(", ") || "—"}</td>
                       <td className="py-3 px-4">
                         <div className="flex flex-wrap gap-1.5">
                           {u.roles.length === 0 ? (
