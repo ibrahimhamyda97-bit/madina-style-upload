@@ -152,7 +152,7 @@ export default function SiteHeader() {
                 <div className="min-w-0">
                   <p className="font-display font-semibold text-sm truncate">{user.email}</p>
                   <p className="text-[11px] text-muted-foreground uppercase tracking-wider mt-0.5">
-                    {isAdmin ? "Administrateur" : isVendor ? "Vendeur" : "Client"}
+                    {isAdmin ? "Administrateur" : isModerator ? "Modérateur" : isVendor ? "Vendeur" : "Client"}
                   </p>
                 </div>
               </div>
