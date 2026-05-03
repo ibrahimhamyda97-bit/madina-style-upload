@@ -14,6 +14,8 @@ interface UserRow {
   first_name: string | null;
   last_name: string | null;
   phone: string | null;
+  city: string | null;
+  neighborhood: string | null;
   avatar_url: string | null;
   created_at: string;
   roles: AppRole[];
@@ -39,7 +41,7 @@ export default function AdminUsers() {
   const load = async () => {
     setLoading(true);
     const [{ data: profiles }, { data: roles }] = await Promise.all([
-      supabase.from("profiles").select("id, first_name, last_name, phone, avatar_url, created_at").order("created_at", { ascending: false }),
+      supabase.from("profiles").select("id, first_name, last_name, phone, city, neighborhood, avatar_url, created_at").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id, role"),
     ]);
     const rolesByUser: Record<string, AppRole[]> = {};
@@ -126,6 +128,7 @@ export default function AdminUsers() {
                 <tr>
                   <th className="text-left py-3 px-4 font-medium">Utilisateur</th>
                   <th className="text-left py-3 px-4 font-medium">Téléphone</th>
+                  <th className="text-left py-3 px-4 font-medium">Adresse</th>
                   <th className="text-left py-3 px-4 font-medium">Rôles attribués</th>
                   <th className="text-right py-3 px-4 font-medium">Actions</th>
                 </tr>
@@ -153,7 +156,8 @@ export default function AdminUsers() {
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-muted-foreground">{u.phone || "—"}</td>
+                      <td className="py-3 px-4 text-muted-foreground whitespace-nowrap">{u.phone || "—"}</td>
+                      <td className="py-3 px-4 text-muted-foreground">{[u.neighborhood, u.city].filter(Boolean).join(", ") || "—"}</td>
                       <td className="py-3 px-4">
                         <div className="flex flex-wrap gap-1.5">
                           {u.roles.length === 0 ? (

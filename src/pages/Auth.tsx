@@ -62,6 +62,7 @@ export default function Auth() {
       const roles = (rolesData ?? []).map((r) => r.role);
       const hasShop = (shopsData ?? []).length > 0;
       if (roles.includes("admin")) dest = "/admin";
+      else if (roles.includes("moderator")) dest = "/moderator";
       else if (roles.includes("courier")) dest = "/courier";
       else if (roles.includes("vendor") || hasShop) dest = "/vendor";
     }
@@ -104,11 +105,14 @@ export default function Auth() {
     }
 
     setLoading(false);
-    toast.success("Compte créé avec succès !");
-
-    if (accountType === "shop") nav("/onboarding/shop");
-    else if (accountType === "courier") nav("/courier");
-    else nav("/account");
+    if (accountType === "courier") {
+      toast.success("Demande envoyée ! Un administrateur va valider votre compte livreur.");
+      nav("/account");
+    } else {
+      toast.success("Compte créé avec succès !");
+      if (accountType === "shop") nav("/onboarding/shop");
+      else nav("/account");
+    }
   }
 
   return (
@@ -210,7 +214,7 @@ export default function Auth() {
                 {accountType === "courier" && (
                   <div className="rounded-xl bg-primary/10 border border-primary/30 p-3 text-xs text-muted-foreground">
                     <Truck className="inline h-3.5 w-3.5 mr-1 text-primary" />
-                    En tant que livreur, vous verrez les commandes payées à récupérer chez les vendeurs et à livrer aux clients.
+                    Votre demande de compte livreur sera examinée par un administrateur. Vous recevrez l'accès une fois validée.
                   </div>
                 )}
 

@@ -55,6 +55,39 @@ export type Database = {
           },
         ]
       }
+      courier_applications: {
+        Row: {
+          created_at: string
+          id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["courier_app_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["courier_app_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["courier_app_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           commission_rate: number
@@ -570,6 +603,10 @@ export type Database = {
         }
         Returns: string
       }
+      review_courier_application: {
+        Args: { p_approve: boolean; p_reason?: string; p_user_id: string }
+        Returns: undefined
+      }
       shop_owner_in_order: {
         Args: { _order_id: string; _user_id: string }
         Returns: boolean
@@ -583,6 +620,7 @@ export type Database = {
         | "courier"
         | "moderator"
         | "order_manager"
+      courier_app_status: "pending" | "approved" | "rejected"
       delivery_status:
         | "unassigned"
         | "assigned"
@@ -744,6 +782,7 @@ export const Constants = {
         "moderator",
         "order_manager",
       ],
+      courier_app_status: ["pending", "approved", "rejected"],
       delivery_status: [
         "unassigned",
         "assigned",

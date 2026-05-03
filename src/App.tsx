@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/hooks/useCart";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
-import DashboardShell, { vendorNav, adminNav, clientNav, courierNav } from "./components/DashboardShell";
+import DashboardShell, { vendorNav, adminNav, clientNav, courierNav, moderatorNav } from "./components/DashboardShell";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Shops from "./pages/Shops";
@@ -29,6 +29,7 @@ import AdminOrders from "./pages/dashboard/AdminOrders";
 import ClientOverview from "./pages/dashboard/ClientOverview";
 import ClientProfile from "./pages/dashboard/ClientProfile";
 import CourierDeliveries from "./pages/dashboard/CourierDeliveries";
+import CourierApplications from "./pages/dashboard/CourierApplications";
 import About from "./pages/About";
 import Services from "./pages/Services";
 import Conditions from "./pages/Conditions";
@@ -93,6 +94,14 @@ const App = () => (
               <Route path="shops" element={<AdminShops />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="finance" element={<AdminFinance />} />
+              <Route path="couriers" element={<CourierApplications />} />
+              <Route path="users" element={<AdminUsers />} />
+            </Route>
+
+            <Route path="/moderator" element={<><SiteHeader /><DashboardShell items={moderatorNav} title="Modérateur" /></>}>
+              <Route index element={<AdminOrders />} />
+              <Route path="shops" element={<AdminShops />} />
+              <Route path="couriers" element={<CourierApplications />} />
               <Route path="users" element={<AdminUsers />} />
             </Route>
 
