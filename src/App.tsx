@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/hooks/useCart";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
-import DashboardShell, { vendorNav, adminNav, clientNav, courierNav } from "./components/DashboardShell";
+import DashboardShell, { vendorNav, adminNav, clientNav, courierNav, moderatorNav } from "./components/DashboardShell";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Shops from "./pages/Shops";
