@@ -105,11 +105,14 @@ export default function Auth() {
     }
 
     setLoading(false);
-    toast.success("Compte créé avec succès !");
-
-    if (accountType === "shop") nav("/onboarding/shop");
-    else if (accountType === "courier") nav("/courier");
-    else nav("/account");
+    if (accountType === "courier") {
+      toast.success("Demande envoyée ! Un administrateur va valider votre compte livreur.");
+      nav("/account");
+    } else {
+      toast.success("Compte créé avec succès !");
+      if (accountType === "shop") nav("/onboarding/shop");
+      else nav("/account");
+    }
   }
 
   return (
