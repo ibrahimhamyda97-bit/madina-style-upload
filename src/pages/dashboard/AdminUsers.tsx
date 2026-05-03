@@ -14,6 +14,8 @@ interface UserRow {
   first_name: string | null;
   last_name: string | null;
   phone: string | null;
+  city: string | null;
+  neighborhood: string | null;
   avatar_url: string | null;
   created_at: string;
   roles: AppRole[];
