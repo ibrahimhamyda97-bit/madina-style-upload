@@ -188,9 +188,10 @@ export default function SiteHeader() {
 
                 <DrawerSectionLabel>Espace</DrawerSectionLabel>
                 {isAdmin && <DrawerLink to="/admin" icon={LayoutDashboard} label="Tableau de bord Admin" />}
-                {isVendor && !isAdmin && <DrawerLink to="/vendor" icon={LayoutDashboard} label="Tableau de bord Vendeur" />}
-                {!isVendor && !isAdmin && <DrawerLink to="/account" icon={LayoutDashboard} label="Mon compte" />}
-                {!isVendor && !isAdmin && <DrawerLink to="/onboarding/shop" icon={Store} label="Ouvrir ma boutique" />}
+                {isModerator && !isAdmin && <DrawerLink to="/moderator" icon={LayoutDashboard} label="Tableau de bord Modérateur" />}
+                {isVendor && !isAdmin && !isModerator && <DrawerLink to="/vendor" icon={LayoutDashboard} label="Tableau de bord Vendeur" />}
+                {!isVendor && !isAdmin && !isModerator && <DrawerLink to="/account" icon={LayoutDashboard} label="Mon compte" />}
+                {!isVendor && !isAdmin && !isModerator && <DrawerLink to="/onboarding/shop" icon={Store} label="Ouvrir ma boutique" />}
               </>
             )}
 
