@@ -62,6 +62,7 @@ export default function Auth() {
       const roles = (rolesData ?? []).map((r) => r.role);
       const hasShop = (shopsData ?? []).length > 0;
       if (roles.includes("admin")) dest = "/admin";
+      else if (roles.includes("moderator")) dest = "/moderator";
       else if (roles.includes("courier")) dest = "/courier";
       else if (roles.includes("vendor") || hasShop) dest = "/vendor";
     }
