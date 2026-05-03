@@ -41,7 +41,7 @@ export default function AdminUsers() {
   const load = async () => {
     setLoading(true);
     const [{ data: profiles }, { data: roles }] = await Promise.all([
-      supabase.from("profiles").select("id, first_name, last_name, phone, avatar_url, created_at").order("created_at", { ascending: false }),
+      supabase.from("profiles").select("id, first_name, last_name, phone, city, neighborhood, avatar_url, created_at").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id, role"),
     ]);
     const rolesByUser: Record<string, AppRole[]> = {};
