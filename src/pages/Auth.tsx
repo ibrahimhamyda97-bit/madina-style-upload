@@ -214,7 +214,7 @@ export default function Auth() {
                 {accountType === "courier" && (
                   <div className="rounded-xl bg-primary/10 border border-primary/30 p-3 text-xs text-muted-foreground">
                     <Truck className="inline h-3.5 w-3.5 mr-1 text-primary" />
-                    En tant que livreur, vous verrez les commandes payées à récupérer chez les vendeurs et à livrer aux clients.
+                    Votre demande de compte livreur sera examinée par un administrateur. Vous recevrez l'accès une fois validée.
                   </div>
                 )}
 
