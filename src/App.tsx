@@ -29,6 +29,7 @@ import AdminOrders from "./pages/dashboard/AdminOrders";
 import ClientOverview from "./pages/dashboard/ClientOverview";
 import ClientProfile from "./pages/dashboard/ClientProfile";
 import CourierDeliveries from "./pages/dashboard/CourierDeliveries";
+import CourierApplications from "./pages/dashboard/CourierApplications";
 import About from "./pages/About";
 import Services from "./pages/Services";
 import Conditions from "./pages/Conditions";
