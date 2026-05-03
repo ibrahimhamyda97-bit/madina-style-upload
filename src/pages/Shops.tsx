@@ -53,6 +53,7 @@ export default function Shops() {
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -110,16 +111,41 @@ export default function Shops() {
           </p>
 
           {/* Search bar */}
-          <div className="mt-6 relative max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher un article, une boutique…"
-              className="w-full pl-11 pr-4 py-3 rounded-full bg-background/90 backdrop-blur border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-soft"
-            />
-          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setSearch(searchInput);
+            }}
+            className="mt-6 flex gap-2 max-w-xl"
+          >
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Rechercher un article, une boutique…"
+                className="w-full pl-11 pr-4 py-3 rounded-full bg-background/90 backdrop-blur border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-soft"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchInput("");
+                    setSearch("");
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-6 w-6 inline-flex items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-muted/70"
+                  aria-label="Effacer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+            <Button type="submit" size="lg" className="rounded-full px-6 shadow-soft">
+              <Search className="h-4 w-4" />
+              Rechercher
+            </Button>
+          </form>
         </div>
       </div>
 
