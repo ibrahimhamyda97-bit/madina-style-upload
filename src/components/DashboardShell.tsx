@@ -63,7 +63,15 @@ export const adminNav: Item[] = [
   { to: "/admin/products", label: "Produits", icon: Package },
   { to: "/admin/products/new", label: "Ajouter", icon: Plus },
   { to: "/admin/shops", label: "Boutiques", icon: Store },
+  { to: "/admin/couriers", label: "Demandes livreurs", icon: Truck },
   { to: "/admin/users", label: "Utilisateurs", icon: Users },
+];
+
+export const moderatorNav: Item[] = [
+  { to: "/moderator", label: "Commandes", icon: ShoppingBag, end: true },
+  { to: "/moderator/shops", label: "Boutiques", icon: Store },
+  { to: "/moderator/couriers", label: "Demandes livreurs", icon: Truck },
+  { to: "/moderator/users", label: "Utilisateurs", icon: Users },
 ];
 
 export const clientNav: Item[] = [
