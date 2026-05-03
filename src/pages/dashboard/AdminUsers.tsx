@@ -128,6 +128,7 @@ export default function AdminUsers() {
                 <tr>
                   <th className="text-left py-3 px-4 font-medium">Utilisateur</th>
                   <th className="text-left py-3 px-4 font-medium">Téléphone</th>
+                  <th className="text-left py-3 px-4 font-medium">Adresse</th>
                   <th className="text-left py-3 px-4 font-medium">Rôles attribués</th>
                   <th className="text-right py-3 px-4 font-medium">Actions</th>
                 </tr>
