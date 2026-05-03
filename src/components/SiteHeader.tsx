@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 export default function SiteHeader() {
-  const { user, isAdmin, isVendor } = useAuth();
+  const { user, isAdmin, isVendor, isModerator } = useAuth();
   const { count } = useCart();
   const nav = useNavigate();
   const loc = useLocation();
