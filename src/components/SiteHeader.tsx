@@ -76,9 +76,9 @@ export default function SiteHeader() {
             )}
             {user ? (
               <>
-                {(isAdmin || isVendor) ? (
+                {(isAdmin || isModerator || isVendor) ? (
                   <Button asChild variant="ghost" size="sm">
-                    <Link to={isAdmin ? "/admin" : "/vendor"}>
+                    <Link to={isAdmin ? "/admin" : isModerator ? "/moderator" : "/vendor"}>
                       <LayoutDashboard className="h-4 w-4" /> Tableau de bord
                     </Link>
                   </Button>
