@@ -41,6 +41,8 @@ export function useAuth() {
   const hasRole = (r: AppRole) => roles.includes(r);
   const isAdmin = hasRole("admin");
   const isVendor = hasRole("vendor");
+  const isModerator = hasRole("moderator");
+  const isStaff = isAdmin || isModerator;
 
-  return { session, user, roles, loading, isAdmin, isVendor, hasRole, refreshRoles: () => user && fetchRoles(user.id) };
+  return { session, user, roles, loading, isAdmin, isVendor, isModerator, isStaff, hasRole, refreshRoles: () => user && fetchRoles(user.id) };
 }
