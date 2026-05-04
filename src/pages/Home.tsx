@@ -1,345 +1,106 @@
-import { Link } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Sparkles, Store, ShieldCheck, SlidersHorizontal, X, Truck, CreditCard, Headphones, FileText, Heart } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Search, ArrowRight, Shirt, Footprints, Watch, Sparkles, Smartphone, Home as HomeIcon, Baby, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import ProductCard, { ProductCardData } from "@/components/ProductCard";
-import hero from "@/assets/hero-madina.jpg";
 
-// Groupes de catégories (alignés avec le formulaire d'ajout d'article).
-// Chaque entrée "items" liste les valeurs exactes stockées en base.
-const FILTER_GROUPS: { label: string; items: { label: string; value: string }[] }[] = [
-  {
-    label: "Vêtements",
-    items: [
-      { label: "Robes", value: "Vêtements - Robes" },
-      { label: "Vestes", value: "Vêtements - Vestes" },
-      { label: "Blazers", value: "Vêtements - Blazers" },
-      { label: "Pantalons", value: "Vêtements - Pantalons" },
-      { label: "Jeans", value: "Vêtements - Jeans" },
-      { label: "Chemises", value: "Vêtements - Chemises" },
-      { label: "T-shirts", value: "Vêtements - T-shirts" },
-      { label: "Pulls & Sweats", value: "Vêtements - Pulls & Sweats" },
-      { label: "Jupes", value: "Vêtements - Jupes" },
-      { label: "Shorts", value: "Vêtements - Shorts" },
-      { label: "Manteaux", value: "Vêtements - Manteaux" },
-      { label: "Sous-vêtements", value: "Vêtements - Sous-vêtements" },
-      { label: "Tenues traditionnelles", value: "Vêtements - Tenues traditionnelles" },
-      { label: "Autre", value: "Vêtements - Autre" },
-    ],
-  },
-  { label: "Chaussures", items: [{ label: "Toutes", value: "Chaussures" }] },
-  {
-    label: "Accessoires",
-    items: [
-      { label: "Accessoires", value: "Accessoires" },
-      { label: "Sacs", value: "Sacs" },
-      { label: "Bijoux", value: "Bijoux" },
-    ],
-  },
-  { label: "Beauté", items: [{ label: "Toutes", value: "Beauté" }] },
-  {
-    label: "Électronique",
-    items: [
-      { label: "Téléphones", value: "Téléphones" },
-      { label: "Ordinateurs", value: "Ordinateurs" },
-      { label: "Tablettes", value: "Tablettes" },
-      { label: "Accessoires Tech", value: "Accessoires Tech" },
-    ],
-  },
-  { label: "Maison", items: [{ label: "Toutes", value: "Maison" }] },
-  { label: "Enfants", items: [{ label: "Toutes", value: "Enfants" }] },
+const CATEGORIES: { label: string; group: string; icon: any; gradient: string }[] = [
+  { label: "Vêtements", group: "Vêtements", icon: Shirt, gradient: "from-rose-500/20 to-pink-500/10" },
+  { label: "Chaussures", group: "Chaussures", icon: Footprints, gradient: "from-amber-500/20 to-orange-500/10" },
+  { label: "Accessoires", group: "Accessoires", icon: Watch, gradient: "from-violet-500/20 to-fuchsia-500/10" },
+  { label: "Beauté", group: "Beauté", icon: Sparkles, gradient: "from-pink-500/20 to-rose-500/10" },
+  { label: "Électronique", group: "Électronique", icon: Smartphone, gradient: "from-blue-500/20 to-cyan-500/10" },
+  { label: "Maison", group: "Maison", icon: HomeIcon, gradient: "from-emerald-500/20 to-teal-500/10" },
+  { label: "Enfants", group: "Enfants", icon: Baby, gradient: "from-yellow-500/20 to-amber-500/10" },
 ];
 
 export default function Home() {
-  const [products, setProducts] = useState<ProductCardData[]>([]);
-  const [activeGroup, setActiveGroup] = useState<string | null>(null);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const nav = useNavigate();
+  const [q, setQ] = useState("");
 
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("products")
-        .select("id, title, price_gnf, category, detected_color, shop:shops(name, slug), images:product_images(image_url, size, position)")
-        .order("created_at", { ascending: false })
-        .limit(24);
-      setProducts((data ?? []) as any);
-    })();
-  }, []);
-
-  const currentGroup = FILTER_GROUPS.find((g) => g.label === activeGroup) ?? null;
-
-  const filteredProducts = useMemo(() => {
-    if (activeCategory) return products.filter((p) => p.category === activeCategory);
-    if (currentGroup) {
-      const values = new Set(currentGroup.items.map((i) => i.value));
-      return products.filter((p) => values.has(p.category));
-    }
-    return products;
-  }, [products, currentGroup, activeCategory]);
-
-  function selectGroup(label: string) {
-    setActiveGroup((prev) => (prev === label ? null : label));
-    setActiveCategory(null);
-  }
-
-  function clearAll() {
-    setActiveGroup(null);
-    setActiveCategory(null);
+  function submitSearch(e: React.FormEvent) {
+    e.preventDefault();
+    const term = q.trim();
+    nav(term ? `/shops?q=${encodeURIComponent(term)}` : "/shops");
   }
 
   return (
     <div className="animate-fade-in">
-      {/* HERO — split layout, image visible et nette */}
+      {/* HERO compact avec recherche */}
       <section className="relative overflow-hidden bg-gradient-hero">
-        {/* Halos colorés pour un fond moderne et vibrant */}
         <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-secondary/30 blur-3xl" />
-        <div className="absolute -bottom-32 right-1/3 h-96 w-96 rounded-full bg-accent/25 blur-3xl" />
+        <div className="absolute -bottom-32 right-1/4 h-96 w-96 rounded-full bg-accent/25 blur-3xl" />
         <div className="absolute -bottom-px left-0 right-0 h-1.5 bg-gradient-flag" />
 
-        <div className="container relative py-16 md:py-24 grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
-          {/* Colonne texte */}
-          <div className="text-primary-foreground">
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur border border-white/20 text-xs font-medium mb-6 animate-fade-up">
-              <Sparkles className="h-3.5 w-3.5 text-secondary" /> La marketplace premium de Guinée
-            </span>
-            <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-balance animate-fade-up">
-              <span className="text-secondary">Madina</span> — Votre centre commercial dans votre poche
-            </h1>
-            <p className="mt-6 text-lg md:text-xl text-primary-foreground/85 max-w-xl animate-fade-up" style={{ animationDelay: "120ms" }}>
-              Des milliers d'articles à portée de main. Parcourez, choisissez et recevez vos achats où que vous soyez en Guinée.
-            </p>
-            <div className="mt-10 flex flex-wrap gap-3 animate-fade-up" style={{ animationDelay: "240ms" }}>
-              <Button asChild size="lg" className="rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-gold">
-                <a href="#produits">Découvrir les articles <ArrowRight className="h-4 w-4" /></a>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full bg-white/10 backdrop-blur border-white/30 text-primary-foreground hover:bg-white/20 hover:text-primary-foreground">
-                <Link to="/onboarding/shop"><Store className="h-4 w-4" /> Ouvrir ma boutique</Link>
-              </Button>
-            </div>
-          </div>
+        <div className="relative container py-14 md:py-20 text-center text-primary-foreground">
+          <h1 className="font-display text-4xl md:text-6xl font-bold tracking-tight">
+            <span className="text-secondary">Madina</span> — Votre marketplace
+          </h1>
+          <p className="mt-4 text-primary-foreground/85 max-w-xl mx-auto">
+            Parcourez par catégorie ou recherchez un article en un clic.
+          </p>
 
-          {/* Colonne image — nette, vibrante, encadrée */}
-          <div className="relative animate-fade-up" style={{ animationDelay: "180ms" }}>
-            <div className="absolute -inset-4 bg-gradient-flag rounded-[2rem] blur-2xl opacity-40" />
-            <div className="relative rounded-[2rem] overflow-hidden border border-white/20 shadow-elegant ring-1 ring-white/10">
-              <img
-                src={hero}
-                alt="Mode et artisanat de Guinée — marketplace Madina"
-                width={1600}
-                height={1024}
-                className="w-full h-[420px] md:h-[520px] object-cover"
+          <form onSubmit={submitSearch} className="mt-8 flex gap-2 max-w-xl mx-auto">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Rechercher un article…"
+                className="w-full pl-11 pr-4 py-3 rounded-full bg-background/95 backdrop-blur border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-secondary/50 shadow-soft"
               />
-              {/* Badge flottant */}
-              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-3 bg-background/85 backdrop-blur-md rounded-2xl px-4 py-3 shadow-soft border border-border">
-                <div>
-                  <p className="text-xs text-muted-foreground">Tendance cette semaine</p>
-                  <p className="text-sm font-semibold text-foreground">Bazin & tenues traditionnelles</p>
-                </div>
-                <span className="inline-flex h-9 px-3 items-center rounded-full bg-gradient-gold text-secondary-foreground text-xs font-bold shadow-gold">
-                  Nouveau
-                </span>
-              </div>
             </div>
-          </div>
+            <Button type="submit" size="lg" className="rounded-full px-6 bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-gold">
+              <Search className="h-4 w-4" /> Rechercher
+            </Button>
+          </form>
         </div>
       </section>
 
-      {/* TRUST */}
-      <section className="container py-14 grid md:grid-cols-3 gap-6">
-        {[
-          { icon: ShieldCheck, title: "Boutiques vérifiées", desc: "Des vendeurs guinéens locaux, sélectionnés et fiables." },
-          { icon: Truck, title: "Livraison rapide", desc: "Recevez vos commandes partout en Guinée avec suivi en temps réel." },
-          { icon: CreditCard, title: "Paiement sécurisé", desc: "Mobile Money (Orange Money, MTN MoMo) protégé à chaque transaction." },
-        ].map((f, i) => (
-          <div key={i} className="bg-gradient-card border border-border rounded-3xl p-6 shadow-soft hover:shadow-elegant transition-smooth animate-fade-up" style={{ animationDelay: `${i * 80}ms` }}>
-            <div className="h-11 w-11 rounded-2xl bg-primary/10 grid place-items-center text-primary mb-4">
-              <f.icon className="h-5 w-5" />
-            </div>
-            <h3 className="font-display text-lg font-semibold">{f.title}</h3>
-            <p className="text-sm text-muted-foreground mt-1.5">{f.desc}</p>
-          </div>
-        ))}
-      </section>
-
-      {/* PRODUCTS */}
-      <section id="produits" className="container py-10">
+      {/* Grille des collections */}
+      <section className="container py-12 md:py-16">
         <div className="flex items-end justify-between mb-6">
           <div>
-            <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight">Nouveautés</h2>
-            <p className="text-muted-foreground mt-1">Les derniers produits ajoutés par nos boutiques.</p>
+            <h2 className="font-display text-2xl md:text-3xl font-bold tracking-tight">Nos collections</h2>
+            <p className="text-muted-foreground text-sm mt-1">Choisissez une catégorie pour explorer.</p>
           </div>
           <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex">
-            <Link to="/shops">Voir tout <ArrowRight className="h-4 w-4" /></Link>
+            <Link to="/shops">Toutes les catégories <ArrowRight className="h-4 w-4" /></Link>
           </Button>
         </div>
 
-        {/* Filtre mobile-first : groupes parents (scroll horizontal) */}
-        <div className="mb-3 -mx-4 px-4 md:mx-0 md:px-0">
-          <div className="flex items-center gap-2 mb-2 text-xs font-medium text-muted-foreground">
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            Filtrer par catégorie
-            {(activeGroup || activeCategory) && (
-              <button onClick={clearAll} className="ml-auto inline-flex items-center gap-1 text-primary hover:underline">
-                <X className="h-3 w-3" /> Réinitialiser
-              </button>
-            )}
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 snap-x scrollbar-thin">
-            <button
-              onClick={clearAll}
-              className={`shrink-0 snap-start px-4 py-2 rounded-full text-sm font-medium border transition-smooth ${
-                !activeGroup
-                  ? "bg-primary text-primary-foreground border-primary shadow-soft"
-                  : "bg-card border-border text-foreground hover:bg-muted"
-              }`}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {CATEGORIES.map((c, i) => (
+            <Link
+              key={c.label}
+              to={`/shops?group=${encodeURIComponent(c.group)}`}
+              className={`group relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br ${c.gradient} p-5 h-32 md:h-36 flex flex-col justify-between shadow-soft hover:shadow-elegant transition-smooth animate-fade-up`}
+              style={{ animationDelay: `${i * 60}ms` }}
             >
-              Tout
-            </button>
-            {FILTER_GROUPS.map((g) => (
-              <button
-                key={g.label}
-                onClick={() => selectGroup(g.label)}
-                className={`shrink-0 snap-start px-4 py-2 rounded-full text-sm font-medium border transition-smooth ${
-                  activeGroup === g.label
-                    ? "bg-primary text-primary-foreground border-primary shadow-soft"
-                    : "bg-card border-border text-foreground hover:bg-muted"
-                }`}
-              >
-                {g.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Sous-catégories (apparaissent quand un groupe est sélectionné) */}
-          {currentGroup && currentGroup.items.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-2 snap-x animate-fade-in">
-              <button
-                onClick={() => setActiveCategory(null)}
-                className={`shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium border transition-smooth ${
-                  !activeCategory
-                    ? "bg-secondary text-secondary-foreground border-secondary"
-                    : "bg-muted/50 border-border text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                Tous {currentGroup.label.toLowerCase()}
-              </button>
-              {currentGroup.items.map((it) => (
-                <button
-                  key={it.value}
-                  onClick={() => setActiveCategory((prev) => (prev === it.value ? null : it.value))}
-                  className={`shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium border transition-smooth ${
-                    activeCategory === it.value
-                      ? "bg-secondary text-secondary-foreground border-secondary"
-                      : "bg-muted/50 border-border text-muted-foreground hover:bg-muted"
-                  }`}
-                >
-                  {it.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {products.length === 0 ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="aspect-[3/4] rounded-2xl bg-muted animate-pulse" />
-            ))}
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-16 bg-muted/30 rounded-3xl border border-border">
-            <p className="text-muted-foreground">Aucun produit dans cette catégorie pour le moment.</p>
-            <Button variant="link" onClick={clearAll} className="mt-2">Voir tous les produits</Button>
-          </div>
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {filteredProducts.map((p) => <ProductCard key={p.id} product={p} />)}
-          </div>
-        )}
-      </section>
-
-      {/* VENTE & À PROPOS */}
-      <section id="vente-apropos" className="relative overflow-hidden mt-16">
-        <div className="absolute inset-0 bg-gradient-hero opacity-95" />
-        <div className="absolute -top-20 right-0 h-80 w-80 rounded-full bg-secondary/20 blur-3xl" />
-        <div className="absolute -bottom-20 left-0 h-80 w-80 rounded-full bg-accent/20 blur-3xl" />
-
-        <div className="relative container py-16 md:py-20 text-primary-foreground">
-          {/* En-tête slogan */}
-          <div className="text-center max-w-3xl mx-auto mb-14">
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur border border-white/20 text-xs font-medium mb-5">
-              <Heart className="h-3.5 w-3.5 text-secondary" /> Vente & À propos
-            </span>
-            <h2 className="font-display text-3xl md:text-5xl font-bold tracking-tight text-balance">
-              <span className="text-secondary">Madina</span> — Votre Centre Commercial Dans Votre Poche
-            </h2>
-            <p className="mt-4 text-primary-foreground/85 md:text-lg">
-              Une marketplace 100% guinéenne pour acheter, vendre et se faire livrer en toute confiance.
-            </p>
-          </div>
-
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* À propos */}
-            <div className="bg-background/10 backdrop-blur-md border border-white/15 rounded-3xl p-7 shadow-elegant">
-              <div className="h-11 w-11 rounded-2xl bg-secondary/20 grid place-items-center text-secondary mb-4">
-                <Store className="h-5 w-5" />
+              <c.icon className="h-7 w-7 text-foreground/80 group-hover:scale-110 transition-transform" />
+              <div>
+                <p className="font-display font-bold text-base md:text-lg text-foreground">{c.label}</p>
+                <p className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                  Explorer <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                </p>
               </div>
-              <h3 className="font-display text-xl font-bold mb-2">À propos de nous</h3>
-              <p className="text-sm text-primary-foreground/80 leading-relaxed">
-                Madina connecte les boutiques locales de Conakry, Kindia, Kankan et au-delà à des
-                milliers de clients. Notre mission : rendre le commerce guinéen accessible,
-                moderne et digne de confiance — directement depuis votre téléphone.
+            </Link>
+          ))}
+
+          {/* Toutes les catégories */}
+          <Link
+            to="/shops"
+            className="group relative overflow-hidden rounded-2xl border-2 border-primary bg-primary text-primary-foreground p-5 h-32 md:h-36 flex flex-col justify-between shadow-soft hover:shadow-elegant transition-smooth animate-fade-up"
+            style={{ animationDelay: `${CATEGORIES.length * 60}ms` }}
+          >
+            <LayoutGrid className="h-7 w-7 group-hover:scale-110 transition-transform" />
+            <div>
+              <p className="font-display font-bold text-base md:text-lg">Toutes les catégories</p>
+              <p className="text-xs opacity-90 inline-flex items-center gap-1">
+                Voir tous les articles <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
               </p>
-              <Link to="/about" className="inline-flex items-center gap-1.5 mt-4 text-sm font-semibold text-secondary hover:underline">
-                En savoir plus <ArrowRight className="h-4 w-4" />
-              </Link>
             </div>
-
-            {/* Nos services */}
-            <div className="bg-background/10 backdrop-blur-md border border-white/15 rounded-3xl p-7 shadow-elegant">
-              <div className="h-11 w-11 rounded-2xl bg-secondary/20 grid place-items-center text-secondary mb-4">
-                <Headphones className="h-5 w-5" />
-              </div>
-              <h3 className="font-display text-xl font-bold mb-3">Nos services</h3>
-              <ul className="space-y-2.5 text-sm text-primary-foreground/85">
-                <li className="flex items-start gap-2"><Truck className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Livraison à domicile partout en Guinée</li>
-                <li className="flex items-start gap-2"><CreditCard className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Paiement sécurisé Mobile Money</li>
-                <li className="flex items-start gap-2"><Store className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Boutique en ligne en quelques minutes</li>
-                <li className="flex items-start gap-2"><Headphones className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Support client à votre écoute</li>
-              </ul>
-              <Link to="/services" className="inline-flex items-center gap-1.5 mt-4 text-sm font-semibold text-secondary hover:underline">
-                Voir tous nos services <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-
-            {/* Conditions de vente */}
-            <div className="bg-background/10 backdrop-blur-md border border-white/15 rounded-3xl p-7 shadow-elegant">
-              <div className="h-11 w-11 rounded-2xl bg-secondary/20 grid place-items-center text-secondary mb-4">
-                <FileText className="h-5 w-5" />
-              </div>
-              <h3 className="font-display text-xl font-bold mb-3">Conditions de vente</h3>
-              <ul className="space-y-2.5 text-sm text-primary-foreground/85">
-                <li className="flex items-start gap-2"><ShieldCheck className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Produits authentiques et vendeurs vérifiés</li>
-                <li className="flex items-start gap-2"><ShieldCheck className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Paiement à la commande, prix en GNF TTC</li>
-                <li className="flex items-start gap-2"><ShieldCheck className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Retour possible sous 7 jours après réception</li>
-                <li className="flex items-start gap-2"><ShieldCheck className="h-4 w-4 text-secondary shrink-0 mt-0.5" /> Données personnelles protégées</li>
-              </ul>
-              <Link to="/conditions" className="inline-flex items-center gap-1.5 mt-4 text-sm font-semibold text-secondary hover:underline">
-                Lire toutes les conditions <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
-
-          {/* CTA final */}
-          <div className="mt-12 flex flex-wrap justify-center gap-3">
-            <Button asChild size="lg" className="rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-gold">
-              <a href="#produits">Commencer mes achats <ArrowRight className="h-4 w-4" /></a>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="rounded-full bg-white/10 backdrop-blur border-white/30 text-primary-foreground hover:bg-white/20 hover:text-primary-foreground">
-              <Link to="/onboarding/shop"><Store className="h-4 w-4" /> Devenir vendeur</Link>
-            </Button>
-          </div>
+          </Link>
         </div>
       </section>
     </div>
