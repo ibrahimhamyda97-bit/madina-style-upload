@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { SlidersHorizontal, X, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ProductCard, { ProductCardData } from "@/components/ProductCard";
