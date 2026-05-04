@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { SlidersHorizontal, X, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ProductCard, { ProductCardData } from "@/components/ProductCard";
@@ -48,12 +49,25 @@ const FILTER_GROUPS: { label: string; items: { label: string; value: string }[] 
 ];
 
 export default function Shops() {
+  const [params] = useSearchParams();
+  const initialQ = params.get("q") ?? "";
+  const initialGroup = params.get("group");
   const [products, setProducts] = useState<ProductCardData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  const [activeGroup, setActiveGroup] = useState<string | null>(
+    initialGroup && FILTER_GROUPS.some((g) => g.label === initialGroup) ? initialGroup : null
+  );
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState(initialQ);
+  const [searchInput, setSearchInput] = useState(initialQ);
+
+  useEffect(() => {
+    const g = params.get("group");
+    const qp = params.get("q") ?? "";
+    if (g && FILTER_GROUPS.some((x) => x.label === g)) setActiveGroup(g);
+    setSearch(qp);
+    setSearchInput(qp);
+  }, [params]);
 
   useEffect(() => {
     (async () => {
