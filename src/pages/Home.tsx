@@ -1,16 +1,23 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Search, ArrowRight, Shirt, Footprints, Watch, Sparkles, Smartphone, Home as HomeIcon, Baby, LayoutGrid } from "lucide-react";
+import { Search, ArrowRight, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import imgVetements from "@/assets/cat-vetements.jpg";
+import imgChaussures from "@/assets/cat-chaussures.jpg";
+import imgAccessoires from "@/assets/cat-accessoires.jpg";
+import imgBeaute from "@/assets/cat-beaute.jpg";
+import imgElectronique from "@/assets/cat-electronique.jpg";
+import imgMaison from "@/assets/cat-maison.jpg";
+import imgEnfants from "@/assets/cat-enfants.jpg";
 
-const CATEGORIES: { label: string; group: string; icon: any; gradient: string }[] = [
-  { label: "Vêtements", group: "Vêtements", icon: Shirt, gradient: "from-rose-500/20 to-pink-500/10" },
-  { label: "Chaussures", group: "Chaussures", icon: Footprints, gradient: "from-amber-500/20 to-orange-500/10" },
-  { label: "Accessoires", group: "Accessoires", icon: Watch, gradient: "from-violet-500/20 to-fuchsia-500/10" },
-  { label: "Beauté", group: "Beauté", icon: Sparkles, gradient: "from-pink-500/20 to-rose-500/10" },
-  { label: "Électronique", group: "Électronique", icon: Smartphone, gradient: "from-blue-500/20 to-cyan-500/10" },
-  { label: "Maison", group: "Maison", icon: HomeIcon, gradient: "from-emerald-500/20 to-teal-500/10" },
-  { label: "Enfants", group: "Enfants", icon: Baby, gradient: "from-yellow-500/20 to-amber-500/10" },
+const CATEGORIES: { label: string; group: string; image: string; tint: string }[] = [
+  { label: "Vêtements", group: "Vêtements", image: imgVetements, tint: "from-rose-600/80 via-pink-500/40 to-transparent" },
+  { label: "Chaussures", group: "Chaussures", image: imgChaussures, tint: "from-orange-600/80 via-amber-500/40 to-transparent" },
+  { label: "Accessoires", group: "Accessoires", image: imgAccessoires, tint: "from-violet-700/80 via-fuchsia-500/40 to-transparent" },
+  { label: "Beauté", group: "Beauté", image: imgBeaute, tint: "from-pink-600/80 via-rose-400/40 to-transparent" },
+  { label: "Électronique", group: "Électronique", image: imgElectronique, tint: "from-blue-700/80 via-cyan-500/40 to-transparent" },
+  { label: "Maison", group: "Maison", image: imgMaison, tint: "from-emerald-700/80 via-teal-500/40 to-transparent" },
+  { label: "Enfants", group: "Enfants", image: imgEnfants, tint: "from-yellow-500/80 via-amber-400/40 to-transparent" },
 ];
 
 export default function Home() {
@@ -74,13 +81,21 @@ export default function Home() {
             <Link
               key={c.label}
               to={`/shops?group=${encodeURIComponent(c.group)}`}
-              className={`group relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br ${c.gradient} p-5 h-32 md:h-36 flex flex-col justify-between shadow-soft hover:shadow-elegant transition-smooth animate-fade-up`}
+              className="group relative overflow-hidden rounded-2xl border border-border h-44 md:h-56 shadow-soft hover:shadow-elegant transition-smooth animate-fade-up"
               style={{ animationDelay: `${i * 60}ms` }}
             >
-              <c.icon className="h-7 w-7 text-foreground/80 group-hover:scale-110 transition-transform" />
-              <div>
-                <p className="font-display font-bold text-base md:text-lg text-foreground">{c.label}</p>
-                <p className="text-xs text-muted-foreground inline-flex items-center gap-1">
+              <img
+                src={c.image}
+                alt={c.label}
+                loading="lazy"
+                width={768}
+                height={768}
+                className="absolute inset-0 h-full w-full object-cover group-hover:scale-110 transition-transform duration-700"
+              />
+              <div className={`absolute inset-0 bg-gradient-to-t ${c.tint}`} />
+              <div className="absolute inset-x-0 bottom-0 p-4">
+                <p className="font-display font-bold text-lg md:text-xl text-white drop-shadow-lg">{c.label}</p>
+                <p className="text-xs text-white/90 inline-flex items-center gap-1 mt-0.5 drop-shadow">
                   Explorer <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
                 </p>
               </div>
@@ -90,15 +105,18 @@ export default function Home() {
           {/* Toutes les catégories */}
           <Link
             to="/shops"
-            className="group relative overflow-hidden rounded-2xl border-2 border-primary bg-primary text-primary-foreground p-5 h-32 md:h-36 flex flex-col justify-between shadow-soft hover:shadow-elegant transition-smooth animate-fade-up"
+            className="group relative overflow-hidden rounded-2xl h-44 md:h-56 shadow-soft hover:shadow-elegant transition-smooth animate-fade-up bg-gradient-to-br from-primary via-primary to-accent text-primary-foreground"
             style={{ animationDelay: `${CATEGORIES.length * 60}ms` }}
           >
-            <LayoutGrid className="h-7 w-7 group-hover:scale-110 transition-transform" />
-            <div>
-              <p className="font-display font-bold text-base md:text-lg">Toutes les catégories</p>
-              <p className="text-xs opacity-90 inline-flex items-center gap-1">
-                Voir tous les articles <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
-              </p>
+            <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-secondary/30 blur-2xl" />
+            <div className="relative h-full p-5 flex flex-col justify-between">
+              <LayoutGrid className="h-8 w-8 group-hover:scale-110 transition-transform" />
+              <div>
+                <p className="font-display font-bold text-lg md:text-xl">Toutes les catégories</p>
+                <p className="text-xs opacity-90 inline-flex items-center gap-1 mt-0.5">
+                  Voir tous les articles <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                </p>
+              </div>
             </div>
           </Link>
         </div>
