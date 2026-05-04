@@ -57,17 +57,27 @@ export default function AdminUsers() {
   const addRole = async (userId: string, role: AppRole) => {
     setBusy(userId + role);
     const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
+    if (error) { setBusy(null); toast.error(error.message); return; }
+    // Promotion : retirer le statut "Client" pour que le statut affiché devienne le nouveau rôle
+    if (role !== "buyer") {
+      await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "buyer");
+    }
     setBusy(null);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`Rôle « ${roleMeta[role].label} » attribué`);
+    toast.success(`Rôle « ${roleMeta[role].label} » attribué — l'utilisateur sera dirigé vers son tableau de bord à la prochaine connexion.`);
     await load();
   };
 
   const removeRole = async (userId: string, role: AppRole) => {
     setBusy(userId + role);
     const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role);
+    if (error) { setBusy(null); toast.error(error.message); return; }
+    // Si plus aucun rôle spécialisé, restaurer "Client"
+    const { data: remaining } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    const stillSpecialized = (remaining ?? []).some((r: any) => r.role !== "buyer");
+    if (!stillSpecialized && !(remaining ?? []).some((r: any) => r.role === "buyer")) {
+      await supabase.from("user_roles").insert({ user_id: userId, role: "buyer" });
+    }
     setBusy(null);
-    if (error) { toast.error(error.message); return; }
     toast.success(`Rôle « ${roleMeta[role].label} » retiré`);
     await load();
   };
