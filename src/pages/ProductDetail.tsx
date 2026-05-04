@@ -383,6 +383,7 @@ export default function ProductDetail() {
                 setAdding(true);
                 await add(product.id, sizeToUse, 1, activeVariant?.id ?? null);
                 setAdding(false);
+                nav("/cart");
               }}
               className="flex-1 rounded-2xl bg-gradient-gold text-secondary-foreground shadow-gold hover:opacity-95 h-14"
             >
