@@ -11,13 +11,13 @@ import imgMaison from "@/assets/cat-maison.jpg";
 import imgEnfants from "@/assets/cat-enfants.jpg";
 
 const CATEGORIES: { label: string; group: string; image: string; tint: string }[] = [
-  { label: "Vêtements", group: "Vêtements", image: imgVetements, tint: "from-rose-600/80 via-pink-500/40 to-transparent" },
-  { label: "Chaussures", group: "Chaussures", image: imgChaussures, tint: "from-orange-600/80 via-amber-500/40 to-transparent" },
-  { label: "Accessoires", group: "Accessoires", image: imgAccessoires, tint: "from-violet-700/80 via-fuchsia-500/40 to-transparent" },
-  { label: "Beauté", group: "Beauté", image: imgBeaute, tint: "from-pink-600/80 via-rose-400/40 to-transparent" },
-  { label: "Électronique", group: "Électronique", image: imgElectronique, tint: "from-blue-700/80 via-cyan-500/40 to-transparent" },
-  { label: "Maison", group: "Maison", image: imgMaison, tint: "from-emerald-700/80 via-teal-500/40 to-transparent" },
-  { label: "Enfants", group: "Enfants", image: imgEnfants, tint: "from-yellow-500/80 via-amber-400/40 to-transparent" },
+  { label: "Vêtements", group: "Vêtements", image: imgVetements, tint: "from-rose-900/85 via-rose-700/30 to-transparent" },
+  { label: "Chaussures", group: "Chaussures", image: imgChaussures, tint: "from-orange-900/85 via-amber-700/30 to-transparent" },
+  { label: "Accessoires", group: "Accessoires", image: imgAccessoires, tint: "from-violet-900/85 via-fuchsia-700/30 to-transparent" },
+  { label: "Beauté", group: "Beauté", image: imgBeaute, tint: "from-pink-900/85 via-rose-600/30 to-transparent" },
+  { label: "Électronique", group: "Électronique", image: imgElectronique, tint: "from-blue-950/85 via-cyan-700/30 to-transparent" },
+  { label: "Maison", group: "Maison", image: imgMaison, tint: "from-emerald-900/85 via-teal-700/30 to-transparent" },
+  { label: "Enfants", group: "Enfants", image: imgEnfants, tint: "from-amber-800/85 via-yellow-600/30 to-transparent" },
 ];
 
 export default function Home() {
