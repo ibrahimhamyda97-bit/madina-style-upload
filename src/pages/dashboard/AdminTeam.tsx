@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Plus, Trash2, Save, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Trash2, Save, ArrowUp, ArrowDown, UserPlus } from "lucide-react";
 import { TEAM_ICONS } from "@/pages/About";
 
 type Member = { id: string; name: string; role: string; icon: string; position: number };
@@ -23,6 +24,8 @@ export default function AdminTeam() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState({ name: "", role: "", icon: "user", position: 0 });
 
   async function load() {
     setLoading(true);
@@ -60,13 +63,20 @@ export default function AdminTeam() {
     load();
   }
 
-  async function add() {
-    const nextPos = (members[members.length - 1]?.position ?? -1) + 1;
+  async function add(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.name.trim() || !form.role.trim()) {
+      return toast.error("Veuillez remplir le nom et le rôle.");
+    }
+    setAdding(true);
+    const pos = form.position || ((members[members.length - 1]?.position ?? -1) + 1);
     const { error } = await (supabase as any)
       .from("team_members")
-      .insert({ name: "Nouveau membre", role: "Rôle", icon: "user", position: nextPos });
+      .insert({ name: form.name.trim(), role: form.role.trim(), icon: form.icon, position: pos });
+    setAdding(false);
     if (error) return toast.error(error.message);
     toast.success("Membre ajouté");
+    setForm({ name: "", role: "", icon: "user", position: 0 });
     load();
   }
 
