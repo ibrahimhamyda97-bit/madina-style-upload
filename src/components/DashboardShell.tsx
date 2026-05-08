@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, Plus, Store, ArrowLeft, Users, Wallet, ShoppingBag, ShoppingCart, User, TrendingUp, Truck, ClipboardCheck } from "lucide-react";
+import { LayoutDashboard, Package, Plus, Store, ArrowLeft, Users, Wallet, ShoppingBag, ShoppingCart, User, TrendingUp, Truck, ClipboardCheck, UserCog } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -65,6 +65,7 @@ export const adminNav: Item[] = [
   { to: "/admin/shops", label: "Boutiques", icon: Store },
   { to: "/admin/couriers", label: "Demandes livreurs", icon: Truck },
   { to: "/admin/users", label: "Utilisateurs", icon: Users },
+  { to: "/admin/team", label: "Équipe (À propos)", icon: UserCog },
 ];
 
 export const moderatorNav: Item[] = [
