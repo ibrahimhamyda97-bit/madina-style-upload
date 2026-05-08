@@ -90,22 +90,73 @@ export default function AdminTeam() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold">Équipe — page À propos</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gérez les noms et rôles affichés dans la section « Notre équipe ».
-          </p>
-        </div>
-        <Button onClick={add} size="sm" className="rounded-full">
-          <Plus className="h-4 w-4" /> Ajouter
-        </Button>
+      <div>
+        <h1 className="font-display text-2xl font-bold">Équipe — page À propos</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Gérez les noms et rôles affichés dans la section « Notre équipe ».
+        </p>
       </div>
+
+      <Card className="border-border shadow-soft">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <UserPlus className="h-5 w-5 text-primary" /> Ajouter un membre
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={add} className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-name">Nom complet</Label>
+              <Input
+                id="new-name"
+                placeholder="Ex: Samirou"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-role">Rôle</Label>
+              <Input
+                id="new-role"
+                placeholder="Ex: Directeur Général"
+                value={form.role}
+                onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-icon">Icône</Label>
+              <Select value={form.icon} onValueChange={(v) => setForm((f) => ({ ...f, icon: v }))}>
+                <SelectTrigger id="new-icon"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ICON_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-position">Position</Label>
+              <Input
+                id="new-position"
+                type="number"
+                placeholder="0, 1, 2..."
+                value={form.position || ""}
+                onChange={(e) => setForm((f) => ({ ...f, position: Number(e.target.value) || 0 }))}
+              />
+            </div>
+            <div className="sm:col-span-2 flex justify-end">
+              <Button type="submit" disabled={adding} className="rounded-full">
+                <Plus className="h-4 w-4 mr-1" /> {adding ? "Ajout…" : "Ajouter le membre"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Chargement…</p>
       ) : members.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Aucun membre. Cliquez sur « Ajouter ».</p>
+        <p className="text-sm text-muted-foreground">Aucun membre enregistré.</p>
       ) : (
         <div className="space-y-4">
           {members.map((m, idx) => {
