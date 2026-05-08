@@ -1,23 +1,29 @@
-import { Store, Users, Heart, Globe, ShieldCheck, Crown } from "lucide-react";
+import { Store, Users, Heart, Globe, ShieldCheck, Crown, Star, Briefcase, Award, UserCog } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-const TEAM = [
-  {
-    name: "SAMIROU",
-    role: "Directeur Général (DG)",
-    icon: Crown,
-    color: "from-yellow-500/20 to-amber-500/5 border-yellow-500/30",
-    iconColor: "text-yellow-500",
-  },
-  {
-    name: "KOLLET KEITA",
-    role: "Modérateur",
-    icon: ShieldCheck,
-    color: "from-primary/20 to-accent/5 border-primary/30",
-    iconColor: "text-primary",
-  },
-];
+export const TEAM_ICONS: Record<string, { icon: any; color: string; iconColor: string }> = {
+  crown: { icon: Crown, color: "from-yellow-500/20 to-amber-500/5 border-yellow-500/30", iconColor: "text-yellow-500" },
+  shield: { icon: ShieldCheck, color: "from-primary/20 to-accent/5 border-primary/30", iconColor: "text-primary" },
+  star: { icon: Star, color: "from-purple-500/20 to-fuchsia-500/5 border-purple-500/30", iconColor: "text-purple-500" },
+  briefcase: { icon: Briefcase, color: "from-blue-500/20 to-cyan-500/5 border-blue-500/30", iconColor: "text-blue-500" },
+  award: { icon: Award, color: "from-rose-500/20 to-pink-500/5 border-rose-500/30", iconColor: "text-rose-500" },
+  user: { icon: UserCog, color: "from-emerald-500/20 to-teal-500/5 border-emerald-500/30", iconColor: "text-emerald-500" },
+};
+
+type Member = { id: string; name: string; role: string; icon: string };
 
 export default function About() {
+  const [team, setTeam] = useState<Member[]>([]);
+
+  useEffect(() => {
+    (supabase as any)
+      .from("team_members")
+      .select("id,name,role,icon")
+      .order("position", { ascending: true })
+      .then(({ data }: any) => setTeam(data ?? []));
+  }, []);
+
   return (
     <div className="animate-fade-in">
       <section className="bg-gradient-hero py-16 md:py-24">
@@ -60,28 +66,33 @@ export default function About() {
         </div>
       </section>
 
-      {/* Équipe */}
-      <section className="container pb-16">
-        <h2 className="font-display text-2xl font-bold mb-6">Notre équipe</h2>
-        <div className="grid sm:grid-cols-2 gap-5 max-w-2xl">
-          {TEAM.map((member) => (
-            <div
-              key={member.name}
-              className={`relative overflow-hidden rounded-2xl border bg-gradient-to-br ${member.color} p-6 shadow-soft`}
-            >
-              <div className="flex items-center gap-4">
-                <div className={`h-14 w-14 rounded-full bg-background/80 grid place-items-center shadow-sm`}>
-                  <member.icon className={`h-7 w-7 ${member.iconColor}`} />
+      {team.length > 0 && (
+        <section className="container pb-16">
+          <h2 className="font-display text-2xl font-bold mb-6">Notre équipe</h2>
+          <div className="grid sm:grid-cols-2 gap-5 max-w-2xl">
+            {team.map((m) => {
+              const cfg = TEAM_ICONS[m.icon] ?? TEAM_ICONS.user;
+              const Icon = cfg.icon;
+              return (
+                <div
+                  key={m.id}
+                  className={`relative overflow-hidden rounded-2xl border bg-gradient-to-br ${cfg.color} p-6 shadow-soft`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="h-14 w-14 rounded-full bg-background/80 grid place-items-center shadow-sm shrink-0">
+                      <Icon className={`h-7 w-7 ${cfg.iconColor}`} />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-display text-lg font-bold truncate">{m.name}</h3>
+                      <p className="text-sm text-muted-foreground font-medium">{m.role}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-display text-lg font-bold">{member.name}</h3>
-                  <p className="text-sm text-muted-foreground font-medium">{member.role}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

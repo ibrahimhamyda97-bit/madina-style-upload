@@ -30,6 +30,7 @@ import ClientOverview from "./pages/dashboard/ClientOverview";
 import ClientProfile from "./pages/dashboard/ClientProfile";
 import CourierDeliveries from "./pages/dashboard/CourierDeliveries";
 import CourierApplications from "./pages/dashboard/CourierApplications";
+import AdminTeam from "./pages/dashboard/AdminTeam";
 import About from "./pages/About";
 import Services from "./pages/Services";
 import Conditions from "./pages/Conditions";
@@ -96,6 +97,7 @@ const App = () => (
               <Route path="finance" element={<AdminFinance />} />
               <Route path="couriers" element={<CourierApplications />} />
               <Route path="users" element={<AdminUsers />} />
+              <Route path="team" element={<AdminTeam />} />
             </Route>
 
             <Route path="/moderator" element={<><SiteHeader /><DashboardShell items={moderatorNav} title="Modérateur" /></>}>
