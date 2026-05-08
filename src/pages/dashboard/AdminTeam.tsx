@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Plus, Trash2, Save, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Trash2, Save, ArrowUp, ArrowDown, UserPlus } from "lucide-react";
 import { TEAM_ICONS } from "@/pages/About";
 
 type Member = { id: string; name: string; role: string; icon: string; position: number };
@@ -23,6 +24,8 @@ export default function AdminTeam() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState({ name: "", role: "", icon: "user", position: 0 });
 
   async function load() {
     setLoading(true);
@@ -60,13 +63,20 @@ export default function AdminTeam() {
     load();
   }
 
-  async function add() {
-    const nextPos = (members[members.length - 1]?.position ?? -1) + 1;
+  async function add(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.name.trim() || !form.role.trim()) {
+      return toast.error("Veuillez remplir le nom et le rôle.");
+    }
+    setAdding(true);
+    const pos = form.position || ((members[members.length - 1]?.position ?? -1) + 1);
     const { error } = await (supabase as any)
       .from("team_members")
-      .insert({ name: "Nouveau membre", role: "Rôle", icon: "user", position: nextPos });
+      .insert({ name: form.name.trim(), role: form.role.trim(), icon: form.icon, position: pos });
+    setAdding(false);
     if (error) return toast.error(error.message);
     toast.success("Membre ajouté");
+    setForm({ name: "", role: "", icon: "user", position: 0 });
     load();
   }
 
@@ -80,22 +90,73 @@ export default function AdminTeam() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold">Équipe — page À propos</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gérez les noms et rôles affichés dans la section « Notre équipe ».
-          </p>
-        </div>
-        <Button onClick={add} size="sm" className="rounded-full">
-          <Plus className="h-4 w-4" /> Ajouter
-        </Button>
+      <div>
+        <h1 className="font-display text-2xl font-bold">Équipe — page À propos</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Gérez les noms et rôles affichés dans la section « Notre équipe ».
+        </p>
       </div>
+
+      <Card className="border-border shadow-soft">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <UserPlus className="h-5 w-5 text-primary" /> Ajouter un membre
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={add} className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-name">Nom complet</Label>
+              <Input
+                id="new-name"
+                placeholder="Ex: Samirou"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-role">Rôle</Label>
+              <Input
+                id="new-role"
+                placeholder="Ex: Directeur Général"
+                value={form.role}
+                onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-icon">Icône</Label>
+              <Select value={form.icon} onValueChange={(v) => setForm((f) => ({ ...f, icon: v }))}>
+                <SelectTrigger id="new-icon"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ICON_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-position">Position</Label>
+              <Input
+                id="new-position"
+                type="number"
+                placeholder="0, 1, 2..."
+                value={form.position || ""}
+                onChange={(e) => setForm((f) => ({ ...f, position: Number(e.target.value) || 0 }))}
+              />
+            </div>
+            <div className="sm:col-span-2 flex justify-end">
+              <Button type="submit" disabled={adding} className="rounded-full">
+                <Plus className="h-4 w-4 mr-1" /> {adding ? "Ajout…" : "Ajouter le membre"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Chargement…</p>
       ) : members.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Aucun membre. Cliquez sur « Ajouter ».</p>
+        <p className="text-sm text-muted-foreground">Aucun membre enregistré.</p>
       ) : (
         <div className="space-y-4">
           {members.map((m, idx) => {
