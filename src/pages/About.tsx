@@ -1,4 +1,21 @@
-import { Store, Users, Heart, Globe } from "lucide-react";
+import { Store, Users, Heart, Globe, ShieldCheck, Crown } from "lucide-react";
+
+const TEAM = [
+  {
+    name: "SAMIROU",
+    role: "Directeur Général (DG)",
+    icon: Crown,
+    color: "from-yellow-500/20 to-amber-500/5 border-yellow-500/30",
+    iconColor: "text-yellow-500",
+  },
+  {
+    name: "KOLLET KEITA",
+    role: "Modérateur",
+    icon: ShieldCheck,
+    color: "from-primary/20 to-accent/5 border-primary/30",
+    iconColor: "text-primary",
+  },
+];
 
 export default function About() {
   return (
@@ -38,6 +55,29 @@ export default function About() {
               <v.icon className="h-6 w-6 text-primary mb-3" />
               <h3 className="font-semibold mb-1">{v.title}</h3>
               <p className="text-sm text-muted-foreground">{v.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Équipe */}
+      <section className="container pb-16">
+        <h2 className="font-display text-2xl font-bold mb-6">Notre équipe</h2>
+        <div className="grid sm:grid-cols-2 gap-5 max-w-2xl">
+          {TEAM.map((member) => (
+            <div
+              key={member.name}
+              className={`relative overflow-hidden rounded-2xl border bg-gradient-to-br ${member.color} p-6 shadow-soft`}
+            >
+              <div className="flex items-center gap-4">
+                <div className={`h-14 w-14 rounded-full bg-background/80 grid place-items-center shadow-sm`}>
+                  <member.icon className={`h-7 w-7 ${member.iconColor}`} />
+                </div>
+                <div>
+                  <h3 className="font-display text-lg font-bold">{member.name}</h3>
+                  <p className="text-sm text-muted-foreground font-medium">{member.role}</p>
+                </div>
+              </div>
             </div>
           ))}
         </div>
