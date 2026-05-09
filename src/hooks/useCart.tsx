@@ -89,15 +89,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
     if (existing) {
       await setQuantity(existing.id, existing.quantity + quantity);
-      toast.success("Quantité mise à jour");
+      toast.success("Quantité mise à jour", {
+        action: { label: "Voir le panier", onClick: () => { window.location.href = "/cart"; } },
+      });
       return;
     }
     const { error } = await supabase.from("cart_items").insert({
       user_id: user.id, product_id: productId, size: size as any, quantity, variant_id: variantId,
     });
     if (error) { toast.error(error.message); return; }
-    toast.success("Ajouté au panier");
-    refresh();
+    await refresh();
+    toast.success("Article ajouté au panier", {
+      duration: 5000,
+      action: { label: "Voir le panier", onClick: () => { window.location.href = "/cart"; } },
+    });
   }
 
   async function setQuantity(id: string, qty: number) {
