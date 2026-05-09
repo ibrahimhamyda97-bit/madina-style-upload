@@ -74,6 +74,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { refresh(); }, [refresh]);
 
+  // Realtime: keep cart in sync across tabs/devices
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`cart-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "cart_items", filter: `user_id=eq.${user.id}` },
+        () => { refresh(); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, refresh]);
+
   const count = items.reduce((s, l) => s + l.quantity, 0);
   const subtotal = items.reduce(
     (s, l) => s + ((l.variant?.price_gnf ?? l.product?.price_gnf) ?? 0) * l.quantity,
@@ -84,16 +98,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   async function add(productId: string, size: string, quantity = 1, variantId: string | null = null) {
     if (!user) { toast.error("Connectez-vous pour ajouter au panier"); return; }
-    const existing = items.find(
-      (i) => i.product_id === productId && i.size === size && (i.variant_id ?? null) === (variantId ?? null)
-    );
-    if (existing) {
-      await setQuantity(existing.id, existing.quantity + quantity);
+
+    // Always check DB to avoid stale-state duplicate-key errors
+    const { data: existingRow } = await supabase
+      .from("cart_items")
+      .select("id, quantity, variant_id")
+      .eq("user_id", user.id)
+      .eq("product_id", productId)
+      .eq("size", size as any)
+      .maybeSingle();
+
+    if (existingRow) {
+      const { error } = await supabase
+        .from("cart_items")
+        .update({ quantity: existingRow.quantity + quantity, variant_id: variantId })
+        .eq("id", existingRow.id);
+      if (error) { toast.error(error.message); return; }
+      await refresh();
       toast.success("Quantité mise à jour", {
         action: { label: "Voir le panier", onClick: () => { window.location.href = "/cart"; } },
       });
       return;
     }
+
     const { error } = await supabase.from("cart_items").insert({
       user_id: user.id, product_id: productId, size: size as any, quantity, variant_id: variantId,
     });
