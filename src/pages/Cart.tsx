@@ -136,7 +136,7 @@ export default function Cart() {
               onClick={() => nav("/checkout")}
               className="w-full mt-6 rounded-2xl bg-gradient-gold text-secondary-foreground shadow-gold h-14 text-base"
             >
-              Payer maintenant <ArrowRight className="h-5 w-5" />
+              Valider la commande <ArrowRight className="h-5 w-5" />
             </Button>
             <p className="text-[11px] text-muted-foreground text-center mt-3">
               Paiement sécurisé via Orange Money ou MTN Mobile Money.
