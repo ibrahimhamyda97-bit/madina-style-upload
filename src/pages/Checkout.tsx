@@ -34,7 +34,7 @@ function operatorMeta(name?: string | null) {
 
 export default function Checkout() {
   const { items, total, subtotal, shipping, refresh } = useCart();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const nav = useNavigate();
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [data, setData] = useState({ customer_name: "", customer_phone: "", customer_address: "", notes: "" });
@@ -46,7 +46,7 @@ export default function Checkout() {
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [confirmedByShop, setConfirmedByShop] = useState<Record<string, boolean>>({});
 
-  useEffect(() => { if (!user) nav("/auth"); }, [user, nav]);
+  useEffect(() => { if (!authLoading && !user) nav("/auth"); }, [authLoading, user, nav]);
   useEffect(() => { if (items.length === 0 && !orderRef) nav("/cart"); }, [items, orderRef, nav]);
 
   // Pre-fill customer info from profile
