@@ -158,56 +158,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const shipping = useMemo(() => items.reduce((s, l) => s + (l.product?.shipping_fee_gnf ?? 0) * l.quantity, 0), [items]);
   const total = subtotal + shipping;
 
-  const hydrateCartLine = useCallback(async (cartRow: { id: string; product_id: string; variant_id: string | null; size: string; quantity: number }) => {
-    const [{ data: product }, { data: variant }] = await Promise.all([
-      supabase
-        .from("products")
-        .select(`
-          id, title, price_gnf, shipping_fee_gnf, shop_id,
-          shop:shops(id, name, slug, commission_rate, payment_operator, payment_number),
-          images:product_images(image_url, size)
-        `)
-        .eq("id", cartRow.product_id)
-        .maybeSingle(),
-      cartRow.variant_id
-        ? supabase
-            .from("product_variants")
-            .select("id, name, color, size, price_gnf, images:product_variant_images(image_url, position)")
-            .eq("id", cartRow.variant_id)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-    ]);
-
-    if (!product) return null;
-    return {
-      id: cartRow.id,
-      product_id: cartRow.product_id,
-      variant_id: cartRow.variant_id,
-      size: cartRow.size,
-      quantity: cartRow.quantity,
-      product,
-      variant,
-    } as CartLine;
-  }, []);
-
   async function add(productId: string, size: string, quantity = 1, variantId: string | null = null) {
     if (!user) { toast.error("Connectez-vous pour ajouter au panier"); return; }
 
     // Always check DB to avoid stale-state duplicate-key errors
-    const { data: existingRow } = await supabase
+    const { data: existingRow, error: lookupError } = await supabase
       .from("cart_items")
       .select("id, quantity, variant_id")
       .eq("user_id", user.id)
       .eq("product_id", productId)
       .eq("size", size as any)
       .maybeSingle();
+    if (lookupError) { toast.error(lookupError.message); return; }
 
     if (existingRow) {
+      const nextQuantity = existingRow.quantity + quantity;
+      setItems((prev) => {
+        const next = prev.map((i) => i.id === existingRow.id ? { ...i, quantity: nextQuantity, variant_id: variantId } : i);
+        writeCachedCart(user.id, next);
+        return next;
+      });
       const { error } = await supabase
         .from("cart_items")
-        .update({ quantity: existingRow.quantity + quantity, variant_id: variantId })
+        .update({ quantity: nextQuantity, variant_id: variantId })
         .eq("id", existingRow.id);
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(error.message); await refresh(); return; }
       await refresh();
       toast.success("Quantité mise à jour", {
         action: { label: "Voir le panier", onClick: () => { window.location.href = "/cart"; } },
@@ -215,10 +190,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const { error } = await supabase.from("cart_items").insert({
+    const { data: insertedRow, error } = await supabase.from("cart_items").insert({
       user_id: user.id, product_id: productId, size: size as any, quantity, variant_id: variantId,
-    });
+    }).select("id, product_id, variant_id, size, quantity").single();
     if (error) { toast.error(error.message); return; }
+    const hydrated = await hydrateCartLine(insertedRow as any);
+    if (hydrated) cacheItems([hydrated, ...items.filter((i) => i.id !== hydrated.id)]);
     await refresh();
     toast.success("Article ajouté au panier", {
       duration: 5000,
