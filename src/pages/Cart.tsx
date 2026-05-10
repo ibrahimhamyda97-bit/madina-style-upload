@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 export default function Cart() {
   const { items, total, subtotal, shipping, count, setQuantity, remove, loading } = useCart();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const nav = useNavigate();
 
   const byShop = useMemo(() => {
@@ -24,6 +24,10 @@ export default function Cart() {
     });
     return m;
   }, [items]);
+
+  if (authLoading) {
+    return <div className="container max-w-md py-20 text-center text-muted-foreground">Chargement...</div>;
+  }
 
   if (!user) {
     return (
