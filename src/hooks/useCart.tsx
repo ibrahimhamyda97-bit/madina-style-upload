@@ -112,22 +112,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     const { data, error } = await supabase
       .from("cart_items")
-      .select(`
-        id, product_id, variant_id, size, quantity,
-        product:products(
-          id, title, price_gnf, shipping_fee_gnf, shop_id,
-          shop:shops(id, name, slug, commission_rate, payment_operator, payment_number),
-          images:product_images(image_url, size)
-        ),
-        variant:product_variants(
-          id, name, color, size, price_gnf,
-          images:product_variant_images(image_url, position)
-        )
-      `)
+      .select("id, product_id, variant_id, size, quantity")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (error) toast.error("Impossible de charger le panier");
-    else cacheItems((data as any) ?? []);
+    else {
+      const hydrated = await Promise.all(((data as any[]) ?? []).map(hydrateCartLine));
+      cacheItems(hydrated.filter(Boolean) as CartLine[]);
+    }
     setLoading(false);
   }, [user, cacheItems]);
 
