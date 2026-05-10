@@ -207,19 +207,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (qty <= 0) return remove(id);
     const { error } = await supabase.from("cart_items").update({ quantity: qty }).eq("id", id);
     if (error) { toast.error(error.message); return; }
-    setItems((prev) => prev.map((i) => i.id === id ? { ...i, quantity: qty } : i));
+    setItems((prev) => {
+      const next = prev.map((i) => i.id === id ? { ...i, quantity: qty } : i);
+      writeCachedCart(user?.id ?? null, next);
+      return next;
+    });
   }
 
   async function remove(id: string) {
     const { error } = await supabase.from("cart_items").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
-    setItems((prev) => prev.filter((i) => i.id !== id));
+    setItems((prev) => {
+      const next = prev.filter((i) => i.id !== id);
+      writeCachedCart(user?.id ?? null, next);
+      return next;
+    });
   }
 
   async function clear() {
     if (!user) return;
     await supabase.from("cart_items").delete().eq("user_id", user.id);
-    setItems([]);
+    cacheItems([]);
   }
 
   return (
