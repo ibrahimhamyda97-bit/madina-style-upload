@@ -32,6 +32,55 @@ export interface CartLine {
 
 type CachedCartByUser = Record<string, CartLine[]>;
 
+function cacheKey(userId: string | null) {
+  return userId ? userId : "guest";
+}
+
+function readCachedCart(userId: string | null): CartLine[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const cache = JSON.parse(localStorage.getItem(CART_CACHE_KEY) || "{}") as CachedCartByUser;
+    return cache[cacheKey(userId)] ?? [];
+  } catch {
+    return [];
+  }
+}
+
+function writeCachedCart(userId: string | null, nextItems: CartLine[]) {
+  if (typeof window === "undefined") return;
+  try {
+    const cache = JSON.parse(localStorage.getItem(CART_CACHE_KEY) || "{}") as CachedCartByUser;
+    cache[cacheKey(userId)] = nextItems;
+    localStorage.setItem(CART_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // LocalStorage can fail in private mode; the in-memory cart still works.
+  }
+}
+
+async function hydrateCartLine(cartRow: { id: string; product_id: string; variant_id: string | null; size: string; quantity: number }) {
+  const [{ data: product }, { data: variant }] = await Promise.all([
+    supabase
+      .from("products")
+      .select(`
+        id, title, price_gnf, shipping_fee_gnf, shop_id,
+        shop:shops(id, name, slug, commission_rate, payment_operator, payment_number),
+        images:product_images(image_url, size)
+      `)
+      .eq("id", cartRow.product_id)
+      .maybeSingle(),
+    cartRow.variant_id
+      ? supabase
+          .from("product_variants")
+          .select("id, name, color, size, price_gnf, images:product_variant_images(image_url, position)")
+          .eq("id", cartRow.variant_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  if (!product) return null;
+  return { ...cartRow, product, variant } as CartLine;
+}
+
 interface CartCtx {
   items: CartLine[];
   count: number;
