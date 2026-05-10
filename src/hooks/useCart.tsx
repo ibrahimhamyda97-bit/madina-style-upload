@@ -1,7 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
+
+const CART_CACHE_KEY = "madina-cart";
 
 export interface CartLine {
   id: string;
@@ -28,6 +30,8 @@ export interface CartLine {
   } | null;
 }
 
+type CachedCartByUser = Record<string, CartLine[]>;
+
 interface CartCtx {
   items: CartLine[];
   count: number;
@@ -46,11 +50,16 @@ const CartContext = createContext<CartCtx | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [items, setItems] = useState<CartLine[]>([]);
+  const [items, setItems] = useState<CartLine[]>(() => readCachedCart(null));
   const [loading, setLoading] = useState(false);
 
+  const cacheItems = useCallback((nextItems: CartLine[]) => {
+    setItems(nextItems);
+    writeCachedCart(user?.id ?? null, nextItems);
+  }, [user?.id]);
+
   const refresh = useCallback(async () => {
-    if (!user) { setItems([]); return; }
+    if (!user) { cacheItems([]); return; }
     setLoading(true);
     const { data, error } = await supabase
       .from("cart_items")
@@ -68,11 +77,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
       `)
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
-    if (!error) setItems((data as any) ?? []);
+    if (error) toast.error("Impossible de charger le panier");
+    else cacheItems((data as any) ?? []);
     setLoading(false);
-  }, [user]);
+  }, [user, cacheItems]);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    if (user) setItems(readCachedCart(user.id));
+    refresh();
+  }, [user?.id, refresh]);
 
   // Realtime: keep cart in sync across tabs/devices
   useEffect(() => {
@@ -88,13 +101,45 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return () => { supabase.removeChannel(channel); };
   }, [user, refresh]);
 
-  const count = items.reduce((s, l) => s + l.quantity, 0);
-  const subtotal = items.reduce(
+  const count = useMemo(() => items.reduce((s, l) => s + l.quantity, 0), [items]);
+  const subtotal = useMemo(() => items.reduce(
     (s, l) => s + ((l.variant?.price_gnf ?? l.product?.price_gnf) ?? 0) * l.quantity,
     0
-  );
-  const shipping = items.reduce((s, l) => s + (l.product?.shipping_fee_gnf ?? 0) * l.quantity, 0);
+  ), [items]);
+  const shipping = useMemo(() => items.reduce((s, l) => s + (l.product?.shipping_fee_gnf ?? 0) * l.quantity, 0), [items]);
   const total = subtotal + shipping;
+
+  const hydrateCartLine = useCallback(async (cartRow: { id: string; product_id: string; variant_id: string | null; size: string; quantity: number }) => {
+    const [{ data: product }, { data: variant }] = await Promise.all([
+      supabase
+        .from("products")
+        .select(`
+          id, title, price_gnf, shipping_fee_gnf, shop_id,
+          shop:shops(id, name, slug, commission_rate, payment_operator, payment_number),
+          images:product_images(image_url, size)
+        `)
+        .eq("id", cartRow.product_id)
+        .maybeSingle(),
+      cartRow.variant_id
+        ? supabase
+            .from("product_variants")
+            .select("id, name, color, size, price_gnf, images:product_variant_images(image_url, position)")
+            .eq("id", cartRow.variant_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+
+    if (!product) return null;
+    return {
+      id: cartRow.id,
+      product_id: cartRow.product_id,
+      variant_id: cartRow.variant_id,
+      size: cartRow.size,
+      quantity: cartRow.quantity,
+      product,
+      variant,
+    } as CartLine;
+  }, []);
 
   async function add(productId: string, size: string, quantity = 1, variantId: string | null = null) {
     if (!user) { toast.error("Connectez-vous pour ajouter au panier"); return; }
