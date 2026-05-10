@@ -185,9 +185,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const { data: insertedRow, error } = await supabase.from("cart_items").insert({
       user_id: user.id, product_id: productId, size: size as any, quantity, variant_id: variantId,
     }).select("id, product_id, variant_id, size, quantity").single();
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      if (error.code === "23505") {
+        await refresh();
+        toast.success("Article déjà dans le panier", {
+          duration: 5000,
+          action: { label: "Voir le panier", onClick: () => { window.location.href = "/cart"; } },
+        });
+        return;
+      }
+      toast.error(error.message);
+      return;
+    }
     const hydrated = await hydrateCartLine(insertedRow as any);
-    if (hydrated) cacheItems([hydrated, ...items.filter((i) => i.id !== hydrated.id)]);
+    if (hydrated) {
+      setItems((prev) => {
+        const next = [hydrated, ...prev.filter((i) => i.id !== hydrated.id)];
+        writeCachedCart(user.id, next);
+        return next;
+      });
+    }
     await refresh();
     toast.success("Article ajouté au panier", {
       duration: 5000,
