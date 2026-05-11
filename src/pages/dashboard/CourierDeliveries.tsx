@@ -241,15 +241,19 @@ export default function CourierDeliveries() {
                     </Button>
                   )}
                   {isMine && o.delivery_status === "assigned" && (
-                    <Button onClick={() => { setCodeDialog({ orderId: o.id, type: "pickup" }); setCodeInput(""); }} className="rounded-xl">
-                      <KeyRound className="h-4 w-4" /> Confirmer la prise en charge
-                    </Button>
+                    <div className="text-xs text-muted-foreground bg-muted/40 rounded-xl px-3 py-2 flex items-center gap-2">
+                      <KeyRound className="h-3 w-3" /> En attente : montrez le code ci-dessus au vendeur pour récupérer le colis.
+                    </div>
                   )}
                   {isMine && o.delivery_status === "picked_up" && (
                     <>
                       <Button onClick={() => setInTransit(o.id)} disabled={busy === o.id} variant="outline" className="rounded-xl">
                         <Navigation className="h-4 w-4" /> Je suis en route
                       </Button>
+                      <Button onClick={() => { setCodeDialog({ orderId: o.id, type: "delivery" }); setCodeInput(""); }} className="rounded-xl bg-gradient-gold text-secondary-foreground shadow-gold">
+                        <CheckCircle2 className="h-4 w-4" /> Confirmer la livraison
+                      </Button>
+                    </>
                       <Button onClick={() => { setCodeDialog({ orderId: o.id, type: "delivery" }); setCodeInput(""); }} className="rounded-xl bg-gradient-gold text-secondary-foreground shadow-gold">
                         <CheckCircle2 className="h-4 w-4" /> Confirmer la livraison
                       </Button>
