@@ -30,7 +30,7 @@ export default function Orders() {
 
   useEffect(() => {
     if (!user) return;
-    (async () => {
+    const fetchOrders = async () => {
       const { data } = await supabase
         .from("orders")
         .select("*, items:order_items(*)")
@@ -38,7 +38,13 @@ export default function Orders() {
         .order("created_at", { ascending: false });
       setOrders(data ?? []);
       setLoading(false);
-    })();
+    };
+    fetchOrders();
+    const ch = supabase
+      .channel(`orders-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` }, () => fetchOrders())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
   }, [user]);
 
   if (!user) return <div className="container py-16 text-center text-muted-foreground">Connectez-vous pour voir vos commandes.</div>;

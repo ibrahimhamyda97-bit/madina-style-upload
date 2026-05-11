@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Package, Check, X, Phone, MapPin, Clock } from "lucide-react";
+import { Package, Check, X, Phone, MapPin, Clock, Truck, KeyRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,15 @@ const statusMeta: Record<string, { label: string; className: string }> = {
   paid: { label: "Payée", className: "bg-primary/15 text-primary border-primary/30" },
   cancelled: { label: "Annulée", className: "bg-destructive/10 text-destructive border-destructive/30" },
   refunded: { label: "Remboursée", className: "bg-muted text-muted-foreground border-border" },
+};
+
+const dStatusMeta: Record<string, { label: string; className: string }> = {
+  unassigned: { label: "À assigner", className: "bg-muted text-muted-foreground border-border" },
+  assigned: { label: "Livreur assigné", className: "bg-primary/10 text-primary border-primary/30" },
+  picked_up: { label: "Colis récupéré", className: "bg-accent/20 text-accent-foreground border-accent/40" },
+  in_transit: { label: "En route", className: "bg-primary/15 text-primary border-primary/30" },
+  delivered: { label: "Livrée ✓", className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30" },
+  failed: { label: "Échec livraison", className: "bg-destructive/10 text-destructive border-destructive/30" },
 };
 
 export default function AdminOrders() {
@@ -27,7 +36,14 @@ export default function AdminOrders() {
     setOrders(data ?? []);
     setLoading(false);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const ch = supabase
+      .channel("admin-orders")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
 
   const filtered = orders.filter((o) => filter === "all" || o.status === filter);
 
@@ -94,7 +110,17 @@ export default function AdminOrders() {
                       {o.payment_reference && <> · réf. {o.payment_reference}</>}
                     </p>
                   </div>
-                  <Badge variant="outline" className={cn("rounded-full", meta.className)}>{meta.label}</Badge>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <Badge variant="outline" className={cn("rounded-full", meta.className)}>{meta.label}</Badge>
+                    {o.status === "paid" && (() => {
+                      const dm = dStatusMeta[o.delivery_status] ?? dStatusMeta.unassigned;
+                      return (
+                        <Badge variant="outline" className={cn("rounded-full text-[10px]", dm.className)}>
+                          <Truck className="h-3 w-3 mr-1" /> {dm.label}
+                        </Badge>
+                      );
+                    })()}
+                  </div>
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-3 mt-4 text-sm">
@@ -116,6 +142,23 @@ export default function AdminOrders() {
                     </div>
                   ))}
                 </div>
+
+                {o.status === "paid" && (
+                  <div className="mt-4 grid sm:grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-border bg-muted/30 p-3">
+                      <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground flex items-center gap-1.5">
+                        <KeyRound className="h-3 w-3" /> Code récupération (livreur → vendeur)
+                      </p>
+                      <p className="font-mono text-lg font-bold tracking-[0.25em] mt-1">{o.pickup_code ?? "—"}</p>
+                    </div>
+                    <div className="rounded-xl border border-border bg-muted/30 p-3">
+                      <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground flex items-center gap-1.5">
+                        <KeyRound className="h-3 w-3" /> Code livraison (client → livreur)
+                      </p>
+                      <p className="font-mono text-lg font-bold tracking-[0.25em] mt-1">{o.delivery_code ?? "—"}</p>
+                    </div>
+                  </div>
+                )}
 
                 {o.status === "pending" && (
                   <div className="flex flex-wrap gap-2 mt-5">
