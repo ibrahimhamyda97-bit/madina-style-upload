@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Wallet, TrendingUp, Banknote, Package, Loader2, Calendar, ShoppingBag, KeyRound, Truck } from "lucide-react";
+import { Wallet, TrendingUp, Banknote, Package, Loader2, Calendar, ShoppingBag, KeyRound, Truck, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 const fmt = (n: number) => Number(n).toLocaleString("fr-FR");
 
