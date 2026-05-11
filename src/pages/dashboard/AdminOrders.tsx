@@ -110,7 +110,17 @@ export default function AdminOrders() {
                       {o.payment_reference && <> · réf. {o.payment_reference}</>}
                     </p>
                   </div>
-                  <Badge variant="outline" className={cn("rounded-full", meta.className)}>{meta.label}</Badge>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <Badge variant="outline" className={cn("rounded-full", meta.className)}>{meta.label}</Badge>
+                    {o.status === "paid" && (() => {
+                      const dm = dStatusMeta[o.delivery_status] ?? dStatusMeta.unassigned;
+                      return (
+                        <Badge variant="outline" className={cn("rounded-full text-[10px]", dm.className)}>
+                          <Truck className="h-3 w-3 mr-1" /> {dm.label}
+                        </Badge>
+                      );
+                    })()}
+                  </div>
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-3 mt-4 text-sm">
