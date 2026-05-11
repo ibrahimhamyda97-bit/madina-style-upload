@@ -641,6 +641,10 @@ export type Database = {
         Args: { _order_id: string; _user_id: string }
         Returns: boolean
       }
+      vendor_confirm_pickup: {
+        Args: { p_code: string; p_order_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:
