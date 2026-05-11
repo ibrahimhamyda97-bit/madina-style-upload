@@ -156,8 +156,9 @@ export default function CourierDeliveries() {
               <div key={o.id} className="bg-card border border-border rounded-3xl p-5 md:p-6 shadow-soft">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="font-mono text-xs text-muted-foreground">{o.reference}</p>
-                    <p className="font-display text-xl font-bold mt-0.5">
+                    <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground">N° de colis</p>
+                    <p className="font-mono text-base font-bold text-foreground mt-0.5 select-all">{o.reference}</p>
+                    <p className="font-display text-xl font-bold mt-2">
                       {fmt(o.total_gnf)} <span className="text-xs text-muted-foreground font-medium">GNF</span>
                     </p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -166,6 +167,23 @@ export default function CourierDeliveries() {
                   </div>
                   <Badge variant="outline" className={cn("rounded-full", meta.className)}>{meta.label}</Badge>
                 </div>
+
+                {/* Pickup code shown to vendor */}
+                {isMine && o.delivery_status === "assigned" && o.pickup_code && (
+                  <div className="mt-4 rounded-2xl border-2 border-primary/30 bg-primary/5 p-4">
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest font-semibold text-primary flex items-center gap-1.5">
+                          <KeyRound className="h-3 w-3" /> Code à montrer au vendeur
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-1 max-w-xs">
+                          Le vendeur saisira ce code pour vous remettre le colis n° <span className="font-mono font-semibold">{o.reference}</span>.
+                        </p>
+                      </div>
+                      <p className="font-mono text-3xl font-bold tracking-[0.3em] text-primary select-all">{o.pickup_code}</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Pickup addresses */}
                 <div className="mt-4 space-y-2">
@@ -223,9 +241,9 @@ export default function CourierDeliveries() {
                     </Button>
                   )}
                   {isMine && o.delivery_status === "assigned" && (
-                    <Button onClick={() => { setCodeDialog({ orderId: o.id, type: "pickup" }); setCodeInput(""); }} className="rounded-xl">
-                      <KeyRound className="h-4 w-4" /> Confirmer la prise en charge
-                    </Button>
+                    <div className="text-xs text-muted-foreground bg-muted/40 rounded-xl px-3 py-2 flex items-center gap-2">
+                      <KeyRound className="h-3 w-3" /> En attente : montrez le code ci-dessus au vendeur pour récupérer le colis.
+                    </div>
                   )}
                   {isMine && o.delivery_status === "picked_up" && (
                     <>

@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Wallet, TrendingUp, Banknote, Package, Loader2, Calendar, ShoppingBag, KeyRound, Truck } from "lucide-react";
+import { Wallet, TrendingUp, Banknote, Package, Loader2, Calendar, ShoppingBag, KeyRound, Truck, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 const fmt = (n: number) => Number(n).toLocaleString("fr-FR");
 
@@ -118,13 +120,13 @@ export default function VendorSales() {
         </p>
       </div>
 
-      {/* Pickup codes for orders awaiting handover */}
+      {/* Pickup confirmation: vendor enters the code given by the courier */}
       {(() => {
         const seen = new Set<string>();
         const pending = lines.filter((l) => {
           const ds = l.order.delivery_status;
           if (seen.has(l.order.id)) return false;
-          if (!["unassigned", "assigned", "picked_up"].includes(ds)) return false;
+          if (!["unassigned", "assigned"].includes(ds)) return false;
           seen.add(l.order.id);
           return true;
         });
@@ -133,28 +135,15 @@ export default function VendorSales() {
           <div className="bg-card border border-border rounded-3xl shadow-soft overflow-hidden">
             <div className="px-5 py-4 border-b border-border">
               <h2 className="font-display text-lg font-bold flex items-center gap-2">
-                <KeyRound className="h-4 w-4 text-primary" /> Codes de prise en charge
+                <KeyRound className="h-4 w-4 text-primary" /> Remise au livreur
               </h2>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Donnez ce code au livreur quand il vient récupérer le colis. Ne le partagez jamais avant.
+                Quand un livreur vient récupérer un colis, demandez-lui son code à 6 chiffres et saisissez-le ici pour confirmer la remise.
               </p>
             </div>
             <ul className="divide-y divide-border">
               {pending.map((l) => (
-                <li key={l.order.id} className="px-5 py-4 flex items-center gap-4 flex-wrap">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-mono text-xs text-muted-foreground">{l.order.reference}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                      <Truck className="h-3 w-3" />
-                      {l.order.delivery_status === "unassigned" && "En attente d'un livreur"}
-                      {l.order.delivery_status === "assigned" && "Livreur en route — préparez le colis"}
-                      {l.order.delivery_status === "picked_up" && "Colis récupéré ✓"}
-                    </p>
-                  </div>
-                  <p className="font-mono text-2xl font-bold tracking-[0.3em] text-primary">
-                    {l.order.pickup_code ?? "—"}
-                  </p>
-                </li>
+                <PickupConfirmRow key={l.order.id} order={l.order} onDone={() => window.location.reload()} />
               ))}
             </ul>
           </div>
@@ -247,5 +236,49 @@ function Kpi({ label, value, icon: Icon, accent, highlight }: { label: string; v
         {fmt(value)} <span className="text-xs font-medium text-muted-foreground">GNF</span>
       </p>
     </div>
+  );
+}
+
+function PickupConfirmRow({ order, onDone }: { order: SoldLine["order"]; onDone: () => void }) {
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit() {
+    if (code.length !== 6) return;
+    setBusy(true);
+    const { error } = await supabase.rpc("vendor_confirm_pickup", { p_order_id: order.id, p_code: code });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Remise confirmée — colis pris en charge ✓");
+    onDone();
+  }
+
+  const waiting = order.delivery_status === "unassigned";
+
+  return (
+    <li className="px-5 py-4 flex flex-wrap items-center gap-4">
+      <div className="flex-1 min-w-[180px]">
+        <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground">N° de colis</p>
+        <p className="font-mono text-sm font-bold mt-0.5 select-all">{order.reference}</p>
+        <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5">
+          <Truck className="h-3 w-3" />
+          {waiting ? "En attente d'un livreur" : "Livreur en route — préparez le colis"}
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <Input
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          placeholder="Code livreur"
+          inputMode="numeric"
+          disabled={waiting}
+          className="w-36 text-center font-mono tracking-[0.3em] text-base h-11"
+        />
+        <Button onClick={submit} disabled={waiting || code.length !== 6 || busy} className="rounded-xl">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+          Remettre
+        </Button>
+      </div>
+    </li>
   );
 }
