@@ -143,6 +143,23 @@ export default function AdminOrders() {
                   ))}
                 </div>
 
+                {o.status === "paid" && (
+                  <div className="mt-4 grid sm:grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-border bg-muted/30 p-3">
+                      <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground flex items-center gap-1.5">
+                        <KeyRound className="h-3 w-3" /> Code récupération (livreur → vendeur)
+                      </p>
+                      <p className="font-mono text-lg font-bold tracking-[0.25em] mt-1">{o.pickup_code ?? "—"}</p>
+                    </div>
+                    <div className="rounded-xl border border-border bg-muted/30 p-3">
+                      <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground flex items-center gap-1.5">
+                        <KeyRound className="h-3 w-3" /> Code livraison (client → livreur)
+                      </p>
+                      <p className="font-mono text-lg font-bold tracking-[0.25em] mt-1">{o.delivery_code ?? "—"}</p>
+                    </div>
+                  </div>
+                )}
+
                 {o.status === "pending" && (
                   <div className="flex flex-wrap gap-2 mt-5">
                     <Button onClick={() => markPaid(o.id)} className="rounded-xl bg-gradient-gold text-secondary-foreground shadow-gold">
