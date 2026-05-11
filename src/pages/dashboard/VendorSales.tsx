@@ -238,3 +238,47 @@ function Kpi({ label, value, icon: Icon, accent, highlight }: { label: string; v
     </div>
   );
 }
+
+function PickupConfirmRow({ order, onDone }: { order: SoldLine["order"]; onDone: () => void }) {
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit() {
+    if (code.length !== 6) return;
+    setBusy(true);
+    const { error } = await supabase.rpc("vendor_confirm_pickup", { p_order_id: order.id, p_code: code });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Remise confirmée — colis pris en charge ✓");
+    onDone();
+  }
+
+  const waiting = order.delivery_status === "unassigned";
+
+  return (
+    <li className="px-5 py-4 flex flex-wrap items-center gap-4">
+      <div className="flex-1 min-w-[180px]">
+        <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground">N° de colis</p>
+        <p className="font-mono text-sm font-bold mt-0.5 select-all">{order.reference}</p>
+        <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5">
+          <Truck className="h-3 w-3" />
+          {waiting ? "En attente d'un livreur" : "Livreur en route — préparez le colis"}
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <Input
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          placeholder="Code livreur"
+          inputMode="numeric"
+          disabled={waiting}
+          className="w-36 text-center font-mono tracking-[0.3em] text-base h-11"
+        />
+        <Button onClick={submit} disabled={waiting || code.length !== 6 || busy} className="rounded-xl">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+          Remettre
+        </Button>
+      </div>
+    </li>
+  );
+}
