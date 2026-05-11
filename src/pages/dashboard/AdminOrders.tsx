@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Package, Check, X, Phone, MapPin, Clock } from "lucide-react";
+import { Package, Check, X, Phone, MapPin, Clock, Truck, KeyRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,15 @@ const statusMeta: Record<string, { label: string; className: string }> = {
   paid: { label: "Payée", className: "bg-primary/15 text-primary border-primary/30" },
   cancelled: { label: "Annulée", className: "bg-destructive/10 text-destructive border-destructive/30" },
   refunded: { label: "Remboursée", className: "bg-muted text-muted-foreground border-border" },
+};
+
+const dStatusMeta: Record<string, { label: string; className: string }> = {
+  unassigned: { label: "À assigner", className: "bg-muted text-muted-foreground border-border" },
+  assigned: { label: "Livreur assigné", className: "bg-primary/10 text-primary border-primary/30" },
+  picked_up: { label: "Colis récupéré", className: "bg-accent/20 text-accent-foreground border-accent/40" },
+  in_transit: { label: "En route", className: "bg-primary/15 text-primary border-primary/30" },
+  delivered: { label: "Livrée ✓", className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30" },
+  failed: { label: "Échec livraison", className: "bg-destructive/10 text-destructive border-destructive/30" },
 };
 
 export default function AdminOrders() {
