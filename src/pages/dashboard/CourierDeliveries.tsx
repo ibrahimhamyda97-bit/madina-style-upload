@@ -254,10 +254,6 @@ export default function CourierDeliveries() {
                         <CheckCircle2 className="h-4 w-4" /> Confirmer la livraison
                       </Button>
                     </>
-                      <Button onClick={() => { setCodeDialog({ orderId: o.id, type: "delivery" }); setCodeInput(""); }} className="rounded-xl bg-gradient-gold text-secondary-foreground shadow-gold">
-                        <CheckCircle2 className="h-4 w-4" /> Confirmer la livraison
-                      </Button>
-                    </>
                   )}
                   {isMine && o.delivery_status === "in_transit" && (
                     <Button onClick={() => { setCodeDialog({ orderId: o.id, type: "delivery" }); setCodeInput(""); }} className="rounded-xl bg-gradient-gold text-secondary-foreground shadow-gold">
