@@ -257,7 +257,7 @@ function Kpi({ label, value, icon: Icon, accent, highlight }: { label: string; v
   );
 }
 
-function PickupConfirmRow({ order, onDone }: { order: SoldLine["order"]; onDone: () => void }) {
+function PickupConfirmRow({ order, courier, onDone }: { order: SoldLine["order"]; courier?: CourierProfile; onDone: () => void }) {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -272,6 +272,7 @@ function PickupConfirmRow({ order, onDone }: { order: SoldLine["order"]; onDone:
   }
 
   const waiting = order.delivery_status === "unassigned";
+  const courierName = courier ? `${courier.first_name ?? ""} ${courier.last_name ?? ""}`.trim() : null;
 
   return (
     <li className="px-5 py-4 flex flex-wrap items-center gap-4">
@@ -280,7 +281,7 @@ function PickupConfirmRow({ order, onDone }: { order: SoldLine["order"]; onDone:
         <p className="font-mono text-sm font-bold mt-0.5 select-all">{order.reference}</p>
         <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5">
           <Truck className="h-3 w-3" />
-          {waiting ? "En attente d'un livreur" : "Livreur en route — préparez le colis"}
+          {waiting ? "En attente d'un livreur" : courierName ? `Livreur : ${courierName}` : "Livreur en route — préparez le colis"}
         </p>
       </div>
       <div className="flex items-center gap-2">
