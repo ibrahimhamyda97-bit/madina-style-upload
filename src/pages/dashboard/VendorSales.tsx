@@ -31,6 +31,7 @@ export default function VendorSales() {
   const [shop, setShop] = useState<{ id: string; name: string; commission_rate: number } | null>(null);
   const [lines, setLines] = useState<SoldLine[]>([]);
   const [payouts, setPayouts] = useState<PayoutRow[]>([]);
+  const [couriers, setCouriers] = useState<Record<string, CourierProfile>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -50,7 +51,7 @@ export default function VendorSales() {
         const [{ data: items }, { data: payoutData }] = await Promise.all([
           supabase
             .from("order_items")
-            .select("id, title, image_url, quantity, unit_price_gnf, commission_rate, size, product_id, order:orders!inner(id, reference, created_at, status, pickup_code, delivery_status)")
+            .select("id, title, image_url, quantity, unit_price_gnf, commission_rate, size, product_id, order:orders!inner(id, reference, created_at, status, pickup_code, delivery_status, courier_id)")
             .eq("shop_id", (shopData as any).id)
             .eq("order.status", "paid")
             .order("created_at", { ascending: false }),
@@ -60,8 +61,23 @@ export default function VendorSales() {
             .eq("shop_id", (shopData as any).id)
             .order("paid_at", { ascending: false }),
         ]);
-        setLines((items as any) ?? []);
+        const itemList = (items as any) ?? [];
+        setLines(itemList);
         setPayouts((payoutData as any) ?? []);
+
+        // fetch courier names
+        const courierIds = Array.from(new Set<string>(
+          itemList.map((l: any) => l.order?.courier_id).filter(Boolean)
+        ));
+        if (courierIds.length > 0) {
+          const { data: profs } = await supabase
+            .from("profiles")
+            .select("id, first_name, last_name")
+            .in("id", courierIds);
+          const map: Record<string, CourierProfile> = {};
+          (profs ?? []).forEach((p: any) => { map[p.id] = p; });
+          setCouriers(map);
+        }
       }
       setLoading(false);
     })();
