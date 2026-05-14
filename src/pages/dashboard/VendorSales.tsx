@@ -19,16 +19,19 @@ interface SoldLine {
   commission_rate: number;
   size: string;
   product_id: string;
-  order: { id: string; reference: string; created_at: string; status: string; pickup_code: string | null; delivery_status: string };
+  order: { id: string; reference: string; created_at: string; status: string; pickup_code: string | null; delivery_status: string; courier_id: string | null };
 }
 
 interface PayoutRow { id: string; amount_gnf: number; paid_at: string; method: string | null; reference: string | null; note: string | null }
+
+interface CourierProfile { id: string; first_name: string | null; last_name: string | null }
 
 export default function VendorSales() {
   const { user } = useAuth();
   const [shop, setShop] = useState<{ id: string; name: string; commission_rate: number } | null>(null);
   const [lines, setLines] = useState<SoldLine[]>([]);
   const [payouts, setPayouts] = useState<PayoutRow[]>([]);
+  const [couriers, setCouriers] = useState<Record<string, CourierProfile>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,7 +51,7 @@ export default function VendorSales() {
         const [{ data: items }, { data: payoutData }] = await Promise.all([
           supabase
             .from("order_items")
-            .select("id, title, image_url, quantity, unit_price_gnf, commission_rate, size, product_id, order:orders!inner(id, reference, created_at, status, pickup_code, delivery_status)")
+            .select("id, title, image_url, quantity, unit_price_gnf, commission_rate, size, product_id, order:orders!inner(id, reference, created_at, status, pickup_code, delivery_status, courier_id)")
             .eq("shop_id", (shopData as any).id)
             .eq("order.status", "paid")
             .order("created_at", { ascending: false }),
@@ -58,8 +61,23 @@ export default function VendorSales() {
             .eq("shop_id", (shopData as any).id)
             .order("paid_at", { ascending: false }),
         ]);
-        setLines((items as any) ?? []);
+        const itemList = (items as any) ?? [];
+        setLines(itemList);
         setPayouts((payoutData as any) ?? []);
+
+        // fetch courier names
+        const courierIds = Array.from(new Set<string>(
+          itemList.map((l: any) => l.order?.courier_id).filter(Boolean)
+        ));
+        if (courierIds.length > 0) {
+          const { data: profs } = await supabase
+            .from("profiles")
+            .select("id, first_name, last_name")
+            .in("id", courierIds);
+          const map: Record<string, CourierProfile> = {};
+          (profs ?? []).forEach((p: any) => { map[p.id] = p; });
+          setCouriers(map);
+        }
       }
       setLoading(false);
     })();
@@ -143,7 +161,7 @@ export default function VendorSales() {
             </div>
             <ul className="divide-y divide-border">
               {pending.map((l) => (
-                <PickupConfirmRow key={l.order.id} order={l.order} onDone={() => window.location.reload()} />
+                <PickupConfirmRow key={l.order.id} order={l.order} courier={couriers[l.order.courier_id ?? ""]} onDone={() => window.location.reload()} />
               ))}
             </ul>
           </div>
@@ -164,6 +182,7 @@ export default function VendorSales() {
               const gross = l.unit_price_gnf * l.quantity;
               const comm = Math.round(gross * (l.commission_rate / 100));
               const net = gross - comm;
+              const courierName = l.order.courier_id ? couriers[l.order.courier_id] ? `${couriers[l.order.courier_id].first_name ?? ""} ${couriers[l.order.courier_id].last_name ?? ""}`.trim() : null : null;
               return (
                 <li key={l.id} className="px-5 py-4 flex items-center gap-4 hover:bg-muted/30 transition-smooth">
                   <div className="h-14 w-14 rounded-xl overflow-hidden bg-muted shrink-0 border border-border">
@@ -175,6 +194,11 @@ export default function VendorSales() {
                       {new Date(l.order.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
                       {" · "}<span className="font-mono">{l.order.reference}</span>
                       {" · "}Taille {l.size}{l.quantity > 1 ? ` · x${l.quantity}` : ""}
+                      {courierName && (
+                        <span className="inline-flex items-center gap-1 ml-1 text-primary">
+                          <Truck className="h-3 w-3" />{courierName}
+                        </span>
+                      )}
                     </p>
                   </div>
                   <div className="text-right">
@@ -239,7 +263,7 @@ function Kpi({ label, value, icon: Icon, accent, highlight }: { label: string; v
   );
 }
 
-function PickupConfirmRow({ order, onDone }: { order: SoldLine["order"]; onDone: () => void }) {
+function PickupConfirmRow({ order, courier, onDone }: { order: SoldLine["order"]; courier?: CourierProfile; onDone: () => void }) {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -254,6 +278,7 @@ function PickupConfirmRow({ order, onDone }: { order: SoldLine["order"]; onDone:
   }
 
   const waiting = order.delivery_status === "unassigned";
+  const courierName = courier ? `${courier.first_name ?? ""} ${courier.last_name ?? ""}`.trim() : null;
 
   return (
     <li className="px-5 py-4 flex flex-wrap items-center gap-4">
@@ -262,7 +287,7 @@ function PickupConfirmRow({ order, onDone }: { order: SoldLine["order"]; onDone:
         <p className="font-mono text-sm font-bold mt-0.5 select-all">{order.reference}</p>
         <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5">
           <Truck className="h-3 w-3" />
-          {waiting ? "En attente d'un livreur" : "Livreur en route — préparez le colis"}
+          {waiting ? "En attente d'un livreur" : courierName ? `Livreur : ${courierName}` : "Livreur en route — préparez le colis"}
         </p>
       </div>
       <div className="flex items-center gap-2">
