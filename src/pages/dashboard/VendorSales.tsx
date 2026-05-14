@@ -161,7 +161,7 @@ export default function VendorSales() {
             </div>
             <ul className="divide-y divide-border">
               {pending.map((l) => (
-                <PickupConfirmRow key={l.order.id} order={l.order} onDone={() => window.location.reload()} />
+                <PickupConfirmRow key={l.order.id} order={l.order} courier={couriers[l.order.courier_id ?? ""]} onDone={() => window.location.reload()} />
               ))}
             </ul>
           </div>
