@@ -19,10 +19,12 @@ interface SoldLine {
   commission_rate: number;
   size: string;
   product_id: string;
-  order: { id: string; reference: string; created_at: string; status: string; pickup_code: string | null; delivery_status: string };
+  order: { id: string; reference: string; created_at: string; status: string; pickup_code: string | null; delivery_status: string; courier_id: string | null };
 }
 
 interface PayoutRow { id: string; amount_gnf: number; paid_at: string; method: string | null; reference: string | null; note: string | null }
+
+interface CourierProfile { id: string; first_name: string | null; last_name: string | null }
 
 export default function VendorSales() {
   const { user } = useAuth();
