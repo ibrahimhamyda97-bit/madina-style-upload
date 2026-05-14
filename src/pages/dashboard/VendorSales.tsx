@@ -182,6 +182,7 @@ export default function VendorSales() {
               const gross = l.unit_price_gnf * l.quantity;
               const comm = Math.round(gross * (l.commission_rate / 100));
               const net = gross - comm;
+              const courierName = l.order.courier_id ? couriers[l.order.courier_id] ? `${couriers[l.order.courier_id].first_name ?? ""} ${couriers[l.order.courier_id].last_name ?? ""}`.trim() : null : null;
               return (
                 <li key={l.id} className="px-5 py-4 flex items-center gap-4 hover:bg-muted/30 transition-smooth">
                   <div className="h-14 w-14 rounded-xl overflow-hidden bg-muted shrink-0 border border-border">
@@ -193,6 +194,11 @@ export default function VendorSales() {
                       {new Date(l.order.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
                       {" · "}<span className="font-mono">{l.order.reference}</span>
                       {" · "}Taille {l.size}{l.quantity > 1 ? ` · x${l.quantity}` : ""}
+                      {courierName && (
+                        <span className="inline-flex items-center gap-1 ml-1 text-primary">
+                          <Truck className="h-3 w-3" />{courierName}
+                        </span>
+                      )}
                     </p>
                   </div>
                   <div className="text-right">
