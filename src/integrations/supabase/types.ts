@@ -149,6 +149,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          cinetpay_transaction_id: string | null
           courier_id: string | null
           created_at: string
           customer_address: string | null
@@ -173,6 +174,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cinetpay_transaction_id?: string | null
           courier_id?: string | null
           created_at?: string
           customer_address?: string | null
@@ -197,6 +199,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cinetpay_transaction_id?: string | null
           courier_id?: string | null
           created_at?: string
           customer_address?: string | null
