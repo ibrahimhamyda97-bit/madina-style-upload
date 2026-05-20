@@ -38,8 +38,12 @@ export default function SiteFooter() {
           <p className="text-sm text-muted-foreground">contact@madina-sbk.com</p>
         </div>
       </div>
-      <div className="container pb-6">
+      <div className="container pb-6 space-y-2">
         <p className="text-xs text-muted-foreground text-center">© {new Date().getFullYear()} Madina. Tous droits réservés.</p>
+        <p className="text-xs text-muted-foreground text-center flex flex-wrap justify-center gap-x-6 gap-y-1">
+          <span><span className="font-semibold text-foreground">Fondateur :</span> SAMIROU</span>
+          <span><span className="font-semibold text-foreground">Modérateur :</span> Kollet Keita</span>
+        </p>
       </div>
     </footer>
   );
