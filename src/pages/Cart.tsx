@@ -143,7 +143,7 @@ export default function Cart() {
               Valider la commande <ArrowRight className="h-5 w-5" />
             </Button>
             <p className="text-[11px] text-muted-foreground text-center mt-3">
-              Paiement sécurisé via Orange Money ou MTN Mobile Money.
+              Paiement sécurisé via CinetPay (Orange Money, MTN, Moov, Wave).
             </p>
           </div>
         </div>

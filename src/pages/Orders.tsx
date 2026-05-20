@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { Package, Clock, Check, X, ChevronRight, KeyRound, Truck } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { Package, Clock, Check, X, ChevronRight, KeyRound, Truck, CreditCard, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const statusMeta: Record<string, { label: string; icon: any; className: string }> = {
@@ -25,8 +26,68 @@ const deliveryLabels: Record<string, string> = {
 
 export default function Orders() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [verifyingCinetPay, setVerifyingCinetPay] = useState(false);
+
+  // Handle CinetPay return
+  useEffect(() => {
+    if (!user) return;
+    const cinetpayStatus = searchParams.get("cinetpay");
+    const txId = searchParams.get("transaction_id") || searchParams.get("cpm_trans_id");
+
+    if (cinetpayStatus === "success" || txId) {
+      verifyCinetPay(txId);
+      // Clean URL params
+      setSearchParams({}, { replace: true });
+    }
+  }, [user, searchParams, setSearchParams]);
+
+  async function verifyCinetPay(txId: string | null) {
+    if (!txId) {
+      // Try to find the most recent pending order with cinetpay_transaction_id
+      const { data: recent } = await supabase
+        .from("orders")
+        .select("cinetpay_transaction_id")
+        .eq("user_id", user!.id)
+        .eq("status", "pending")
+        .not("cinetpay_transaction_id", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+      if (recent?.cinetpay_transaction_id) {
+        txId = recent.cinetpay_transaction_id;
+      } else {
+        toast.info("Votre commande est en cours de traitement.");
+        return;
+      }
+    }
+
+    setVerifyingCinetPay(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("cinetpay-verify", {
+        body: { transaction_id: txId },
+      });
+
+      if (error) {
+        console.error("CinetPay verify error:", error);
+        toast.error("Impossible de vérifier le paiement. Rechargez la page dans quelques instants.");
+        return;
+      }
+
+      if (data?.paid) {
+        toast.success("Paiement confirmé ! Votre commande est validée.", { duration: 5000 });
+      } else {
+        toast.info("Le paiement est en cours de traitement. Votre commande sera validée automatiquement.");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Erreur de vérification du paiement.");
+    } finally {
+      setVerifyingCinetPay(false);
+    }
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -59,6 +120,12 @@ export default function Orders() {
           <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">Mes commandes</h1>
           <p className="text-sm text-muted-foreground">{orders.length} commande{orders.length > 1 ? "s" : ""}</p>
         </div>
+        {verifyingCinetPay && (
+          <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Vérification du paiement...
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -88,9 +155,16 @@ export default function Orders() {
                       {o.payment_operator && <> · {o.payment_operator}</>}
                     </p>
                   </div>
-                  <Badge variant="outline" className={cn("rounded-full font-medium", meta.className)}>
-                    <Icon className="h-3 w-3 mr-1" /> {meta.label}
-                  </Badge>
+                  <div className="flex flex-col items-end gap-2">
+                    <Badge variant="outline" className={cn("rounded-full font-medium", meta.className)}>
+                      <Icon className="h-3 w-3 mr-1" /> {meta.label}
+                    </Badge>
+                    {o.cinetpay_transaction_id && (
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        <CreditCard className="h-3 w-3" /> CinetPay
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-border flex items-center gap-2 overflow-x-auto pb-1">
