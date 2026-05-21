@@ -123,6 +123,28 @@ export default function Home() {
           </Link>
         </div>
       </section>
+
+      {/* Floating cart reminder */}
+      {count > 0 && (
+        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:w-[380px] z-50 animate-fade-up">
+          <div className="bg-card border border-border/80 rounded-2xl shadow-elegant p-4 flex items-center gap-3 backdrop-blur-xl bg-background/95">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 grid place-items-center shrink-0">
+              <ShoppingCart className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-1/2">
+              <p className="font-semibold text-sm">{count} article{count > 1 ? "s" : ""} en attente</p>
+              <p className="text-xs text-muted-foreground">Total : <strong className="text-primary">{total.toLocaleString("fr-FR")} GNF</strong></p>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => nav("/checkout")}
+              className="rounded-xl bg-gradient-gold text-secondary-foreground shadow-gold shrink-0"
+            >
+              Commander <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
