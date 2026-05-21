@@ -24,6 +24,7 @@ const CATEGORIES: { label: string; group: string; image: string; tint: string }[
 export default function Home() {
   const nav = useNavigate();
   const [q, setQ] = useState("");
+  const { count, total } = useCart();
 
   function submitSearch(e: React.FormEvent) {
     e.preventDefault();
