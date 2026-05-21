@@ -52,6 +52,25 @@ export default function Cart() {
         </div>
       </div>
 
+      {!loading && items.length > 0 && (
+        <div className="mb-6 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center gap-4 animate-fade-in">
+          <div className="h-10 w-10 rounded-xl bg-primary/10 grid place-items-center shrink-0">
+            <ShoppingCart className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-1/2">
+            <p className="font-semibold text-sm">Vous avez <strong className="text-primary">{count} article{count > 1 ? "s" : ""}</strong> dans votre panier</p>
+            <p className="text-xs text-muted-foreground">Ne les laissez pas filer — finalisez votre commande maintenant !</p>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => nav("/checkout")}
+            className="rounded-xl bg-gradient-gold text-secondary-foreground shadow-gold shrink-0 hidden sm:flex"
+          >
+            Payer maintenant <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
       {loading ? (
         <p className="text-muted-foreground">Chargement...</p>
       ) : items.length === 0 ? (
