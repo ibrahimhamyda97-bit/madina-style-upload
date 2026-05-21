@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Search, ArrowRight, LayoutGrid } from "lucide-react";
+import { Search, ArrowRight, LayoutGrid, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/hooks/useCart";
 import imgVetements from "@/assets/cat-vetements.jpg";
 import imgChaussures from "@/assets/cat-chaussures.jpg";
 import imgAccessoires from "@/assets/cat-accessoires.jpg";
