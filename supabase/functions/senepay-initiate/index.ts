@@ -14,7 +14,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { order_id, return_url } = await req.json();
+    const { order_id, return_url, payment_channel } = await req.json();
     if (!order_id) {
       return new Response(JSON.stringify({ error: "order_id requis" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
