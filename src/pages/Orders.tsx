@@ -29,49 +29,44 @@ export default function Orders() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [verifyingCinetPay, setVerifyingCinetPay] = useState(false);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
 
-  // Handle CinetPay return
+  // Handle SenePay return
   useEffect(() => {
     if (!user) return;
-    const cinetpayStatus = searchParams.get("cinetpay");
-    const txId = searchParams.get("transaction_id") || searchParams.get("cpm_trans_id");
+    const senepayReturn = searchParams.get("senepay");
 
-    if (cinetpayStatus === "success" || txId) {
-      verifyCinetPay(txId);
-      // Clean URL params
+    if (senepayReturn) {
+      verifyPayment();
       setSearchParams({}, { replace: true });
     }
   }, [user, searchParams, setSearchParams]);
 
-  async function verifyCinetPay(txId: string | null) {
-    if (!txId) {
-      // Try to find the most recent pending order with cinetpay_transaction_id
-      const { data: recent } = await supabase
-        .from("orders")
-        .select("cinetpay_transaction_id")
-        .eq("user_id", user!.id)
-        .eq("status", "pending")
-        .not("cinetpay_transaction_id", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
-      if (recent?.cinetpay_transaction_id) {
-        txId = recent.cinetpay_transaction_id;
-      } else {
-        toast.info("Votre commande est en cours de traitement.");
-        return;
-      }
+  async function verifyPayment() {
+    const { data: recent } = await supabase
+      .from("orders")
+      .select("cinetpay_transaction_id")
+      .eq("user_id", user!.id)
+      .eq("status", "pending")
+      .not("cinetpay_transaction_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const sessionToken = recent?.cinetpay_transaction_id;
+    if (!sessionToken) {
+      toast.info("Votre commande est en cours de traitement.");
+      return;
     }
 
-    setVerifyingCinetPay(true);
+    setVerifyingPayment(true);
     try {
-      const { data, error } = await supabase.functions.invoke("cinetpay-verify", {
-        body: { transaction_id: txId },
+      const { data, error } = await supabase.functions.invoke("senepay-verify", {
+        body: { session_token: sessionToken },
       });
 
       if (error) {
-        console.error("CinetPay verify error:", error);
+        console.error("SenePay verify error:", error);
         toast.error("Impossible de vérifier le paiement. Rechargez la page dans quelques instants.");
         return;
       }
@@ -85,7 +80,7 @@ export default function Orders() {
       console.error(e);
       toast.error("Erreur de vérification du paiement.");
     } finally {
-      setVerifyingCinetPay(false);
+      setVerifyingPayment(false);
     }
   }
 

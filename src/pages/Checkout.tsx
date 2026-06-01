@@ -28,7 +28,7 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false);
   const [orderRef, setOrderRef] = useState<string | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
-  const [cinetpayLoading, setCinetpayLoading] = useState(false);
+  const [payLoading, setPayLoading] = useState(false);
 
   useEffect(() => { if (!authLoading && !user) nav("/auth"); }, [authLoading, user, nav]);
   useEffect(() => { if (items.length === 0 && !orderRef) nav("/cart"); }, [items, orderRef, nav]);
@@ -87,15 +87,14 @@ export default function Checkout() {
     return Array.from(m.values());
   }, [items]);
 
-  async function handleCinetPay() {
+  async function handlePay() {
     if (!user) return;
     const parsed = schema.safeParse(data);
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
 
-    setCinetpayLoading(true);
+    setPayLoading(true);
 
     try {
-      // 1. Create order via place_order RPC
       const reference = `MAD-${Date.now().toString(36).toUpperCase()}`;
       const { data: orderId, error: orderErr } = await supabase.rpc("place_order", {
         p_reference: reference,
@@ -103,35 +102,32 @@ export default function Checkout() {
         p_customer_phone: parsed.data.customer_phone,
         p_customer_address: parsed.data.customer_address,
         p_notes: parsed.data.notes || null,
-        p_payment_operator: "CinetPay",
+        p_payment_operator: "SenePay",
         p_payment_reference: reference,
         p_confirmed_shop_ids: shopGroups.map((g) => g.shopId),
       });
 
       if (orderErr || !orderId) {
-        setCinetpayLoading(false);
+        setPayLoading(false);
         return toast.error(orderErr?.message ?? "Erreur lors de la création de la commande");
       }
 
-      // 2. Get CinetPay payment URL
-      const returnUrl = `${window.location.origin}/orders?cinetpay=success`;
-      const { data: cpData, error: cpErr } = await supabase.functions.invoke("cinetpay-initiate", {
+      const returnUrl = `${window.location.origin}/orders?senepay=1`;
+      const { data: spData, error: spErr } = await supabase.functions.invoke("senepay-initiate", {
         body: { order_id: orderId, return_url: returnUrl },
       });
 
-      if (cpErr || !cpData?.payment_url) {
-        console.error("CinetPay init error:", cpErr, cpData);
-        setCinetpayLoading(false);
-        return toast.error(cpData?.error || "Erreur CinetPay. Veuillez réessayer.");
+      if (spErr || !spData?.payment_url) {
+        console.error("SenePay init error:", spErr, spData);
+        setPayLoading(false);
+        return toast.error(spData?.error || "Erreur SenePay. Veuillez réessayer.");
       }
 
-      // 3. Clear cart and redirect to CinetPay
       await refresh();
-      window.location.href = cpData.payment_url;
-      // Note: page navigates away, so no need to reset loading state
+      window.location.href = spData.payment_url;
     } catch (e) {
-      console.error("CinetPay flow error:", e);
-      setCinetpayLoading(false);
+      console.error("SenePay flow error:", e);
+      setPayLoading(false);
       toast.error("Erreur lors du paiement. Veuillez réessayer.");
     }
   }
@@ -221,15 +217,15 @@ export default function Checkout() {
 
       {step === 1 && (
         <div className="space-y-5">
-          {/* CinetPay payment card */}
+          {/* SenePay payment card */}
           <div className="bg-gradient-card border border-primary/30 rounded-3xl p-6 md:p-8 shadow-elegant">
             <div className="flex items-center gap-3 mb-5 pb-4 border-b border-border">
               <div className="h-11 w-11 rounded-xl bg-primary grid place-items-center text-white">
                 <CreditCard className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-display font-bold text-base">Payer avec CinetPay</p>
-                <p className="text-xs text-muted-foreground">Mobile Money sécurisé · Orange · MTN · Moov · Wave</p>
+                <p className="font-display font-bold text-base">Payer avec SenePay</p>
+                <p className="text-xs text-muted-foreground">Mobile Money sécurisé · Orange · MTN</p>
               </div>
               <div className="text-right shrink-0">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Montant</p>
@@ -241,9 +237,9 @@ export default function Checkout() {
               <div className="flex items-start gap-3 rounded-2xl bg-background/50 p-3">
                 <Wallet className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium">Paiement sécurisé via CinetPay</p>
+                  <p className="font-medium">Paiement sécurisé via SenePay</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Vous serez redirigé vers la page de paiement CinetPay pour finaliser votre transaction en toute sécurité.
+                    Vous serez redirigé vers la page de paiement SenePay pour finaliser votre transaction en toute sécurité.
                   </p>
                 </div>
               </div>
@@ -261,14 +257,14 @@ export default function Checkout() {
 
             <Button
               size="lg"
-              disabled={cinetpayLoading}
-              onClick={handleCinetPay}
+              disabled={payLoading}
+              onClick={handlePay}
               className="w-full mt-6 rounded-2xl bg-gradient-gold text-secondary-foreground shadow-gold h-14 text-base"
             >
-              {cinetpayLoading ? (
+              {payLoading ? (
                 <><Loader2 className="h-5 w-5 animate-spin" /> Préparation du paiement...</>
               ) : (
-                <><ExternalLink className="h-5 w-5" /> Payer {total.toLocaleString("fr-FR")} GNF avec CinetPay</>
+                <><ExternalLink className="h-5 w-5" /> Payer {total.toLocaleString("fr-FR")} GNF avec SenePay</>
               )}
             </Button>
           </div>
