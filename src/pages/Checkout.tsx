@@ -11,6 +11,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import orangeMoneyLogo from "@/assets/orange-money.png";
+import mtnMomoLogo from "@/assets/mtn-momo.png";
 
 const schema = z.object({
   customer_name: z.string().trim().min(2, "Nom trop court").max(80),
@@ -19,8 +21,10 @@ const schema = z.object({
   notes: z.string().max(500).optional(),
 });
 
+type PaymentChannel = "ORANGE_MONEY" | "MTN_MOMO";
+
 export default function Checkout() {
-  const { items, total, subtotal, shipping, refresh } = useCart();
+  const { items, total, subtotal, shipping, refresh, loading: cartLoading } = useCart();
   const { user, loading: authLoading } = useAuth();
   const nav = useNavigate();
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
@@ -29,9 +33,14 @@ export default function Checkout() {
   const [orderRef, setOrderRef] = useState<string | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
+  const [paymentChannel, setPaymentChannel] = useState<PaymentChannel>("ORANGE_MONEY");
 
   useEffect(() => { if (!authLoading && !user) nav("/auth"); }, [authLoading, user, nav]);
-  useEffect(() => { if (items.length === 0 && !orderRef) nav("/cart"); }, [items, orderRef, nav]);
+  useEffect(() => {
+    if (authLoading || cartLoading) return;
+    if (!user) return;
+    if (items.length === 0 && !orderRef && !payLoading) nav("/cart");
+  }, [authLoading, cartLoading, user, items, orderRef, payLoading, nav]);
 
   // Pre-fill customer info from profile
   useEffect(() => {
@@ -96,13 +105,14 @@ export default function Checkout() {
 
     try {
       const reference = `MAD-${Date.now().toString(36).toUpperCase()}`;
+      const operatorLabel = paymentChannel === "ORANGE_MONEY" ? "Orange Money" : "MTN MoMo";
       const { data: orderId, error: orderErr } = await supabase.rpc("place_order", {
         p_reference: reference,
         p_customer_name: parsed.data.customer_name,
         p_customer_phone: parsed.data.customer_phone,
         p_customer_address: parsed.data.customer_address,
         p_notes: parsed.data.notes || null,
-        p_payment_operator: "SenePay",
+        p_payment_operator: operatorLabel,
         p_payment_reference: reference,
         p_confirmed_shop_ids: shopGroups.map((g) => g.shopId),
       });
@@ -112,9 +122,12 @@ export default function Checkout() {
         return toast.error(orderErr?.message ?? "Erreur lors de la création de la commande");
       }
 
+      // Lock orderRef so the empty-cart redirect doesn't fire after cart is cleared
+      setOrderRef(reference);
+
       const returnUrl = `${window.location.origin}/orders?senepay=1`;
       const { data: spData, error: spErr } = await supabase.functions.invoke("senepay-initiate", {
-        body: { order_id: orderId, return_url: returnUrl },
+        body: { order_id: orderId, return_url: returnUrl, payment_channel: paymentChannel },
       });
 
       if (spErr || !spData?.payment_url) {
@@ -234,12 +247,55 @@ export default function Checkout() {
             </div>
 
             <div className="space-y-3 text-sm">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-2">
+                  Choisissez votre opérateur Mobile Money
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {([
+                    { id: "ORANGE_MONEY" as const, label: "Orange Money", logo: orangeMoneyLogo },
+                    { id: "MTN_MOMO" as const, label: "MTN MoMo", logo: mtnMomoLogo },
+                  ]).map((op) => {
+                    const active = paymentChannel === op.id;
+                    return (
+                      <button
+                        key={op.id}
+                        type="button"
+                        onClick={() => setPaymentChannel(op.id)}
+                        aria-pressed={active}
+                        className={cn(
+                          "relative flex flex-col items-center gap-2 rounded-2xl border-2 bg-background/50 p-4 transition-smooth",
+                          active
+                            ? "border-primary shadow-elegant"
+                            : "border-border hover:border-primary/40"
+                        )}
+                      >
+                        {active && (
+                          <span className="absolute top-2 right-2 h-5 w-5 rounded-full bg-primary text-primary-foreground grid place-items-center">
+                            <Check className="h-3 w-3" />
+                          </span>
+                        )}
+                        <img
+                          src={op.logo}
+                          alt={`Logo ${op.label}`}
+                          loading="lazy"
+                          width={1024}
+                          height={1024}
+                          className="h-14 w-14 object-contain"
+                        />
+                        <span className="text-xs font-semibold">{op.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="flex items-start gap-3 rounded-2xl bg-background/50 p-3">
                 <Wallet className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <div>
                   <p className="font-medium">Paiement sécurisé via SenePay</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Vous serez redirigé vers la page de paiement SenePay pour finaliser votre transaction en toute sécurité.
+                    Vous serez redirigé vers la page de paiement SenePay pour finaliser votre transaction avec {paymentChannel === "ORANGE_MONEY" ? "Orange Money" : "MTN MoMo"}.
                   </p>
                 </div>
               </div>
@@ -264,7 +320,7 @@ export default function Checkout() {
               {payLoading ? (
                 <><Loader2 className="h-5 w-5 animate-spin" /> Préparation du paiement...</>
               ) : (
-                <><ExternalLink className="h-5 w-5" /> Payer {total.toLocaleString("fr-FR")} GNF avec SenePay</>
+                <><ExternalLink className="h-5 w-5" /> Payer {total.toLocaleString("fr-FR")} GNF</>
               )}
             </Button>
           </div>
