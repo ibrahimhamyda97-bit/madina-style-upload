@@ -616,6 +616,14 @@ export type Database = {
         Returns: undefined
       }
       generate_auth_code: { Args: never; Returns: string }
+      get_basic_profiles: {
+        Args: { _ids: string[] }
+        Returns: {
+          first_name: string
+          id: string
+          last_name: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
