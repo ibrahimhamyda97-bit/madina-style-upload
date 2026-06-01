@@ -30,14 +30,23 @@ serve(async (req) => {
     }
 
     const authHeader = req.headers.get("authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Non authentifié" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const token = authHeader.replace("Bearer ", "");
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    const { data: claimsData, error: claimsErr } = await supabase.auth.getClaims(token);
+    const user = claimsData?.claims ? { id: claimsData.claims.sub } : null;
+    if (claimsErr || !user) {
+      console.error("Auth error:", claimsErr);
       return new Response(JSON.stringify({ error: "Non authentifié" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
