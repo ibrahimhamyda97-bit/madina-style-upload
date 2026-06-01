@@ -74,7 +74,10 @@ serve(async (req) => {
     const projectRef = (Deno.env.get("SUPABASE_URL") || "").match(/https:\/\/([^.]+)/)?.[1];
     const notifyUrl = `https://${projectRef}.supabase.co/functions/v1/senepay-webhook`;
 
-    const payload = {
+    const allowedChannels = ["ORANGE_MONEY", "MTN_MOMO"];
+    const channel = allowedChannels.includes(payment_channel) ? payment_channel : null;
+
+    const payload: Record<string, unknown> = {
       amount: Number(order.total_gnf),
       currency: "GNF",
       country: "GN",
@@ -83,9 +86,13 @@ serve(async (req) => {
       successUrl: `${return_url}&status=success`,
       cancelUrl: `${return_url}&status=cancel`,
       webhookUrl: notifyUrl,
-      metadata: { order_id: order.id, user_id: user.id },
+      metadata: { order_id: order.id, user_id: user.id, payment_channel: channel },
       expiresInMinutes: 60,
     };
+    if (channel) {
+      payload.paymentMethods = [channel];
+      payload.preferredPaymentMethod = channel;
+    }
 
     const spRes = await fetch(SENEPAY_URL, {
       method: "POST",
