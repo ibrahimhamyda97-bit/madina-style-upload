@@ -115,7 +115,7 @@ export default function Orders() {
           <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">Mes commandes</h1>
           <p className="text-sm text-muted-foreground">{orders.length} commande{orders.length > 1 ? "s" : ""}</p>
         </div>
-        {verifyingCinetPay && (
+        {verifyingPayment && (
           <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Vérification du paiement...
@@ -156,7 +156,7 @@ export default function Orders() {
                     </Badge>
                     {o.cinetpay_transaction_id && (
                       <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                        <CreditCard className="h-3 w-3" /> CinetPay
+                        <CreditCard className="h-3 w-3" /> SenePay
                       </span>
                     )}
                   </div>
