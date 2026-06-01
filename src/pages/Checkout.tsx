@@ -105,13 +105,14 @@ export default function Checkout() {
 
     try {
       const reference = `MAD-${Date.now().toString(36).toUpperCase()}`;
+      const operatorLabel = paymentChannel === "ORANGE_MONEY" ? "Orange Money" : "MTN MoMo";
       const { data: orderId, error: orderErr } = await supabase.rpc("place_order", {
         p_reference: reference,
         p_customer_name: parsed.data.customer_name,
         p_customer_phone: parsed.data.customer_phone,
         p_customer_address: parsed.data.customer_address,
         p_notes: parsed.data.notes || null,
-        p_payment_operator: "SenePay",
+        p_payment_operator: operatorLabel,
         p_payment_reference: reference,
         p_confirmed_shop_ids: shopGroups.map((g) => g.shopId),
       });
@@ -121,9 +122,12 @@ export default function Checkout() {
         return toast.error(orderErr?.message ?? "Erreur lors de la création de la commande");
       }
 
+      // Lock orderRef so the empty-cart redirect doesn't fire after cart is cleared
+      setOrderRef(reference);
+
       const returnUrl = `${window.location.origin}/orders?senepay=1`;
       const { data: spData, error: spErr } = await supabase.functions.invoke("senepay-initiate", {
-        body: { order_id: orderId, return_url: returnUrl },
+        body: { order_id: orderId, return_url: returnUrl, payment_channel: paymentChannel },
       });
 
       if (spErr || !spData?.payment_url) {
