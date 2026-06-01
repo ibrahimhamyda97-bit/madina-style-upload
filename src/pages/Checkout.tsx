@@ -247,12 +247,55 @@ export default function Checkout() {
             </div>
 
             <div className="space-y-3 text-sm">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-2">
+                  Choisissez votre opérateur Mobile Money
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {([
+                    { id: "ORANGE_MONEY" as const, label: "Orange Money", logo: orangeMoneyLogo },
+                    { id: "MTN_MOMO" as const, label: "MTN MoMo", logo: mtnMomoLogo },
+                  ]).map((op) => {
+                    const active = paymentChannel === op.id;
+                    return (
+                      <button
+                        key={op.id}
+                        type="button"
+                        onClick={() => setPaymentChannel(op.id)}
+                        aria-pressed={active}
+                        className={cn(
+                          "relative flex flex-col items-center gap-2 rounded-2xl border-2 bg-background/50 p-4 transition-smooth",
+                          active
+                            ? "border-primary shadow-elegant"
+                            : "border-border hover:border-primary/40"
+                        )}
+                      >
+                        {active && (
+                          <span className="absolute top-2 right-2 h-5 w-5 rounded-full bg-primary text-primary-foreground grid place-items-center">
+                            <Check className="h-3 w-3" />
+                          </span>
+                        )}
+                        <img
+                          src={op.logo}
+                          alt={`Logo ${op.label}`}
+                          loading="lazy"
+                          width={1024}
+                          height={1024}
+                          className="h-14 w-14 object-contain"
+                        />
+                        <span className="text-xs font-semibold">{op.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="flex items-start gap-3 rounded-2xl bg-background/50 p-3">
                 <Wallet className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <div>
                   <p className="font-medium">Paiement sécurisé via SenePay</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Vous serez redirigé vers la page de paiement SenePay pour finaliser votre transaction en toute sécurité.
+                    Vous serez redirigé vers la page de paiement SenePay pour finaliser votre transaction avec {paymentChannel === "ORANGE_MONEY" ? "Orange Money" : "MTN MoMo"}.
                   </p>
                 </div>
               </div>
@@ -277,7 +320,7 @@ export default function Checkout() {
               {payLoading ? (
                 <><Loader2 className="h-5 w-5 animate-spin" /> Préparation du paiement...</>
               ) : (
-                <><ExternalLink className="h-5 w-5" /> Payer {total.toLocaleString("fr-FR")} GNF avec SenePay</>
+                <><ExternalLink className="h-5 w-5" /> Payer {total.toLocaleString("fr-FR")} GNF</>
               )}
             </Button>
           </div>
