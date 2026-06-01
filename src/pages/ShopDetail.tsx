@@ -12,7 +12,7 @@ export default function ShopDetail() {
   useEffect(() => {
     if (!slug) return;
     (async () => {
-      const { data: s } = await supabase.from("shops").select("*").eq("slug", slug).maybeSingle();
+      const { data: s } = await supabase.from("shops").select("id, name, slug, description, logo_url, banner_url, city, phone, status").eq("slug", slug).maybeSingle();
       setShop(s);
       if (s) {
         const { data: p } = await supabase

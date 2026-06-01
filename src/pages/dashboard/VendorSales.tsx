@@ -70,10 +70,7 @@ export default function VendorSales() {
           itemList.map((l: any) => l.order?.courier_id).filter(Boolean)
         ));
         if (courierIds.length > 0) {
-          const { data: profs } = await supabase
-            .from("profiles")
-            .select("id, first_name, last_name")
-            .in("id", courierIds);
+          const { data: profs } = await supabase.rpc("get_basic_profiles", { _ids: courierIds });
           const map: Record<string, CourierProfile> = {};
           (profs ?? []).forEach((p: any) => { map[p.id] = p; });
           setCouriers(map);
