@@ -11,6 +11,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import orangeMoneyLogo from "@/assets/orange-money.png";
+import mtnMomoLogo from "@/assets/mtn-momo.png";
 
 const schema = z.object({
   customer_name: z.string().trim().min(2, "Nom trop court").max(80),
@@ -19,8 +21,10 @@ const schema = z.object({
   notes: z.string().max(500).optional(),
 });
 
+type PaymentChannel = "ORANGE_MONEY" | "MTN_MOMO";
+
 export default function Checkout() {
-  const { items, total, subtotal, shipping, refresh } = useCart();
+  const { items, total, subtotal, shipping, refresh, loading: cartLoading } = useCart();
   const { user, loading: authLoading } = useAuth();
   const nav = useNavigate();
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
@@ -29,9 +33,14 @@ export default function Checkout() {
   const [orderRef, setOrderRef] = useState<string | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
+  const [paymentChannel, setPaymentChannel] = useState<PaymentChannel>("ORANGE_MONEY");
 
   useEffect(() => { if (!authLoading && !user) nav("/auth"); }, [authLoading, user, nav]);
-  useEffect(() => { if (items.length === 0 && !orderRef) nav("/cart"); }, [items, orderRef, nav]);
+  useEffect(() => {
+    if (authLoading || cartLoading) return;
+    if (!user) return;
+    if (items.length === 0 && !orderRef && !payLoading) nav("/cart");
+  }, [authLoading, cartLoading, user, items, orderRef, payLoading, nav]);
 
   // Pre-fill customer info from profile
   useEffect(() => {
