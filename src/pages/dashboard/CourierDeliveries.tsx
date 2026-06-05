@@ -53,23 +53,57 @@ export default function CourierDeliveries() {
   async function load() {
     if (!user) return;
     setLoading(true);
-    const { data: ordersData, error } = await supabase
+
+    // Mine: full data (RLS now restricts to courier_id = auth.uid())
+    const minePromise = supabase
       .from("orders")
       .select("id, reference, total_gnf, customer_name, customer_phone, customer_address, delivery_status, courier_id, pickup_code, delivery_code, created_at, picked_up_at, delivered_at, items:order_items(id, title, image_url, quantity, size, shop_id)")
-      .eq("status", "paid")
+      .eq("courier_id", user.id)
+      .neq("delivery_status", "delivered")
       .order("created_at", { ascending: false });
 
-    if (error) {
-      toast.error(error.message);
+    // Available: safe RPC (no PII, no codes)
+    const availPromise = supabase.rpc("get_available_courier_orders");
+
+    const [{ data: mineData, error: mineErr }, { data: availData, error: availErr }] = await Promise.all([minePromise, availPromise]);
+
+    if (mineErr || availErr) {
+      toast.error((mineErr ?? availErr)!.message);
       setLoading(false);
       return;
     }
 
-    const list = (ordersData ?? []) as unknown as Order[];
-    setOrders(list);
+    const mineList = (mineData ?? []) as unknown as Order[];
+
+    // Fetch items for available orders via safe RPC
+    const availOrders = (availData ?? []) as Array<{ id: string; reference: string; total_gnf: number; delivery_status: string; created_at: string }>;
+    let availItems: Array<{ id: string; order_id: string; shop_id: string; title: string; image_url: string | null; quantity: number; size: string }> = [];
+    if (availOrders.length) {
+      const { data: itemsData } = await supabase.rpc("get_available_courier_order_items", { _order_ids: availOrders.map((o) => o.id) });
+      availItems = (itemsData ?? []) as typeof availItems;
+    }
+    const availList: Order[] = availOrders.map((o) => ({
+      id: o.id,
+      reference: o.reference,
+      total_gnf: o.total_gnf,
+      customer_name: null,
+      customer_phone: null,
+      customer_address: null,
+      delivery_status: o.delivery_status,
+      courier_id: null,
+      pickup_code: null,
+      delivery_code: null,
+      created_at: o.created_at,
+      picked_up_at: null,
+      delivered_at: null,
+      items: availItems.filter((it) => it.order_id === o.id).map((it) => ({ id: it.id, title: it.title, image_url: it.image_url, quantity: it.quantity, size: it.size, shop_id: it.shop_id })),
+    }));
+
+    const combined = [...mineList, ...availList];
+    setOrders(combined);
 
     // Fetch shops referenced in items
-    const shopIds = Array.from(new Set(list.flatMap((o) => o.items.map((i) => i.shop_id))));
+    const shopIds = Array.from(new Set(combined.flatMap((o) => o.items.map((i) => i.shop_id))));
     if (shopIds.length) {
       const { data: shopsData } = await supabase
         .from("shops")
@@ -85,8 +119,8 @@ export default function CourierDeliveries() {
   useEffect(() => { load(); }, [user]);
 
   const available = useMemo(
-    () => orders.filter((o) => o.delivery_status === "unassigned" || (o.delivery_status === "assigned" && o.courier_id !== user?.id)),
-    [orders, user]
+    () => orders.filter((o) => o.delivery_status === "unassigned" && o.courier_id === null),
+    [orders]
   );
   const mine = useMemo(
     () => orders.filter((o) => o.courier_id === user?.id && o.delivery_status !== "delivered"),
