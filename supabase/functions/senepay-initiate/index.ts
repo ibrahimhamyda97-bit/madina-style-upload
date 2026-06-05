@@ -76,6 +76,8 @@ serve(async (req) => {
 
     const allowedChannels = ["ORANGE_MONEY", "MTN_MOMO"];
     const channel = allowedChannels.includes(payment_channel) ? payment_channel : null;
+    // SenePay accepts multiple casings depending on endpoint version
+    const channelLower = channel?.toLowerCase() ?? null;
 
     const payload: Record<string, unknown> = {
       amount: Number(order.total_gnf),
@@ -89,9 +91,19 @@ serve(async (req) => {
       metadata: { order_id: order.id, user_id: user.id, payment_channel: channel },
       expiresInMinutes: 60,
     };
-    if (channel) {
+    if (channel && channelLower) {
+      // Force a single payment method so the checkout skips the operator selection step
       payload.paymentMethods = [channel];
+      payload.payment_methods = [channelLower];
+      payload.allowedPaymentMethods = [channel];
+      payload.allowed_payment_methods = [channelLower];
+      payload.channels = [channelLower];
+      payload.paymentMethod = channel;
+      payload.payment_method = channelLower;
       payload.preferredPaymentMethod = channel;
+      payload.preferred_payment_method = channelLower;
+      payload.lockPaymentMethod = true;
+      payload.skipMethodSelection = true;
     }
 
     const spRes = await fetch(SENEPAY_URL, {
