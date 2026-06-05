@@ -616,6 +616,28 @@ export type Database = {
         Returns: undefined
       }
       generate_auth_code: { Args: never; Returns: string }
+      get_available_courier_order_items: {
+        Args: { _order_ids: string[] }
+        Returns: {
+          id: string
+          image_url: string
+          order_id: string
+          quantity: number
+          shop_id: string
+          size: Database["public"]["Enums"]["product_size"]
+          title: string
+        }[]
+      }
+      get_available_courier_orders: {
+        Args: never
+        Returns: {
+          created_at: string
+          delivery_status: Database["public"]["Enums"]["delivery_status"]
+          id: string
+          reference: string
+          total_gnf: number
+        }[]
+      }
       get_basic_profiles: {
         Args: { _ids: string[] }
         Returns: {
