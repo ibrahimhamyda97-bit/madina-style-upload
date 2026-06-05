@@ -32,12 +32,21 @@ export default function Checkout() {
   const { user, loading: authLoading } = useAuth();
   const nav = useNavigate();
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
-  const [data, setData] = useState({ customer_name: "", customer_phone: "", customer_address: "", notes: "" });
+  const [data, setData] = useState({
+    customer_name: "",
+    customer_phone: "",
+    customer_city: "",
+    customer_neighborhood: "",
+    customer_address_extra: "",
+    notes: "",
+  });
   const [submitting, setSubmitting] = useState(false);
   const [orderRef, setOrderRef] = useState<string | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
   const [paymentChannel, setPaymentChannel] = useState<PaymentChannel>("ORANGE_MONEY");
+
+  const neighborhoods = data.customer_city ? (GUINEA_CITIES[data.customer_city] ?? []) : [];
 
   useEffect(() => { if (!authLoading && !user) nav("/auth"); }, [authLoading, user, nav]);
   useEffect(() => {
@@ -57,12 +66,14 @@ export default function Checkout() {
         .maybeSingle();
       if (p) {
         const fullName = [p.first_name, p.last_name].filter(Boolean).join(" ").trim();
-        const address = [p.neighborhood, p.city].filter(Boolean).join(", ");
+        const city = p.city && GUINEA_CITIES[p.city] ? p.city : "";
+        const hood = city && p.neighborhood && GUINEA_CITIES[city]?.includes(p.neighborhood) ? p.neighborhood : "";
         setData((d) => ({
+          ...d,
           customer_name: d.customer_name || fullName,
           customer_phone: d.customer_phone || (p.phone ?? ""),
-          customer_address: d.customer_address || address,
-          notes: d.notes,
+          customer_city: d.customer_city || city,
+          customer_neighborhood: d.customer_neighborhood || hood,
         }));
       }
       setProfileLoaded(true);
