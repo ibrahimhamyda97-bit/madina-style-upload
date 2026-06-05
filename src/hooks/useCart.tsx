@@ -17,7 +17,7 @@ export interface CartLine {
     price_gnf: number;
     shipping_fee_gnf: number;
     shop_id: string;
-    shop?: { id: string; name: string; slug: string; commission_rate: number; payment_operator: string | null; payment_number: string | null };
+    shop?: { id: string; name: string; slug: string; commission_rate: number };
     images: { image_url: string; size: string }[];
   };
   variant?: {
