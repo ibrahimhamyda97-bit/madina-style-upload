@@ -125,7 +125,7 @@ export default function Checkout() {
         p_reference: reference,
         p_customer_name: parsed.data.customer_name,
         p_customer_phone: parsed.data.customer_phone,
-        p_customer_address: parsed.data.customer_address,
+        p_customer_address: [parsed.data.customer_neighborhood, parsed.data.customer_city, parsed.data.customer_address_extra].filter(Boolean).join(", "),
         p_notes: parsed.data.notes || null,
         p_payment_operator: operatorLabel,
         p_payment_reference: reference,
