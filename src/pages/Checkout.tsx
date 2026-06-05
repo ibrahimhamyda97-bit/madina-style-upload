@@ -13,11 +13,15 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import orangeMoneyLogo from "@/assets/orange-money.png";
 import mtnMomoLogo from "@/assets/mtn-momo.png";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { GUINEA_CITIES, GUINEA_CITY_NAMES } from "@/data/guinea-cities";
 
 const schema = z.object({
   customer_name: z.string().trim().min(2, "Nom trop court").max(80),
   customer_phone: z.string().trim().min(6, "Téléphone invalide").max(40),
-  customer_address: z.string().trim().min(4, "Adresse trop courte").max(300),
+  customer_city: z.string().trim().min(2, "Ville requise").max(60),
+  customer_neighborhood: z.string().trim().min(2, "Quartier requis").max(80),
+  customer_address_extra: z.string().trim().max(200).optional(),
   notes: z.string().max(500).optional(),
 });
 
@@ -28,12 +32,21 @@ export default function Checkout() {
   const { user, loading: authLoading } = useAuth();
   const nav = useNavigate();
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
-  const [data, setData] = useState({ customer_name: "", customer_phone: "", customer_address: "", notes: "" });
+  const [data, setData] = useState({
+    customer_name: "",
+    customer_phone: "",
+    customer_city: "",
+    customer_neighborhood: "",
+    customer_address_extra: "",
+    notes: "",
+  });
   const [submitting, setSubmitting] = useState(false);
   const [orderRef, setOrderRef] = useState<string | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
   const [paymentChannel, setPaymentChannel] = useState<PaymentChannel>("ORANGE_MONEY");
+
+  const neighborhoods = data.customer_city ? (GUINEA_CITIES[data.customer_city] ?? []) : [];
 
   useEffect(() => { if (!authLoading && !user) nav("/auth"); }, [authLoading, user, nav]);
   useEffect(() => {
@@ -53,12 +66,14 @@ export default function Checkout() {
         .maybeSingle();
       if (p) {
         const fullName = [p.first_name, p.last_name].filter(Boolean).join(" ").trim();
-        const address = [p.neighborhood, p.city].filter(Boolean).join(", ");
+        const city = p.city && GUINEA_CITIES[p.city] ? p.city : "";
+        const hood = city && p.neighborhood && GUINEA_CITIES[city]?.includes(p.neighborhood) ? p.neighborhood : "";
         setData((d) => ({
+          ...d,
           customer_name: d.customer_name || fullName,
           customer_phone: d.customer_phone || (p.phone ?? ""),
-          customer_address: d.customer_address || address,
-          notes: d.notes,
+          customer_city: d.customer_city || city,
+          customer_neighborhood: d.customer_neighborhood || hood,
         }));
       }
       setProfileLoaded(true);
@@ -110,7 +125,7 @@ export default function Checkout() {
         p_reference: reference,
         p_customer_name: parsed.data.customer_name,
         p_customer_phone: parsed.data.customer_phone,
-        p_customer_address: parsed.data.customer_address,
+        p_customer_address: [parsed.data.customer_neighborhood, parsed.data.customer_city, parsed.data.customer_address_extra].filter(Boolean).join(", "),
         p_notes: parsed.data.notes || null,
         p_payment_operator: operatorLabel,
         p_payment_reference: reference,
@@ -206,9 +221,46 @@ export default function Checkout() {
             <Label className="flex items-center gap-1.5 text-xs"><Phone className="h-3 w-3" /> Téléphone *</Label>
             <Input value={data.customer_phone} onChange={(e) => setData({ ...data, customer_phone: e.target.value })} placeholder="+224 ..." />
           </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5 text-xs"><MapPin className="h-3 w-3" /> Ville *</Label>
+              <Select
+                value={data.customer_city}
+                onValueChange={(v) => setData({ ...data, customer_city: v, customer_neighborhood: "" })}
+              >
+                <SelectTrigger><SelectValue placeholder="Choisir une ville" /></SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {GUINEA_CITY_NAMES.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5 text-xs"><MapPin className="h-3 w-3" /> Quartier / Commune *</Label>
+              <Select
+                value={data.customer_neighborhood}
+                onValueChange={(v) => setData({ ...data, customer_neighborhood: v })}
+                disabled={!data.customer_city}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={data.customer_city ? "Choisir un quartier" : "Sélectionnez d'abord la ville"} />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {neighborhoods.map((n) => (
+                    <SelectItem key={n} value={n}>{n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="space-y-1.5">
-            <Label className="flex items-center gap-1.5 text-xs"><MapPin className="h-3 w-3" /> Adresse de livraison *</Label>
-            <Textarea rows={3} value={data.customer_address} onChange={(e) => setData({ ...data, customer_address: e.target.value })} placeholder="Conakry, Kaloum, ..." />
+            <Label className="text-xs">Repère / détails (optionnel)</Label>
+            <Input
+              value={data.customer_address_extra}
+              onChange={(e) => setData({ ...data, customer_address_extra: e.target.value })}
+              placeholder="Ex : à côté de la pharmacie centrale, immeuble bleu..."
+            />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Note (optionnel)</Label>
