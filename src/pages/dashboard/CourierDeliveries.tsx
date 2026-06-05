@@ -238,18 +238,24 @@ export default function CourierDeliveries() {
                   })}
                 </div>
 
-                {/* Delivery address */}
-                <div className="mt-3">
-                  <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground mb-2">Livrer à</p>
-                  <div className="flex items-start gap-2 bg-primary/5 border border-primary/20 rounded-xl p-3">
-                    <Navigation className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-sm">{o.customer_name ?? "Client"}</p>
-                      <p className="text-[11px] text-muted-foreground flex items-center gap-1.5"><Phone className="h-3 w-3" />{o.customer_phone ?? "—"}</p>
-                      <p className="text-[12px] mt-1 flex items-start gap-1.5"><MapPin className="h-3 w-3 mt-0.5 shrink-0" />{o.customer_address ?? "—"}</p>
+                {/* Delivery address - only visible once courier has claimed the order */}
+                {isMine ? (
+                  <div className="mt-3">
+                    <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground mb-2">Livrer à</p>
+                    <div className="flex items-start gap-2 bg-primary/5 border border-primary/20 rounded-xl p-3">
+                      <Navigation className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm">{o.customer_name ?? "Client"}</p>
+                        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5"><Phone className="h-3 w-3" />{o.customer_phone ?? "—"}</p>
+                        <p className="text-[12px] mt-1 flex items-start gap-1.5"><MapPin className="h-3 w-3 mt-0.5 shrink-0" />{o.customer_address ?? "—"}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="mt-3 text-[11px] text-muted-foreground italic">
+                    Les coordonnées du client seront affichées dès que vous prendrez cette livraison.
+                  </div>
+                )}
 
                 {/* Items */}
                 <div className="mt-4 pt-4 border-t border-border space-y-2">
