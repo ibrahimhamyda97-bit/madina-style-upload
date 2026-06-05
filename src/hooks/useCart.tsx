@@ -17,7 +17,7 @@ export interface CartLine {
     price_gnf: number;
     shipping_fee_gnf: number;
     shop_id: string;
-    shop?: { id: string; name: string; slug: string; commission_rate: number; payment_operator: string | null; payment_number: string | null };
+    shop?: { id: string; name: string; slug: string; commission_rate: number };
     images: { image_url: string; size: string }[];
   };
   variant?: {
@@ -63,7 +63,7 @@ async function hydrateCartLine(cartRow: { id: string; product_id: string; varian
       .from("products")
       .select(`
         id, title, price_gnf, shipping_fee_gnf, shop_id,
-        shop:shops(id, name, slug, commission_rate, payment_operator, payment_number),
+        shop:shops(id, name, slug, commission_rate),
         images:product_images(image_url, size)
       `)
       .eq("id", cartRow.product_id)
