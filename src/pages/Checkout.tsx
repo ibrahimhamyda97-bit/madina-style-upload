@@ -221,9 +221,46 @@ export default function Checkout() {
             <Label className="flex items-center gap-1.5 text-xs"><Phone className="h-3 w-3" /> Téléphone *</Label>
             <Input value={data.customer_phone} onChange={(e) => setData({ ...data, customer_phone: e.target.value })} placeholder="+224 ..." />
           </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5 text-xs"><MapPin className="h-3 w-3" /> Ville *</Label>
+              <Select
+                value={data.customer_city}
+                onValueChange={(v) => setData({ ...data, customer_city: v, customer_neighborhood: "" })}
+              >
+                <SelectTrigger><SelectValue placeholder="Choisir une ville" /></SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {GUINEA_CITY_NAMES.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5 text-xs"><MapPin className="h-3 w-3" /> Quartier / Commune *</Label>
+              <Select
+                value={data.customer_neighborhood}
+                onValueChange={(v) => setData({ ...data, customer_neighborhood: v })}
+                disabled={!data.customer_city}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={data.customer_city ? "Choisir un quartier" : "Sélectionnez d'abord la ville"} />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {neighborhoods.map((n) => (
+                    <SelectItem key={n} value={n}>{n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="space-y-1.5">
-            <Label className="flex items-center gap-1.5 text-xs"><MapPin className="h-3 w-3" /> Adresse de livraison *</Label>
-            <Textarea rows={3} value={data.customer_address} onChange={(e) => setData({ ...data, customer_address: e.target.value })} placeholder="Conakry, Kaloum, ..." />
+            <Label className="text-xs">Repère / détails (optionnel)</Label>
+            <Input
+              value={data.customer_address_extra}
+              onChange={(e) => setData({ ...data, customer_address_extra: e.target.value })}
+              placeholder="Ex : à côté de la pharmacie centrale, immeuble bleu..."
+            />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Note (optionnel)</Label>
