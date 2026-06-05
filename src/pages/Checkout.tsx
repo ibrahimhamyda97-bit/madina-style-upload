@@ -13,11 +13,15 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import orangeMoneyLogo from "@/assets/orange-money.png";
 import mtnMomoLogo from "@/assets/mtn-momo.png";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { GUINEA_CITIES, GUINEA_CITY_NAMES } from "@/data/guinea-cities";
 
 const schema = z.object({
   customer_name: z.string().trim().min(2, "Nom trop court").max(80),
   customer_phone: z.string().trim().min(6, "Téléphone invalide").max(40),
-  customer_address: z.string().trim().min(4, "Adresse trop courte").max(300),
+  customer_city: z.string().trim().min(2, "Ville requise").max(60),
+  customer_neighborhood: z.string().trim().min(2, "Quartier requis").max(80),
+  customer_address_extra: z.string().trim().max(200).optional(),
   notes: z.string().max(500).optional(),
 });
 
