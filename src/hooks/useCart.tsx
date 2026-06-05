@@ -63,7 +63,7 @@ async function hydrateCartLine(cartRow: { id: string; product_id: string; varian
       .from("products")
       .select(`
         id, title, price_gnf, shipping_fee_gnf, shop_id,
-        shop:shops(id, name, slug, commission_rate, payment_operator, payment_number),
+        shop:shops(id, name, slug, commission_rate),
         images:product_images(image_url, size)
       `)
       .eq("id", cartRow.product_id)
