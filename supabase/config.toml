@@ -2,3 +2,6 @@ project_id = "mbaabmexkijalnqjfivc"
 
 [functions.senepay-webhook]
 verify_jwt = false
+
+[functions.support-ai]
+verify_jwt = false

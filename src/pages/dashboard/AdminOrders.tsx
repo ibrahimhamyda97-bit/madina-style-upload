@@ -26,6 +26,7 @@ export default function AdminOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "paid">("pending");
+  const [search, setSearch] = useState("");
 
   async function load() {
     setLoading(true);
@@ -45,7 +46,10 @@ export default function AdminOrders() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
-  const filtered = orders.filter((o) => filter === "all" || o.status === filter);
+  const q = search.trim().toUpperCase();
+  const filtered = orders
+    .filter((o) => filter === "all" || o.status === filter)
+    .filter((o) => !q || (o.reference ?? "").toUpperCase().includes(q));
 
   async function markPaid(id: string) {
     const { error } = await supabase.from("orders").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", id);
@@ -70,7 +74,7 @@ export default function AdminOrders() {
         <p className="text-muted-foreground mt-2">Validez les paiements mobile money reçus.</p>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
         {(["pending", "paid", "all"] as const).map((f) => (
           <button
             key={f}
@@ -83,6 +87,12 @@ export default function AdminOrders() {
             {f === "pending" ? "En attente" : f === "paid" ? "Payées" : "Toutes"}
           </button>
         ))}
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Rechercher N° SAM-XXXDJXXX"
+          className="ml-auto h-9 w-full sm:w-72 rounded-full bg-muted/40 border border-border px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+        />
       </div>
 
       {loading ? (
