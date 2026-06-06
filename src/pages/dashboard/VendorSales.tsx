@@ -33,6 +33,7 @@ export default function VendorSales() {
   const [payouts, setPayouts] = useState<PayoutRow[]>([]);
   const [couriers, setCouriers] = useState<Record<string, CourierProfile>>({});
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (!user) return;
