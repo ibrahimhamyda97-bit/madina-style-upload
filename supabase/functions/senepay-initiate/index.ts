@@ -125,8 +125,16 @@ serve(async (req) => {
       .update({ cinetpay_transaction_id: spData.sessionToken })
       .eq("id", order.id);
 
+    // Append channel to checkout URL so SenePay pre-selects the operator
+    // and goes straight to the final payment screen.
+    let checkoutUrl: string = spData.checkoutUrl;
+    if (channelCode) {
+      const sep = checkoutUrl.includes("?") ? "&" : "?";
+      checkoutUrl = `${checkoutUrl}${sep}method=${channelCode}&paymentMethod=${channelCode}&channel=${channelCode}`;
+    }
+
     return new Response(
-      JSON.stringify({ payment_url: spData.checkoutUrl, session_token: spData.sessionToken }),
+      JSON.stringify({ payment_url: checkoutUrl, session_token: spData.sessionToken }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
