@@ -218,7 +218,8 @@ export default function VendorSales() {
               );
             })}
           </ul>
-        )}
+        );
+        })()}
       </div>
 
       {/* Payouts received */}
