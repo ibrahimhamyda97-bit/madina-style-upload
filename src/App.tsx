@@ -35,6 +35,7 @@ import About from "./pages/About";
 import Services from "./pages/Services";
 import Conditions from "./pages/Conditions";
 import NotFound from "./pages/NotFound";
+import SupportChatWidget from "./components/SupportChatWidget";
 
 const queryClient = new QueryClient();
 
