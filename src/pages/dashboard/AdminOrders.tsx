@@ -46,7 +46,10 @@ export default function AdminOrders() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
-  const filtered = orders.filter((o) => filter === "all" || o.status === filter);
+  const q = search.trim().toUpperCase();
+  const filtered = orders
+    .filter((o) => filter === "all" || o.status === filter)
+    .filter((o) => !q || (o.reference ?? "").toUpperCase().includes(q));
 
   async function markPaid(id: string) {
     const { error } = await supabase.from("orders").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", id);
