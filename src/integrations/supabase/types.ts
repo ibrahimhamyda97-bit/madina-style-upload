@@ -616,6 +616,7 @@ export type Database = {
         Returns: undefined
       }
       generate_auth_code: { Args: never; Returns: string }
+      generate_order_reference: { Args: never; Returns: string }
       get_available_courier_order_items: {
         Args: { _order_ids: string[] }
         Returns: {
