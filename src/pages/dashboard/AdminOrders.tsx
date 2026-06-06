@@ -26,6 +26,7 @@ export default function AdminOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "paid">("pending");
+  const [search, setSearch] = useState("");
 
   async function load() {
     setLoading(true);
