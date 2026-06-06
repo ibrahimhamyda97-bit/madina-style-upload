@@ -110,6 +110,7 @@ const App = () => (
 
             <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />
           </Routes>
+          <SupportChatWidget />
         </CartProvider>
       </BrowserRouter>
     </TooltipProvider>
