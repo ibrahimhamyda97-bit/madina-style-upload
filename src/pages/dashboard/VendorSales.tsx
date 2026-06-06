@@ -168,15 +168,26 @@ export default function VendorSales() {
 
       {/* Sold items */}
       <div className="bg-card border border-border rounded-3xl shadow-soft overflow-hidden">
-        <div className="px-5 py-4 border-b border-border">
-          <h2 className="font-display text-lg font-bold flex items-center gap-2"><Package className="h-4 w-4" /> Produits vendus</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">{lines.length} ligne{lines.length > 1 ? "s" : ""} de commande payée{lines.length > 1 ? "s" : ""}.</p>
+        <div className="px-5 py-4 border-b border-border flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-display text-lg font-bold flex items-center gap-2"><Package className="h-4 w-4" /> Produits vendus</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">{lines.length} ligne{lines.length > 1 ? "s" : ""} de commande payée{lines.length > 1 ? "s" : ""}.</p>
+          </div>
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher par N° SAM-XXXDJXXX"
+            className="max-w-xs h-9 rounded-xl"
+          />
         </div>
-        {lines.length === 0 ? (
-          <div className="p-10 text-center text-muted-foreground text-sm">Aucune vente pour le moment.</div>
+        {(() => {
+          const q = search.trim().toUpperCase();
+          const filtered = q ? lines.filter((l) => l.order.reference.toUpperCase().includes(q)) : lines;
+          return filtered.length === 0 ? (
+          <div className="p-10 text-center text-muted-foreground text-sm">{q ? "Aucune commande ne correspond à ce numéro." : "Aucune vente pour le moment."}</div>
         ) : (
           <ul className="divide-y divide-border">
-            {lines.map((l) => {
+            {filtered.map((l) => {
               const gross = l.unit_price_gnf * l.quantity;
               const comm = Math.round(gross * (l.commission_rate / 100));
               const net = gross - comm;
