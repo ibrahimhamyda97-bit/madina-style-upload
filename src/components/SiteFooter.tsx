@@ -28,7 +28,15 @@ export default function SiteFooter() {
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li><Link to="/about" className="hover:text-foreground transition-colors">À propos de nous</Link></li>
             <li><Link to="/services" className="hover:text-foreground transition-colors">Nos services</Link></li>
-            <li><Link to="/conditions" className="hover:text-foreground transition-colors">Conditions de vente</Link></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="font-semibold text-sm mb-3">Légal</h4>
+          <ul className="space-y-2 text-sm text-muted-foreground">
+            <li><Link to="/cgu" className="hover:text-foreground transition-colors">Conditions d'utilisation</Link></li>
+            <li><Link to="/cgv" className="hover:text-foreground transition-colors">Conditions de vente</Link></li>
+            <li><Link to="/confidentialite" className="hover:text-foreground transition-colors">Politique de confidentialité</Link></li>
           </ul>
         </div>
 
