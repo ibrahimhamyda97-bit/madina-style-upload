@@ -80,7 +80,7 @@ export default function AdminOrders() {
       </div>
 
       <div className="flex flex-wrap gap-2 items-center">
-        {(["pending", "paid", "all"] as const).map((f) => (
+        {(["pending", "confirmed", "delivered", "paid", "all"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -89,7 +89,11 @@ export default function AdminOrders() {
               filter === f ? "bg-primary text-primary-foreground shadow-soft" : "bg-muted text-muted-foreground hover:bg-muted/70"
             )}
           >
-            {f === "pending" ? "En attente" : f === "paid" ? "Payées" : "Toutes"}
+            {f === "pending" ? "En attente"
+              : f === "confirmed" ? "Confirmées"
+              : f === "delivered" ? "Livrées"
+              : f === "paid" ? "Payées"
+              : "Toutes"}
           </button>
         ))}
         <input
