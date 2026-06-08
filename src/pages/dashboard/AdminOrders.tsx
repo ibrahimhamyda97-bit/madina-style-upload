@@ -25,7 +25,7 @@ const dStatusMeta: Record<string, { label: string; className: string }> = {
 export default function AdminOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "pending" | "paid">("pending");
+  const [filter, setFilter] = useState<"all" | "pending" | "paid" | "confirmed" | "delivered">("pending");
   const [search, setSearch] = useState("");
 
   async function load() {
