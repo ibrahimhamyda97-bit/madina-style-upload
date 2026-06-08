@@ -34,6 +34,9 @@ import AdminTeam from "./pages/dashboard/AdminTeam";
 import About from "./pages/About";
 import Services from "./pages/Services";
 import Conditions from "./pages/Conditions";
+import CGU from "./pages/CGU";
+import CGV from "./pages/CGV";
+import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 import SupportChatWidget from "./components/SupportChatWidget";
 
