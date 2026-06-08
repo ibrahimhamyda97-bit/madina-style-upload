@@ -34,6 +34,9 @@ import AdminTeam from "./pages/dashboard/AdminTeam";
 import About from "./pages/About";
 import Services from "./pages/Services";
 import Conditions from "./pages/Conditions";
+import CGU from "./pages/CGU";
+import CGV from "./pages/CGV";
+import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 import SupportChatWidget from "./components/SupportChatWidget";
 
@@ -67,6 +70,9 @@ const App = () => (
             <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
             <Route path="/services" element={<PublicLayout><Services /></PublicLayout>} />
             <Route path="/conditions" element={<PublicLayout><Conditions /></PublicLayout>} />
+            <Route path="/cgu" element={<PublicLayout><CGU /></PublicLayout>} />
+            <Route path="/cgv" element={<PublicLayout><CGV /></PublicLayout>} />
+            <Route path="/confidentialite" element={<PublicLayout><Privacy /></PublicLayout>} />
             <Route path="/auth" element={<><SiteHeader /><Auth /></>} />
             <Route path="/onboarding/shop" element={<PublicLayout><ShopOnboarding /></PublicLayout>} />
 

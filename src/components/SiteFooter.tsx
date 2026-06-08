@@ -5,7 +5,7 @@ export default function SiteFooter() {
   return (
     <footer className="border-t border-border/60 mt-20">
       <div className="h-1 bg-gradient-flag" />
-      <div className="container py-10 grid md:grid-cols-4 gap-8">
+      <div className="container py-10 grid md:grid-cols-2 lg:grid-cols-5 gap-8">
         <div>
           <div className="flex items-center gap-2.5">
             <img src={madinaLogo} alt="Madina E-Commerce" className="h-10 w-10 object-contain" />
@@ -28,7 +28,15 @@ export default function SiteFooter() {
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li><Link to="/about" className="hover:text-foreground transition-colors">À propos de nous</Link></li>
             <li><Link to="/services" className="hover:text-foreground transition-colors">Nos services</Link></li>
-            <li><Link to="/conditions" className="hover:text-foreground transition-colors">Conditions de vente</Link></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="font-semibold text-sm mb-3">Légal</h4>
+          <ul className="space-y-2 text-sm text-muted-foreground">
+            <li><Link to="/cgu" className="hover:text-foreground transition-colors">Conditions d'utilisation</Link></li>
+            <li><Link to="/cgv" className="hover:text-foreground transition-colors">Conditions de vente</Link></li>
+            <li><Link to="/confidentialite" className="hover:text-foreground transition-colors">Politique de confidentialité</Link></li>
           </ul>
         </div>
 

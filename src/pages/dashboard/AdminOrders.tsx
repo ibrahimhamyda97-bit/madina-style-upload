@@ -25,7 +25,7 @@ const dStatusMeta: Record<string, { label: string; className: string }> = {
 export default function AdminOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "pending" | "paid">("pending");
+  const [filter, setFilter] = useState<"all" | "pending" | "paid" | "confirmed" | "delivered">("pending");
   const [search, setSearch] = useState("");
 
   async function load() {
@@ -48,7 +48,12 @@ export default function AdminOrders() {
 
   const q = search.trim().toUpperCase();
   const filtered = orders
-    .filter((o) => filter === "all" || o.status === filter)
+    .filter((o) => {
+      if (filter === "all") return true;
+      if (filter === "confirmed") return o.status === "paid" && o.delivery_status !== "delivered";
+      if (filter === "delivered") return o.delivery_status === "delivered";
+      return o.status === filter;
+    })
     .filter((o) => !q || (o.reference ?? "").toUpperCase().includes(q));
 
   async function markPaid(id: string) {
@@ -75,7 +80,7 @@ export default function AdminOrders() {
       </div>
 
       <div className="flex flex-wrap gap-2 items-center">
-        {(["pending", "paid", "all"] as const).map((f) => (
+        {(["pending", "confirmed", "delivered", "paid", "all"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -84,7 +89,11 @@ export default function AdminOrders() {
               filter === f ? "bg-primary text-primary-foreground shadow-soft" : "bg-muted text-muted-foreground hover:bg-muted/70"
             )}
           >
-            {f === "pending" ? "En attente" : f === "paid" ? "Payées" : "Toutes"}
+            {f === "pending" ? "En attente"
+              : f === "confirmed" ? "Confirmées"
+              : f === "delivered" ? "Livrées"
+              : f === "paid" ? "Payées"
+              : "Toutes"}
           </button>
         ))}
         <input
