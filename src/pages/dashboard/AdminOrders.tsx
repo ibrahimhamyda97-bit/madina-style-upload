@@ -48,7 +48,12 @@ export default function AdminOrders() {
 
   const q = search.trim().toUpperCase();
   const filtered = orders
-    .filter((o) => filter === "all" || o.status === filter)
+    .filter((o) => {
+      if (filter === "all") return true;
+      if (filter === "confirmed") return o.status === "paid" && o.delivery_status !== "delivered";
+      if (filter === "delivered") return o.delivery_status === "delivered";
+      return o.status === filter;
+    })
     .filter((o) => !q || (o.reference ?? "").toUpperCase().includes(q));
 
   async function markPaid(id: string) {
