@@ -70,6 +70,9 @@ const App = () => (
             <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
             <Route path="/services" element={<PublicLayout><Services /></PublicLayout>} />
             <Route path="/conditions" element={<PublicLayout><Conditions /></PublicLayout>} />
+            <Route path="/cgu" element={<PublicLayout><CGU /></PublicLayout>} />
+            <Route path="/cgv" element={<PublicLayout><CGV /></PublicLayout>} />
+            <Route path="/confidentialite" element={<PublicLayout><Privacy /></PublicLayout>} />
             <Route path="/auth" element={<><SiteHeader /><Auth /></>} />
             <Route path="/onboarding/shop" element={<PublicLayout><ShopOnboarding /></PublicLayout>} />
 
