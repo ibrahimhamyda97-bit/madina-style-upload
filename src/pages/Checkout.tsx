@@ -268,12 +268,59 @@ export default function Checkout() {
         <div className="bg-card border border-border rounded-3xl p-6 md:p-8 shadow-soft space-y-4">
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-display text-lg font-bold">Vos coordonnées de livraison</h2>
-            {profileLoaded && (data.customer_name || data.customer_phone) && (
+            {savedAddresses.length === 1 && selectedAddressId === savedAddresses[0]?.id && (
               <span className="text-[10px] uppercase tracking-wider font-bold text-primary bg-primary/10 px-2 py-1 rounded-full">
-                Pré-rempli
+                Adresse pré-enregistrée
               </span>
             )}
           </div>
+
+          {savedAddresses.length > 0 && (
+            <div className="space-y-2 pb-3 border-b border-border">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Mes adresses enregistrées</Label>
+                <Link to="/account/addresses" className="text-xs text-primary hover:underline">Gérer</Link>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-2">
+                {savedAddresses.map((a) => {
+                  const active = selectedAddressId === a.id;
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => handleSelectAddress(a.id)}
+                      className={cn(
+                        "text-left rounded-2xl border-2 p-3 transition-smooth bg-background/50",
+                        active ? "border-primary shadow-soft" : "border-border hover:border-primary/40"
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-display font-bold truncate">{a.label || "Adresse"}</p>
+                        {a.is_default && (
+                          <span className="inline-flex items-center gap-1 text-[9px] uppercase font-bold tracking-wider text-primary">
+                            <Star className="h-3 w-3 fill-current" />
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{a.recipient_name} · {a.phone}</p>
+                      <p className="text-xs text-muted-foreground truncate">{[a.neighborhood, a.city].filter(Boolean).join(", ")}</p>
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => handleSelectAddress("new")}
+                  className={cn(
+                    "rounded-2xl border-2 border-dashed p-3 transition-smooth flex items-center justify-center gap-1.5 text-sm font-medium",
+                    selectedAddressId === "new" ? "border-primary text-primary" : "border-border text-muted-foreground hover:border-primary/40"
+                  )}
+                >
+                  <Plus className="h-4 w-4" /> Nouvelle adresse
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1.5 text-xs"><UserIcon className="h-3 w-3" /> Nom complet *</Label>
             <Input value={data.customer_name} onChange={(e) => setData({ ...data, customer_name: e.target.value })} placeholder="Aïssata Diallo" />
