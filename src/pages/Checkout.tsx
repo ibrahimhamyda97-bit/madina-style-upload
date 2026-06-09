@@ -374,6 +374,17 @@ export default function Checkout() {
             <Label className="text-xs">Note (optionnel)</Label>
             <Textarea rows={2} value={data.notes} onChange={(e) => setData({ ...data, notes: e.target.value })} placeholder="Instructions particulières..." />
           </div>
+          {selectedAddressId === "new" && (
+            <label className="flex items-center gap-2 text-sm cursor-pointer rounded-xl bg-muted/40 px-3 py-2">
+              <input
+                type="checkbox"
+                checked={saveAddress}
+                onChange={(e) => setSaveAddress(e.target.checked)}
+                className="h-4 w-4 rounded"
+              />
+              Enregistrer cette adresse pour mes prochaines commandes
+            </label>
+          )}
           <Button
             size="lg"
             onClick={() => {
