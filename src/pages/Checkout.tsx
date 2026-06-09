@@ -185,6 +185,19 @@ export default function Checkout() {
         return toast.error(orderErr?.message ?? "Erreur lors de la création de la commande");
       }
 
+      // Persist new address if user opted in
+      if (saveAddress && selectedAddressId === "new") {
+        await supabase.from("user_addresses").insert({
+          user_id: user.id,
+          recipient_name: parsed.data.customer_name,
+          phone: parsed.data.customer_phone,
+          city: parsed.data.customer_city,
+          neighborhood: parsed.data.customer_neighborhood,
+          address_extra: parsed.data.customer_address_extra || null,
+          is_default: savedAddresses.length === 0,
+        });
+      }
+
       // Lock orderRef so the empty-cart redirect doesn't fire after cart is cleared
       setOrderRef(reference);
 
