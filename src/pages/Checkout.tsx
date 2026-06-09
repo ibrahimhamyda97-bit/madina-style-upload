@@ -58,16 +58,32 @@ export default function Checkout() {
     if (items.length === 0 && !orderRef && !payLoading) nav("/cart");
   }, [authLoading, cartLoading, user, items, orderRef, payLoading, nav]);
 
-  // Pre-fill customer info from profile
+  // Pre-fill from saved addresses; fall back to profile
   useEffect(() => {
     if (!user || profileLoaded) return;
     (async () => {
-      const { data: p } = await supabase
-        .from("profiles")
-        .select("first_name, last_name, phone, city, neighborhood")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (p) {
+      const [{ data: addrs }, { data: p }] = await Promise.all([
+        supabase
+          .from("user_addresses")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("is_default", { ascending: false })
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("profiles")
+          .select("first_name, last_name, phone, city, neighborhood")
+          .eq("id", user.id)
+          .maybeSingle(),
+      ]);
+
+      const addresses = (addrs ?? []) as any[];
+      setSavedAddresses(addresses);
+
+      if (addresses.length > 0) {
+        const pick = addresses.find((a) => a.is_default) ?? addresses[0];
+        applyAddress(pick);
+        setSelectedAddressId(pick.id);
+      } else if (p) {
         const fullName = [p.first_name, p.last_name].filter(Boolean).join(" ").trim();
         const city = p.city && GUINEA_CITIES[p.city] ? p.city : "";
         const hood = city && p.neighborhood && GUINEA_CITIES[city]?.includes(p.neighborhood) ? p.neighborhood : "";
@@ -78,10 +94,39 @@ export default function Checkout() {
           customer_city: d.customer_city || city,
           customer_neighborhood: d.customer_neighborhood || hood,
         }));
+        setSelectedAddressId("new");
       }
       setProfileLoaded(true);
     })();
   }, [user, profileLoaded]);
+
+  function applyAddress(a: any) {
+    setData((d) => ({
+      ...d,
+      customer_name: a.recipient_name,
+      customer_phone: a.phone,
+      customer_city: GUINEA_CITIES[a.city] ? a.city : "",
+      customer_neighborhood: GUINEA_CITIES[a.city]?.includes(a.neighborhood) ? a.neighborhood : "",
+      customer_address_extra: a.address_extra ?? "",
+    }));
+  }
+
+  function handleSelectAddress(id: string) {
+    setSelectedAddressId(id);
+    if (id === "new") {
+      setData((d) => ({
+        ...d,
+        customer_name: "",
+        customer_phone: "",
+        customer_city: "",
+        customer_neighborhood: "",
+        customer_address_extra: "",
+      }));
+      return;
+    }
+    const a = savedAddresses.find((x) => x.id === id);
+    if (a) applyAddress(a);
+  }
 
   // Group cart by shop
   const shopGroups = useMemo(() => {
