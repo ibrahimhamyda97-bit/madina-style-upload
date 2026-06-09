@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { ArrowLeft, Check, Loader2, Phone, MapPin, User as UserIcon, Store, ShieldCheck, Package, CreditCard, Wallet, ExternalLink } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Phone, MapPin, User as UserIcon, Store, ShieldCheck, Package, CreditCard, Wallet, ExternalLink, Plus, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,6 +45,9 @@ export default function Checkout() {
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
   const [paymentChannel, setPaymentChannel] = useState<PaymentChannel>("ORANGE_MONEY");
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | "new" | null>(null);
+  const [saveAddress, setSaveAddress] = useState(false);
 
   const neighborhoods = data.customer_city ? (GUINEA_CITIES[data.customer_city] ?? []) : [];
 
