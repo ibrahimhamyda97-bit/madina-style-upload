@@ -28,6 +28,7 @@ import AdminFinance from "./pages/dashboard/AdminFinance";
 import AdminOrders from "./pages/dashboard/AdminOrders";
 import ClientOverview from "./pages/dashboard/ClientOverview";
 import ClientProfile from "./pages/dashboard/ClientProfile";
+import ClientAddresses from "./pages/dashboard/ClientAddresses";
 import CourierDeliveries from "./pages/dashboard/CourierDeliveries";
 import CourierApplications from "./pages/dashboard/CourierApplications";
 import AdminTeam from "./pages/dashboard/AdminTeam";
@@ -79,6 +80,7 @@ const App = () => (
             <Route path="/account" element={<><SiteHeader /><DashboardShell items={clientNav} title="Mon compte" /></>}>
               <Route index element={<ClientOverview />} />
               <Route path="profile" element={<ClientProfile />} />
+              <Route path="addresses" element={<ClientAddresses />} />
               <Route path="cart" element={<Cart />} />
               <Route path="orders" element={<Orders />} />
             </Route>
