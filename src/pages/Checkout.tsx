@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { ArrowLeft, Check, Loader2, Phone, MapPin, User as UserIcon, Store, ShieldCheck, Package, CreditCard, Wallet, ExternalLink } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Phone, MapPin, User as UserIcon, Store, ShieldCheck, Package, CreditCard, Wallet, ExternalLink, Plus, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,6 +45,9 @@ export default function Checkout() {
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
   const [paymentChannel, setPaymentChannel] = useState<PaymentChannel>("ORANGE_MONEY");
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | "new" | null>(null);
+  const [saveAddress, setSaveAddress] = useState(false);
 
   const neighborhoods = data.customer_city ? (GUINEA_CITIES[data.customer_city] ?? []) : [];
 
@@ -55,16 +58,32 @@ export default function Checkout() {
     if (items.length === 0 && !orderRef && !payLoading) nav("/cart");
   }, [authLoading, cartLoading, user, items, orderRef, payLoading, nav]);
 
-  // Pre-fill customer info from profile
+  // Pre-fill from saved addresses; fall back to profile
   useEffect(() => {
     if (!user || profileLoaded) return;
     (async () => {
-      const { data: p } = await supabase
-        .from("profiles")
-        .select("first_name, last_name, phone, city, neighborhood")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (p) {
+      const [{ data: addrs }, { data: p }] = await Promise.all([
+        supabase
+          .from("user_addresses")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("is_default", { ascending: false })
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("profiles")
+          .select("first_name, last_name, phone, city, neighborhood")
+          .eq("id", user.id)
+          .maybeSingle(),
+      ]);
+
+      const addresses = (addrs ?? []) as any[];
+      setSavedAddresses(addresses);
+
+      if (addresses.length > 0) {
+        const pick = addresses.find((a) => a.is_default) ?? addresses[0];
+        applyAddress(pick);
+        setSelectedAddressId(pick.id);
+      } else if (p) {
         const fullName = [p.first_name, p.last_name].filter(Boolean).join(" ").trim();
         const city = p.city && GUINEA_CITIES[p.city] ? p.city : "";
         const hood = city && p.neighborhood && GUINEA_CITIES[city]?.includes(p.neighborhood) ? p.neighborhood : "";
@@ -75,10 +94,39 @@ export default function Checkout() {
           customer_city: d.customer_city || city,
           customer_neighborhood: d.customer_neighborhood || hood,
         }));
+        setSelectedAddressId("new");
       }
       setProfileLoaded(true);
     })();
   }, [user, profileLoaded]);
+
+  function applyAddress(a: any) {
+    setData((d) => ({
+      ...d,
+      customer_name: a.recipient_name,
+      customer_phone: a.phone,
+      customer_city: GUINEA_CITIES[a.city] ? a.city : "",
+      customer_neighborhood: GUINEA_CITIES[a.city]?.includes(a.neighborhood) ? a.neighborhood : "",
+      customer_address_extra: a.address_extra ?? "",
+    }));
+  }
+
+  function handleSelectAddress(id: string) {
+    setSelectedAddressId(id);
+    if (id === "new") {
+      setData((d) => ({
+        ...d,
+        customer_name: "",
+        customer_phone: "",
+        customer_city: "",
+        customer_neighborhood: "",
+        customer_address_extra: "",
+      }));
+      return;
+    }
+    const a = savedAddresses.find((x) => x.id === id);
+    if (a) applyAddress(a);
+  }
 
   // Group cart by shop
   const shopGroups = useMemo(() => {
@@ -135,6 +183,19 @@ export default function Checkout() {
       if (orderErr || !orderId) {
         setPayLoading(false);
         return toast.error(orderErr?.message ?? "Erreur lors de la création de la commande");
+      }
+
+      // Persist new address if user opted in
+      if (saveAddress && selectedAddressId === "new") {
+        await supabase.from("user_addresses").insert({
+          user_id: user.id,
+          recipient_name: parsed.data.customer_name,
+          phone: parsed.data.customer_phone,
+          city: parsed.data.customer_city,
+          neighborhood: parsed.data.customer_neighborhood,
+          address_extra: parsed.data.customer_address_extra || null,
+          is_default: savedAddresses.length === 0,
+        });
       }
 
       // Lock orderRef so the empty-cart redirect doesn't fire after cart is cleared
@@ -207,12 +268,59 @@ export default function Checkout() {
         <div className="bg-card border border-border rounded-3xl p-6 md:p-8 shadow-soft space-y-4">
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-display text-lg font-bold">Vos coordonnées de livraison</h2>
-            {profileLoaded && (data.customer_name || data.customer_phone) && (
+            {savedAddresses.length === 1 && selectedAddressId === savedAddresses[0]?.id && (
               <span className="text-[10px] uppercase tracking-wider font-bold text-primary bg-primary/10 px-2 py-1 rounded-full">
-                Pré-rempli
+                Adresse pré-enregistrée
               </span>
             )}
           </div>
+
+          {savedAddresses.length > 0 && (
+            <div className="space-y-2 pb-3 border-b border-border">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Mes adresses enregistrées</Label>
+                <Link to="/account/addresses" className="text-xs text-primary hover:underline">Gérer</Link>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-2">
+                {savedAddresses.map((a) => {
+                  const active = selectedAddressId === a.id;
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => handleSelectAddress(a.id)}
+                      className={cn(
+                        "text-left rounded-2xl border-2 p-3 transition-smooth bg-background/50",
+                        active ? "border-primary shadow-soft" : "border-border hover:border-primary/40"
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-display font-bold truncate">{a.label || "Adresse"}</p>
+                        {a.is_default && (
+                          <span className="inline-flex items-center gap-1 text-[9px] uppercase font-bold tracking-wider text-primary">
+                            <Star className="h-3 w-3 fill-current" />
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{a.recipient_name} · {a.phone}</p>
+                      <p className="text-xs text-muted-foreground truncate">{[a.neighborhood, a.city].filter(Boolean).join(", ")}</p>
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => handleSelectAddress("new")}
+                  className={cn(
+                    "rounded-2xl border-2 border-dashed p-3 transition-smooth flex items-center justify-center gap-1.5 text-sm font-medium",
+                    selectedAddressId === "new" ? "border-primary text-primary" : "border-border text-muted-foreground hover:border-primary/40"
+                  )}
+                >
+                  <Plus className="h-4 w-4" /> Nouvelle adresse
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1.5 text-xs"><UserIcon className="h-3 w-3" /> Nom complet *</Label>
             <Input value={data.customer_name} onChange={(e) => setData({ ...data, customer_name: e.target.value })} placeholder="Aïssata Diallo" />
@@ -266,6 +374,17 @@ export default function Checkout() {
             <Label className="text-xs">Note (optionnel)</Label>
             <Textarea rows={2} value={data.notes} onChange={(e) => setData({ ...data, notes: e.target.value })} placeholder="Instructions particulières..." />
           </div>
+          {selectedAddressId === "new" && (
+            <label className="flex items-center gap-2 text-sm cursor-pointer rounded-xl bg-muted/40 px-3 py-2">
+              <input
+                type="checkbox"
+                checked={saveAddress}
+                onChange={(e) => setSaveAddress(e.target.checked)}
+                className="h-4 w-4 rounded"
+              />
+              Enregistrer cette adresse pour mes prochaines commandes
+            </label>
+          )}
           <Button
             size="lg"
             onClick={() => {
