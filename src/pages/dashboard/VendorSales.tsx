@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import PayoutPanel from "@/components/PayoutPanel";
 
 const fmt = (n: number) => Number(n).toLocaleString("fr-FR");
 
@@ -135,6 +136,11 @@ export default function VendorSales() {
           Montant que l'administration de Madina vous doit après commission et versements déjà effectués.
         </p>
       </div>
+
+      {/* Withdrawal requests */}
+      {user && shop && (
+        <PayoutPanel scope="shop" shopId={shop.id} userId={user.id} />
+      )}
 
       {/* Pickup confirmation: vendor enters the code given by the courier */}
       {(() => {
