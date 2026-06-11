@@ -28,41 +28,59 @@ export default function About() {
     <div className="animate-fade-in">
       <section className="bg-gradient-hero py-16 md:py-24">
         <div className="container text-center text-primary-foreground">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-primary-foreground/80 mb-3">Marketplace — Conakry · Guinée</p>
           <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">À propos de Madina</h1>
           <p className="text-lg text-primary-foreground/80 max-w-2xl mx-auto">
-            Votre centre commercial dans votre poche — nous connectons les vendeurs guinéens aux acheteurs à travers tout le pays.
+            Une marketplace nouvelle génération, pensée pour le commerce ouest-africain et alignée
+            sur les standards européens de sécurité, de transparence et de protection des données.
           </p>
         </div>
       </section>
 
       <section className="container py-14 max-w-3xl">
-        <h2 className="font-display text-2xl font-bold mb-4">Notre histoire</h2>
+        <h2 className="font-display text-2xl font-bold mb-4">Notre mission</h2>
         <p className="text-muted-foreground leading-relaxed mb-6">
-          Madina est née d'une vision simple : rendre accessible à tous les Guinéens la richesse des produits locaux.
-          Inspirée du célèbre marché de Madina à Conakry, notre plateforme numérique rassemble des centaines de boutiques
-          et des milliers d'articles — vêtements, chaussures, électronique, beauté et bien plus — le tout accessible
-          depuis votre téléphone.
+          Madina connecte des entrepreneurs guinéens à une clientèle nationale et internationale via
+          une plateforme moderne, sécurisée et accessible depuis un simple smartphone. Notre
+          ambition : faire du commerce local guinéen une référence régionale en matière
+          d'<strong>expérience d'achat</strong>, de <strong>logistique</strong> et de
+          <strong> confiance</strong>.
         </p>
         <p className="text-muted-foreground leading-relaxed mb-6">
-          Nous croyons au commerce équitable, à la transparence et à la qualité. Chaque boutique est vérifiée,
-          chaque produit est photographié avec soin, et notre système de détection IA garantit que vous recevez
-          exactement ce que vous voyez.
+          Inspirée du marché historique de Madina à Conakry, notre plateforme rassemble des
+          centaines de boutiques vérifiées, des dizaines de milliers de produits et un réseau de
+          livreurs partenaires couvrant les principales villes du pays.
         </p>
 
-        <h2 className="font-display text-2xl font-bold mb-4 mt-10">Nos valeurs</h2>
+        <h2 className="font-display text-2xl font-bold mb-4 mt-10">Nos engagements</h2>
         <div className="grid sm:grid-cols-2 gap-5">
           {[
-            { icon: Store, title: "Commerce local", desc: "Nous soutenons les entrepreneurs et artisans guinéens en leur offrant une vitrine numérique moderne." },
-            { icon: Users, title: "Communauté", desc: "Madina est plus qu'une marketplace — c'est une communauté de vendeurs et d'acheteurs qui se font confiance." },
-            { icon: Heart, title: "Qualité & confiance", desc: "Boutiques vérifiées, photos réelles, détection IA des couleurs — zéro mauvaise surprise." },
-            { icon: Globe, title: "Accessibilité", desc: "De Conakry à Kankan, de Kindia à N'Zérékoré — Madina livre partout en Guinée." },
+            { icon: ShieldCheck, title: "Conformité &amp; sécurité", desc: "Chiffrement TLS, authentification forte, conformité RGPD pour les utilisateurs européens et standards bancaires pour les paiements." },
+            { icon: Store, title: "Commerce local valorisé", desc: "Nous offrons aux entrepreneurs guinéens une vitrine professionnelle et des outils de gestion équivalents à ceux des grandes plateformes mondiales." },
+            { icon: Users, title: "Communauté de confiance", desc: "Boutiques vérifiées, modération active, support humain et assistant IA disponibles 24/7." },
+            { icon: Heart, title: "Qualité contrôlée", desc: "Détection IA des photos et des couleurs, vérification d'identité des vendeurs, protocole de remise et de réception sécurisé par codes." },
+            { icon: Globe, title: "Couverture nationale", desc: "De Conakry à N'Zérékoré, en passant par Kindia et Kankan — un réseau logistique en croissance continue." },
+            { icon: Award, title: "Transparence financière", desc: "Commissions claires, suivi en temps réel des soldes vendeurs et livreurs, demandes de retrait traçables." },
           ].map((v, i) => (
             <div key={i} className="bg-card border border-border rounded-2xl p-5 shadow-soft">
               <v.icon className="h-6 w-6 text-primary mb-3" />
-              <h3 className="font-semibold mb-1">{v.title}</h3>
+              <h3 className="font-semibold mb-1" dangerouslySetInnerHTML={{ __html: v.title }} />
               <p className="text-sm text-muted-foreground">{v.desc}</p>
             </div>
           ))}
+        </div>
+
+        <div className="mt-12 rounded-3xl border border-primary/20 bg-primary/5 p-6">
+          <h3 className="font-display text-lg font-bold mb-2">Une gouvernance responsable</h3>
+          <p className="text-sm text-muted-foreground">
+            Madina s'appuie sur une équipe pluridisciplinaire (technologie, logistique, juridique,
+            relation client) et collabore avec des partenaires reconnus pour le paiement,
+            l'hébergement et la cybersécurité. Nos politiques sont régulièrement auditées et
+            publiées dans nos <a href="/cgu" className="text-primary underline">CGU</a>, nos{" "}
+            <a href="/cgv" className="text-primary underline">CGV</a> et notre{" "}
+            <a href="/confidentialite" className="text-primary underline">Politique de
+            confidentialité</a>.
+          </p>
         </div>
       </section>
 
