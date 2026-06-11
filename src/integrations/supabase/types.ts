@@ -225,6 +225,71 @@ export type Database = {
         }
         Relationships: []
       }
+      payout_requests: {
+        Row: {
+          admin_note: string | null
+          amount_gnf: number
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          note: string | null
+          payment_reference: string | null
+          payout_account: string
+          payout_method: string
+          requester_id: string
+          requester_type: Database["public"]["Enums"]["payout_requester_type"]
+          reviewed_at: string | null
+          reviewed_by: string | null
+          shop_id: string | null
+          status: Database["public"]["Enums"]["payout_request_status"]
+          updated_at: string
+        }
+        Insert: {
+          admin_note?: string | null
+          amount_gnf: number
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          payment_reference?: string | null
+          payout_account: string
+          payout_method: string
+          requester_id: string
+          requester_type: Database["public"]["Enums"]["payout_requester_type"]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id?: string | null
+          status?: Database["public"]["Enums"]["payout_request_status"]
+          updated_at?: string
+        }
+        Update: {
+          admin_note?: string | null
+          amount_gnf?: number
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          payment_reference?: string | null
+          payout_account?: string
+          payout_method?: string
+          requester_id?: string
+          requester_type?: Database["public"]["Enums"]["payout_requester_type"]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id?: string | null
+          status?: Database["public"]["Enums"]["payout_request_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_requests_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payouts: {
         Row: {
           amount_gnf: number
@@ -636,6 +701,14 @@ export type Database = {
     }
     Functions: {
       assign_courier_role: { Args: never; Returns: undefined }
+      confirm_payout_reception: {
+        Args: { p_request_id: string }
+        Returns: undefined
+      }
+      courier_available_balance: {
+        Args: { _courier_id: string }
+        Returns: number
+      }
       courier_can_see_order: {
         Args: { _order_id: string; _user_id: string }
         Returns: boolean
@@ -709,10 +782,39 @@ export type Database = {
         }
         Returns: string
       }
+      request_courier_payout: {
+        Args: {
+          p_account: string
+          p_amount: number
+          p_method: string
+          p_note?: string
+        }
+        Returns: string
+      }
+      request_shop_payout: {
+        Args: {
+          p_account: string
+          p_amount: number
+          p_method: string
+          p_note?: string
+          p_shop_id: string
+        }
+        Returns: string
+      }
       review_courier_application: {
         Args: { p_approve: boolean; p_reason?: string; p_user_id: string }
         Returns: undefined
       }
+      review_payout_request: {
+        Args: {
+          p_admin_note?: string
+          p_approve: boolean
+          p_payment_reference?: string
+          p_request_id: string
+        }
+        Returns: undefined
+      }
+      shop_available_balance: { Args: { _shop_id: string }; Returns: number }
       shop_owner_in_order: {
         Args: { _order_id: string; _user_id: string }
         Returns: boolean
@@ -739,6 +841,8 @@ export type Database = {
         | "delivered"
         | "failed"
       order_status: "pending" | "paid" | "cancelled" | "refunded"
+      payout_request_status: "pending" | "approved" | "rejected" | "confirmed"
+      payout_requester_type: "shop" | "courier"
       product_size:
         | "XS"
         | "S"
@@ -902,6 +1006,8 @@ export const Constants = {
         "failed",
       ],
       order_status: ["pending", "paid", "cancelled", "refunded"],
+      payout_request_status: ["pending", "approved", "rejected", "confirmed"],
+      payout_requester_type: ["shop", "courier"],
       product_size: [
         "XS",
         "S",
