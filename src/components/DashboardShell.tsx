@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, Plus, Store, ArrowLeft, Users, Wallet, ShoppingBag, ShoppingCart, User, TrendingUp, Truck, ClipboardCheck, UserCog, MapPin } from "lucide-react";
+import { LayoutDashboard, Package, Plus, Store, ArrowLeft, Users, Wallet, ShoppingBag, ShoppingCart, User, TrendingUp, Truck, ClipboardCheck, UserCog, MapPin, Banknote } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -60,6 +60,7 @@ export const adminNav: Item[] = [
   { to: "/admin", label: "Vue d'ensemble", icon: LayoutDashboard, end: true },
   { to: "/admin/orders", label: "Commandes", icon: ShoppingBag },
   { to: "/admin/finance", label: "Finance", icon: Wallet },
+  { to: "/admin/payouts", label: "Demandes de retrait", icon: Banknote },
   { to: "/admin/products", label: "Produits", icon: Package },
   { to: "/admin/products/new", label: "Ajouter", icon: Plus },
   { to: "/admin/shops", label: "Boutiques", icon: Store },
@@ -85,5 +86,6 @@ export const clientNav: Item[] = [
 
 export const courierNav: Item[] = [
   { to: "/courier", label: "Livraisons", icon: Truck, end: true },
+  { to: "/courier/earnings", label: "Mes gains", icon: Wallet },
   { to: "/account/profile", label: "Mon profil", icon: User },
 ];

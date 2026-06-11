@@ -25,6 +25,8 @@ import MyShop from "./pages/dashboard/MyShop";
 import AdminShops from "./pages/dashboard/AdminShops";
 import AdminUsers from "./pages/dashboard/AdminUsers";
 import AdminFinance from "./pages/dashboard/AdminFinance";
+import AdminPayoutRequests from "./pages/dashboard/AdminPayoutRequests";
+import CourierEarnings from "./pages/dashboard/CourierEarnings";
 import AdminOrders from "./pages/dashboard/AdminOrders";
 import ClientOverview from "./pages/dashboard/ClientOverview";
 import ClientProfile from "./pages/dashboard/ClientProfile";
@@ -95,6 +97,7 @@ const App = () => (
 
             <Route path="/courier" element={<><SiteHeader /><DashboardShell items={courierNav} title="Livreur" /></>}>
               <Route index element={<CourierDeliveries />} />
+              <Route path="earnings" element={<CourierEarnings />} />
             </Route>
 
             <Route path="/admin" element={<><SiteHeader /><DashboardShell items={adminNav} title="Admin" /></>}>
@@ -104,6 +107,7 @@ const App = () => (
               <Route path="shops" element={<AdminShops />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="finance" element={<AdminFinance />} />
+              <Route path="payouts" element={<AdminPayoutRequests />} />
               <Route path="couriers" element={<CourierApplications />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="team" element={<AdminTeam />} />
