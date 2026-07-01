@@ -364,6 +364,44 @@ export type Database = {
           },
         ]
       }
+      product_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          product_id: string
+          rating: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          product_id: string
+          rating: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          product_id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_variant_images: {
         Row: {
           created_at: string
@@ -503,6 +541,9 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          blocked: boolean
+          blocked_at: string | null
+          blocked_reason: string | null
           city: string | null
           created_at: string
           first_name: string | null
@@ -514,6 +555,9 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          blocked?: boolean
+          blocked_at?: string | null
+          blocked_reason?: string | null
           city?: string | null
           created_at?: string
           first_name?: string | null
@@ -525,6 +569,9 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          blocked?: boolean
+          blocked_at?: string | null
+          blocked_reason?: string | null
           city?: string | null
           created_at?: string
           first_name?: string | null
@@ -697,10 +744,26 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      product_review_summary: {
+        Row: {
+          avg_rating: number | null
+          product_id: string | null
+          review_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       assign_courier_role: { Args: never; Returns: undefined }
+      can_review_product: { Args: { p_product_id: string }; Returns: boolean }
       confirm_payout_reception: {
         Args: { p_request_id: string }
         Returns: undefined
@@ -730,6 +793,7 @@ export type Database = {
         Args: { p_order_id: string }
         Returns: undefined
       }
+      delete_own_account: { Args: never; Returns: undefined }
       generate_auth_code: { Args: never; Returns: string }
       generate_order_reference: { Args: never; Returns: string }
       get_available_courier_order_items: {

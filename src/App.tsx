@@ -31,6 +31,7 @@ import AdminOrders from "./pages/dashboard/AdminOrders";
 import ClientOverview from "./pages/dashboard/ClientOverview";
 import ClientProfile from "./pages/dashboard/ClientProfile";
 import ClientAddresses from "./pages/dashboard/ClientAddresses";
+import ClientSettings from "./pages/dashboard/ClientSettings";
 import CourierDeliveries from "./pages/dashboard/CourierDeliveries";
 import CourierApplications from "./pages/dashboard/CourierApplications";
 import AdminTeam from "./pages/dashboard/AdminTeam";
@@ -85,6 +86,7 @@ const App = () => (
               <Route path="addresses" element={<ClientAddresses />} />
               <Route path="cart" element={<Cart />} />
               <Route path="orders" element={<Orders />} />
+              <Route path="settings" element={<ClientSettings />} />
             </Route>
 
             <Route path="/vendor" element={<><SiteHeader /><DashboardShell items={vendorNav} title="Vendeur" /></>}>
